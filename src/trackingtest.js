@@ -7,8 +7,6 @@
 export const STILL_SECONDS = 4;
 export const MOVE_SECONDS = 7;
 
-const GRADE_TEXT = ['gut', 'geht so', 'schlecht'];
-
 /** Note 0 (gut), 1 (geht so) oder 2 (schlecht) für einen Wert; higher = größer ist besser. */
 function grade(value, good, ok, higher = true) {
   if (higher) return value >= good ? 0 : value >= ok ? 1 : 2;
@@ -120,4 +118,3 @@ function verdictText(g) {
   ][g];
 }
 
-export { GRADE_TEXT };

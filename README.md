@@ -82,6 +82,10 @@ Für alle Spiele gilt:
 - **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne. Die Schwellen sind je Übung und Stufe mit simulierten Spielern ermittelt (siehe „Austarieren“).
 - **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
 
+## Gewertet wird nur mit echtem Ball
+
+Punkte, Rekorde, Sterne im Profil, Abzeichen, Rang und die Plätze in der Bestenliste gibt es nur, wenn mit dem echten Ball vor der Kamera gespielt wird. Mit der Maus als Ball, mit dem gemalten Test-Ball und mit der simulierten Kamera (`?sim`) läuft der **Übungsmodus**: Alles lässt sich ausprobieren, aber nichts wird verbucht. Am unteren Feldrand steht dann „Übungsmodus – Punkte zählen nicht“.
+
 ## Punktabzug
 
 Fehler kosten in jeder Übung ein paar Punkte und die laufende Serie, damit sauberes Spielen mehr bringt als schnelles Herumschieben: den Lichtkegel verlassen (einmal 10, danach 4 je Sekunde im Dunkeln), im Rennen oder beim Zeichnen neben der Spur bleiben, im Rhythmus eine Note verpassen, bei Punktlandung zu spät kommen, beim Zielrollen vorbeirollen, beim Pendel trödeln, einen Trick verpatzen. Die Punktzahl fällt nie unter null.
@@ -194,6 +198,16 @@ Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen,
 4. Schwankt die Erkennung, wenn das projizierte Bild heller oder dunkler wird: **Kamera-Automatik sperren** einschalten. Das geht nicht mit jeder Webcam.
 5. **Projektion abdunkeln** (Feinabstimmung) erhöhen, wenn der Ball nur im hellen Beamerbild verloren geht.
 6. Raum weiter abdunkeln. Farbiges Beamerlicht verfälscht die Ballfarbe weniger, wenn kein Tageslicht dazukommt.
+
+## Läuft nur im Browser
+
+Die App braucht kein Programm, keine Installation und keinen eigenen Server: Kamera, Ballerkennung, Spiel, Ton und Spielstände laufen vollständig im Browser des Laptops. Aus dem Netz kommen nur die Dateien der Seite selbst.
+
+Damit es flüssig bleibt:
+
+- Gerechnet wird höchstens in Full HD (1080 Bildzeilen), auch auf schärferen Bildschirmen.
+- Ruckelt das Spiel einige Sekunden lang, nimmt die App von selbst erst das Leuchten und die Auflösung etwas zurück („mittel“), dann schaltet sie das Leuchten ganz ab („sparsam“). Die aktuelle Stufe steht im Kamerabild (Taste `D`) hinter „Qualität“. Nach dem Neuladen beginnt sie wieder bei „voll“.
+- Solange die Einrichtung offen ist, wird das Spielfeld im Hintergrund nur noch selten neu gezeichnet; die Rechenzeit gehört dann der Kamera.
 
 ## Offline
 

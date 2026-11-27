@@ -215,6 +215,7 @@ export function bestLabel(app, game, level) {
 /** Zeilen für das, was eine Runde eingebracht hat: Punkte fürs Profil, Rangaufstieg, neue Abzeichen. */
 export function rewardLines(rewards, profile) {
   if (!rewards || !profile) return [];
+  if (rewards.practice) return ['Übungsmodus: nicht gewertet'];
   const lines = [`+${rewards.xp} Punkte${rewards.dailyBonus ? ' (Tagesbonus x2)' : ''}`];
   if (rewards.rankUp) lines.push(`Aufstieg: ${rankOf(profile.xp).name}!`);
   for (const b of rewards.badges ?? []) lines.push(`Neues Abzeichen: ${b.name}`);

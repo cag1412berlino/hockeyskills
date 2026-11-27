@@ -6,7 +6,7 @@ import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
 import { Sound, Voice, Music } from './sound.js';
 import { applyHomography, invertHomography } from './homography.js';
-import { autoCalibrate, manualCalibrate, toGray, calibOk, findBrightSpot } from './calibration.js';
+import { autoCalibrate, manualCalibrate, toGray, calibOk } from './calibration.js';
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
 import { games, categories } from './games/index.js';
@@ -54,6 +54,11 @@ const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera
 const app = createApp({ engine, sound, voice, music, onPlayerChange: () => refreshSetup() });
 window.hockey = app; // zum Ausprobieren in der Browser-Konsole
 
+// Übungsmodus: Mit der Maus als Ball, mit dem gemalten Test-Ball oder mit der simulierten Kamera
+// wird nichts gewertet. Punkte, Rekorde, Abzeichen und Ranglisten gibt es nur mit echtem Ball.
+app.practice = () => mode === 'mouse' || fakeBall || !!sim;
+engine.note = () => (setupEl.hidden && app.practice() ? 'Übungsmodus – Punkte zählen nicht' : null);
+
 // ---------- Ballposition ----------
 
 stage.addEventListener('pointermove', (e) => {
@@ -78,8 +83,6 @@ function updateRegion() {
   tracker.setRegion(c.map((p) => applyHomography(back, mx + (p.x - mx) * 1.1, my + (p.y - my) * 1.1)));
 }
 
-const ballCss = () => BALL_PRESETS[config.ball.preset]?.css ?? `hsl(${config.ball.h} 100% 50%)`;
-
 /** Der Test-Ball wird etwas dunkler gemalt als die reine Ballfarbe, damit die Kamera ihn nicht überbelichtet. */
 const fakeCss = () => `hsl(${config.ball.h} 100% 42%)`;
 /** Die Farbe, nach der gerade gesucht wird. */
@@ -102,7 +105,7 @@ async function setFakeBall(on) {
   calibrating = true;
   try {
     // An fünf Stellen des Felds malen und messen: Je nach Blickwinkel sieht die Kamera die Farbe anders.
-    const [tl, tr, br, bl] = engine.fieldCorners();
+    const [tl, tr, , bl] = engine.fieldCorners();
     const at = (u, v) => ({ x: tl.x + (tr.x - tl.x) * u + (bl.x - tl.x) * v, y: tl.y + (tr.y - tl.y) * u + (bl.y - tl.y) * v });
     const radius = Math.min(stage.width, stage.height) * 0.035;
     const dot = (p) => (ctx, cw, ch) => {
@@ -299,7 +302,7 @@ function countFps() {
   fps.since = now;
   if (!debugEl.hidden) {
     $('#debug-info').textContent =
-      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder`;
+      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder · Qualität ${['voll', 'mittel', 'sparsam'][engine.quality]}`;
   }
 }
 

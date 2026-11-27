@@ -26,7 +26,13 @@ export function predict(pos, vel, seconds, limit = 150) {
   const k = d > limit ? limit / d : 1;
   return { x: pos.x + dx * k, y: pos.y + dy * k };
 }
-const MAX_HEIGHT = 1440;       // höchste Bildhöhe in Pixeln, mit der gerechnet wird
+// Qualitätsstufen: höchste Bildhöhe in Pixeln und Stärke des Leuchtens. Leuchten bei hoher Auflösung
+// ist das Teuerste am ganzen Bild. Ruckelt es, schaltet die App von selbst eine Stufe herunter.
+const QUALITY = [
+  { height: 1080, glow: 1 },
+  { height: 900, glow: 0.6 },
+  { height: 720, glow: 0 },
+];
 
 export class Engine {
   constructor(canvas, config) {
@@ -40,6 +46,8 @@ export class Engine {
     this.trail = [];            // letzte Ballpositionen für den Schweif
     this.scene = null;
     this.paused = false;        // true, solange die Einrichtung offen ist
+    this.quality = 0;           // Stufe in QUALITY, steigt von selbst, wenn das Bild ruckelt
+    this.pace = { since: 0, frames: 0, peak: 0, slow: 0, tick: 0 };
     this.override = null;       // eigene Zeichenfunktion (Kalibrierung)
     this.clickOverride = null;
     this.ballProvider = () => null; // liefert {x, y} in Projektions-Koordinaten 0..1 oder null
@@ -69,7 +77,9 @@ export class Engine {
 
   resize() {
     // Auflösung begrenzen: Leuchteffekte kosten sonst auf 4K-Beamern zu viel Rechenzeit.
-    const dpr = Math.min(window.devicePixelRatio || 1, MAX_HEIGHT / window.innerHeight);
+    const q = QUALITY[this.quality];
+    theme.glow = q.glow;
+    const dpr = Math.min(window.devicePixelRatio || 1, q.height / window.innerHeight);
     const cw = (this.canvas.width = Math.round(window.innerWidth * dpr));
     const ch = (this.canvas.height = Math.round(window.innerHeight * dpr));
     const f = this.field;
@@ -196,6 +206,30 @@ export class Engine {
     requestAnimationFrame(loop);
   }
 
+  /**
+   * Zählt die Bilder pro Sekunde und schaltet die Qualität herunter, wenn das Spiel dauerhaft
+   * langsamer läuft, als der Bildschirm es zulässt. Als Maß gilt der beste bisher gesehene Wert
+   * (höchstens 60): Ein Beamer mit 30 Bildern pro Sekunde gilt so nicht als „ruckelnd“.
+   */
+  watchPace(now) {
+    const p = this.pace;
+    p.frames++;
+    if (!p.since) p.since = now;
+    if (now - p.since < 2000) return;
+    const fps = (p.frames * 1000) / (now - p.since);
+    p.since = now;
+    p.frames = 0;
+    if (document.hidden) return;
+    p.peak = Math.max(p.peak, Math.min(60, fps));
+    // Nur das laufende Spiel zählt; in der Einrichtung wird absichtlich seltener gezeichnet.
+    p.slow = !this.paused && !this.override && fps < p.peak * 0.8 ? p.slow + 1 : 0;
+    if (p.slow >= 2 && this.quality < QUALITY.length - 1) {
+      this.quality++;
+      p.slow = 0;
+      this.resize();
+    }
+  }
+
   /** Gemalter Hintergrund der Themenwelt. Bleibt dunkel, damit er den Ball nicht überstrahlt. */
   drawBackground(ctx) {
     const f = this.field;
@@ -284,6 +318,10 @@ export class Engine {
     const { ctx, canvas, field: f, ball } = this;
     this.time += dt;
     this.onFrame?.(dt);
+    this.watchPace(now);
+    // Solange die Einrichtung offen ist, liegt das Spielfeld nur blass im Hintergrund:
+    // Dann reicht ein Bild von sechs, der Rest der Rechenzeit gehört der Kamera.
+    if (this.paused && !this.override && this.pace.tick++ % 6) return;
     this.updateBall(dt);
     this.bloom += (this.bloomGoal - this.bloom) * Math.min(1, dt * 1.5);
     if (!this.paused) this.floor.update(dt, this.ball, this.world);
@@ -324,6 +362,20 @@ export class Engine {
         ctx.fillStyle = `rgba(2,4,14,${this.fade})`;
         ctx.fillRect(0, 0, f.w, f.h);
         this.fade = Math.max(0, this.fade - dt * 4);
+      }
+      const note = this.note?.();
+      if (note) {
+        // dauerhafter Hinweis am unteren Feldrand (z. B. Übungsmodus)
+        ctx.font = `500 22px ${theme.family}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const nw = ctx.measureText(note).width + 36;
+        ctx.fillStyle = 'rgba(8,14,36,0.82)';
+        ctx.beginPath();
+        ctx.roundRect(f.w / 2 - nw / 2, f.h - 44, nw, 34, 17);
+        ctx.fill();
+        ctx.fillStyle = '#ffd76a';
+        ctx.fillText(note, f.w / 2, f.h - 26);
       }
       ctx.restore();
       // Test-Ball: ein gemalter „Ball“ an der Maus, den die Kamera wie einen echten Ball filmt

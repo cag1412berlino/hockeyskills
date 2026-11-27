@@ -3,13 +3,14 @@
 export const theme = {
   family: '"Fredoka", system-ui, sans-serif',
   px: 1, // Bildschirm-Pixel pro Feld-Einheit (für den Leuchteffekt)
+  glow: 1, // Stärke des Leuchtens, 0 = aus (die App nimmt es zurück, wenn das Bild ruckelt)
   world: 'space', // aktuelle Themenwelt: bestimmt, wie Wesen und Sammelstücke aussehen
 };
 
 /** Sanftes Leuchten für alles, was danach gezeichnet wird. Mit noGlow wieder ausschalten. */
 export function glow(ctx, color, blur = 22) {
   ctx.shadowColor = color;
-  ctx.shadowBlur = blur * 0.55 * theme.px; // bewusst zurückhaltend: ein feiner Schein, kein Nebel
+  ctx.shadowBlur = blur * 0.55 * theme.px * theme.glow; // bewusst zurückhaltend: ein feiner Schein, kein Nebel
 }
 
 export function noGlow(ctx) {

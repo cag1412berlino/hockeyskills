@@ -283,12 +283,12 @@ export class PlayScene {
     }
     const key = scoreKey(app, game, level);
     const best = app.profile.highscores[key] || 0;
-    const record = this.score > best;
+    const record = this.score > best && !app.practice?.();
     if (record) {
       app.profile.highscores[key] = this.score;
       app.save();
     }
-    app.result({ game, level, score: this.score, best: Math.max(best, this.score), record, stars, rewards });
+    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards });
   }
 
   onClick(x, y) { clickButtons([this.exit], x, y); }

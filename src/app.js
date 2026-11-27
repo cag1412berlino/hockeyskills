@@ -26,6 +26,8 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     session: null, // laufendes Training oder Duell
     get profile() { return currentProfile(); },
     save: saveConfig,
+    /** Übungsmodus (Maus, Test-Ball, simulierte Kamera): Es wird nichts gewertet. main.js legt das fest. */
+    practice: () => false,
     palette: () => paletteFor(),
     /** Die bunten Spielfarben der gerade gezeigten Themenwelt. */
     worldPalette: () => worldPalette(engine.theme),
@@ -80,7 +82,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
      * Liefert, was es dafür gab: Punkte, Rangaufstieg, neue Abzeichen.
      */
     record: (r, profile) => {
-      if (!profile) return { xp: 0, badges: [] };
+      if (!profile || app.practice()) return { xp: 0, badges: [], practice: app.practice() };
       const rewards = recordRound(profile, {
         gameId: r.game.id, level: r.level, score: r.score, stars: r.stars, maxMult: r.maxMult,
         lives: r.lives, livesLeft: r.livesLeft,
@@ -148,7 +150,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
           if (duel) {
             const totals = [0, 1].map((w) => s.results.filter((r) => r.who === w).reduce((sum, r) => sum + r.score, 0));
             const winner = totals[0] === totals[1] ? null : s.players[totals[0] > totals[1] ? 0 : 1];
-            if (winner) recordEvent(winner, 'duel', categories);
+            if (winner && !app.practice()) recordEvent(winner, 'duel', categories);
             saveConfig();
             app.show(new DuelResultScene(app, s));
             return;
@@ -156,10 +158,11 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
           const total = s.results.reduce((sum, r) => sum + r.score, 0);
           const key = `session:${s.kind}:${s.level}:${config.speed}`;
           const best = app.profile.highscores[key] || 0;
-          if (total > best) app.profile.highscores[key] = total;
-          const badges = recordEvent(app.profile, s.kind, categories);
+          const counts = !app.practice();
+          if (counts && total > best) app.profile.highscores[key] = total;
+          const badges = counts ? recordEvent(app.profile, s.kind, categories) : [];
           saveConfig();
-          app.show(new SessionResultScene(app, s, Math.max(best, total), total > best, badges));
+          app.show(new SessionResultScene(app, s, Math.max(best, total), counts && total > best, badges));
         },
       }, duel ? { player: s.players[who] } : {}));
     },
