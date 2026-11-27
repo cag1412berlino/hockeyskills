@@ -2,7 +2,7 @@
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
-Stand: Prototyp mit Kalibrierung, Ballerkennung und sieben Spielen.
+Stand: Prototyp mit Kalibrierung, Ballerkennung und zehn Spielen.
 
 ## Spiele
 
@@ -15,6 +15,9 @@ Stand: Prototyp mit Kalibrierung, Ballerkennung und sieben Spielen.
 | **Slalom** | Der Reihe nach durch die Tore. | Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. Später gibt es ein schmales Bonus-Tor. |
 | **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. | Der Schild fängt einen Treffer ab, die Schneeflocke bremst alles. Später fliegen Stachelbälle im Zickzack. |
 | **Fangen** | Zwei, drei oder vier Fänger (je nach Stufe) jagen den Ball. Drei Leben. | Jeder Fänger jagt anders: direkt, den Weg abschneidend, von der Seite, groß und langsam. Sie wenden träge, Haken schlagen hilft. Die Schneeflocke friert sie ein. |
+| **Pendel** | Vorhand-Rückhand-Wechsel: Der Ball muss zwischen zwei Feldern hin und her. | Ein Ring zieht sich um das aktive Feld zusammen; wer vorher ankommt, ist „im Takt“ und bekommt dreifache Punkte. Später wandert und dreht sich das Feldpaar. |
+| **Stopp** | Sterne sammeln, solange der Rahmen blau ist. Bei „Stopp!“ muss der Ball sofort still liegen. Drei Leben. | Die Vorwarnung wird kürzer, der erlaubte Spielraum kleiner. |
+| **Draht** | Den Ball durch einen schmalen, gewundenen Gang führen, ohne die Wand zu berühren. | Wer anstößt, muss zum letzten Kontrollpunkt zurück. Der Gang wird enger. |
 
 Für alle Spiele gilt:
 

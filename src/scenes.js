@@ -44,13 +44,15 @@ export class MenuScene extends ButtonScene {
     const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
     const rows = Math.ceil(n / cols);
     const cell = w / cols;
-    const r = rows > 1 ? Math.min(112, cell * 0.32) : 150;
+    // Ab drei Reihen rücken die Buttons enger zusammen und werden etwas kleiner.
+    const step = rows > 2 ? 222 : 320;
+    const r = rows > 2 ? 66 : rows > 1 ? Math.min(112, cell * 0.32) : 150;
     this.buttons = games.map((game, i) => {
       const row = Math.floor(i / cols);
       const inRow = Math.min(cols, n - row * cols); // letzte Reihe mittig setzen
       return new DwellButton({
         x: w / 2 + ((i % cols) - (inRow - 1) / 2) * cell,
-        y: rows > 1 ? 355 + row * 320 : 520,
+        y: rows > 2 ? 325 + row * step : rows > 1 ? 355 + row * step : 520,
         r,
         color: colors[i % colors.length],
         icon: game.icon, label: game.name,
@@ -73,7 +75,7 @@ export class MenuScene extends ButtonScene {
     title(ctx, 'Skiller Academy', cx, 160, 84, this.app.palette()[0]);
     text(ctx, BRAND.club, cx, 228, 28, tone(this.app.palette()[3], 80), 'center', 0);
     ctx.globalAlpha = this.pulse();
-    text(ctx, 'Lege den Ball auf ein Spiel', this.field.w / 2, 945, 36, '#fff', 'center', 6);
+    text(ctx, 'Lege den Ball auf ein Spiel', this.field.w / 2, 962, 30, '#fff', 'center', 6);
     ctx.globalAlpha = 1;
     // Buttons leicht versetzt schweben lassen
     this.buttons.forEach((b, i) => {

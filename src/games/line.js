@@ -15,7 +15,7 @@ const HOLD = 0.8; // Sekunden, die der Ball am Stopp-Punkt ruhig liegen muss
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /** Weiche Kurve durch die Stützpunkte, als Liste dicht liegender Punkte. */
-function spline(ctrl, field) {
+export function spline(ctrl, field) {
   const out = [];
   for (let i = 0; i < ctrl.length - 1; i++) {
     const p0 = ctrl[i - 1] ?? ctrl[i], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[i + 2] ?? ctrl[i + 1];
