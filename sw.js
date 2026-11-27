@@ -10,7 +10,9 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return;
   e.respondWith(
-    fetch(request)
+    // 'no-cache' fragt jedes Mal beim Server nach, ob es eine neuere Fassung gibt.
+    // Sonst liefert der Browser bis zu zehn Minuten lang alte Dateien aus seinem Zwischenspeicher.
+    fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();

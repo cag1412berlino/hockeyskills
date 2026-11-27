@@ -12,6 +12,7 @@ import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScen
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { newProfile, rankOf, recordRound, recordEvent, dailyGame, dateString, summarize } from './profile.js';
 import { THEMES, randomTheme, worldPalette, bright, setBallHue } from './themes.js';
+import { VERSION } from './version.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -68,7 +69,8 @@ const app = {
 
   /** Wechselt den Bildschirm. Im Menü gilt die gewählte Themenwelt, bei "auto" der Weltraum. */
   show(scene) {
-    if (!(scene instanceof PlayScene)) engine.theme = config.theme === 'auto' ? 'space' : config.theme;
+    // Bei fester Themenwelt gilt sie überall; bei "auto" bleibt im Menü die Welt der letzten Runde stehen.
+    if (config.theme !== 'auto') engine.theme = config.theme;
     engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
     engine.bloomTo(0.35);
     engine.setScene(scene);
@@ -471,7 +473,7 @@ function buildSetup() {
   $('#theme').onchange = (e) => {
     config.theme = e.target.value;
     saveConfig();
-    engine.theme = config.theme === 'auto' ? 'space' : config.theme;
+    engine.theme = config.theme === 'auto' ? randomTheme() : config.theme;
   };
 
   // Spieler
@@ -657,6 +659,8 @@ $('#brand').textContent = BRAND.name;
 for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
 setBallHue(config.ball.h);
+engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt
+$('#version').textContent = `Version ${VERSION}`;
 sound.muted = config.muted;
 voice.enabled = config.voice;
 music.enabled = config.music;
