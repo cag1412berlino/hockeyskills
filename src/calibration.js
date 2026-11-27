@@ -112,7 +112,7 @@ export async function manualCalibrate(io, corners) {
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `bold ${Math.round(ch * 0.04)}px system-ui, sans-serif`;
+      ctx.font = `bold ${Math.round(ch * 0.032)}px system-ui, sans-serif`;
       ctx.fillText(`Klicke im Bild auf die Ecke ${names[pts.length] ?? ''} des Spielfelds (${pts.length + 1}/4) – Esc bricht ab`, cw / 2, ch * 0.05);
       ctx.strokeStyle = '#0ff';
       ctx.lineWidth = 3;

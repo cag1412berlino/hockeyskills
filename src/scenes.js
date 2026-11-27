@@ -1,21 +1,30 @@
 // Die Bildschirme der App: Spielauswahl, Schwierigkeit, Spiel, Ergebnis.
-import { DwellButton, updateButtons, clickButtons, icons, text } from './ui.js';
+import { DwellButton, updateButtons, clickButtons, icons, text, title, heart, glow, noGlow } from './ui.js';
 
 const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
+const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
+const scoreKey = (app, game, level) => `${game.id}:${level}:${app.config.speed}`;
+const pad = (n) => String(n).padStart(5, '0');
 
 class ButtonScene {
   constructor(app) {
     this.app = app;
     this.buttons = [];
+    this.time = 0;
   }
   get field() { return this.app.engine.field; }
-  update(dt, ball) { updateButtons(this.buttons, dt, ball); }
+  update(dt, ball) {
+    this.time += dt;
+    updateButtons(this.buttons, dt, ball);
+  }
   onClick(x, y) { clickButtons(this.buttons, x, y); }
   draw(ctx) { this.buttons.forEach((b) => b.draw(ctx)); }
-  /** Reicht Töne und Aktion eines Buttons zusammen weiter. */
+  /** Spielt den Auswahl-Ton und führt dann die Aktion aus. */
   act(fn) {
     return () => { this.app.sound.select(); fn(); };
   }
+  /** Langsam pulsierende Deckkraft für Hinweistexte. */
+  pulse() { return 0.6 + 0.4 * Math.sin(this.time * 4); }
 }
 
 export class MenuScene extends ButtonScene {
@@ -23,18 +32,30 @@ export class MenuScene extends ButtonScene {
     const { w } = this.field;
     const games = this.app.games;
     const colors = this.app.palette();
-    const gap = w / games.length;
-    const r = Math.min(170, gap * 0.36);
-    this.buttons = games.map((game, i) => new DwellButton({
-      x: gap * (i + 0.5), y: 520, r,
-      color: colors[i % colors.length],
-      icon: game.icon, label: game.name,
-      onActivate: this.act(() => this.app.levels(game)),
-    }));
+    const n = games.length;
+    const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : 3;
+    const rows = Math.ceil(n / cols);
+    const cell = w / cols;
+    const r = rows > 1 ? Math.min(112, cell * 0.32) : 150;
+    this.buttons = games.map((game, i) => {
+      const row = Math.floor(i / cols);
+      const inRow = Math.min(cols, n - row * cols); // letzte Reihe mittig setzen
+      return new DwellButton({
+        x: w / 2 + ((i % cols) - (inRow - 1) / 2) * cell,
+        y: rows > 1 ? 355 + row * 320 : 520,
+        r,
+        color: colors[i % colors.length],
+        icon: game.icon, label: game.name,
+        onActivate: this.act(() => this.app.levels(game)),
+      });
+    });
   }
   draw(ctx) {
-    text(ctx, 'Hockey Skills', this.field.w / 2, 150, 90);
-    text(ctx, 'Lege den Ball auf ein Spiel', this.field.w / 2, 900, 40, 'rgba(255,255,255,0.7)');
+    const c = this.app.palette();
+    title(ctx, 'Hockey Skills', this.field.w / 2, 120, 118, c[1], c[3]);
+    ctx.globalAlpha = this.pulse();
+    text(ctx, 'Ball auf ein Spiel legen', this.field.w / 2, 945, 40);
+    ctx.globalAlpha = 1;
     super.draw(ctx);
   }
 }
@@ -47,23 +68,38 @@ export class LevelScene extends ButtonScene {
   layout() {
     const { w } = this.field;
     const colors = this.app.palette();
-    const r = Math.min(140, w * 0.12);
+    const r = Math.min(140, w * 0.125);
     this.buttons = [1, 2, 3].map((level) => {
-      const best = this.app.config.highscores[`${this.game.id}:${level}`];
+      const best = this.app.config.highscores[scoreKey(this.app, this.game, level)];
       return new DwellButton({
-        x: (w / 3) * (level - 0.5), y: 500, r,
-        color: colors[level % colors.length],
+        x: (w / 3) * (level - 0.5), y: 480, r,
+        color: colors[level - 1],
         icon: icons.stars(level), label: LEVEL_NAMES[level - 1],
-        sub: best ? `Rekord ${best}` : '',
+        sub: best ? `Hi ${best}` : '',
         onActivate: this.act(() => this.app.play(this.game, level)),
       });
     });
     this.buttons.push(new DwellButton({
-      x: 90, y: 910, r: 65, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+      x: 100, y: 890, r: 70, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+    }));
+    // Tempo-Button: schaltet reihum Langsam, Normal, Schnell.
+    const speed = this.app.config.speed;
+    this.buttons.push(new DwellButton({
+      x: w - 130, y: 820, r: 70, color: colors[3], icon: icons.speed(speed + 1),
+      label: SPEEDS[speed].name,
+      onActivate: this.act(() => {
+        this.app.config.speed = (speed + 1) % SPEEDS.length;
+        this.app.save();
+        this.layout();
+      }),
     }));
   }
   draw(ctx) {
-    text(ctx, this.game.name, this.field.w / 2, 150, 80);
+    const c = this.app.palette();
+    title(ctx, this.game.name, this.field.w / 2, 140, 110, c[1], c[3]);
+    ctx.globalAlpha = this.pulse();
+    text(ctx, 'Stufe wählen', this.field.w / 2, 250, 40);
+    ctx.globalAlpha = 1;
     super.draw(ctx);
   }
 }
@@ -74,7 +110,9 @@ export class PlayScene {
     this.score = 0;
     this.duration = game.duration ?? 60;
     this.timeLeft = this.duration;
+    this.lives = game.lives ?? null;
     this.countdown = 3.5;
+    this.speed = SPEEDS[app.config.speed].factor;
     this.lastTick = 4;
     const scene = this;
     // Das ist alles, was ein Spiel von der App bekommt.
@@ -85,15 +123,20 @@ export class PlayScene {
       sound: app.sound,
       get score() { return scene.score; },
       get timeLeft() { return scene.timeLeft; },
+      get lives() { return scene.lives; },
       addScore(n) { scene.score = Math.max(0, scene.score + n); },
+      loseLife() {
+        scene.lives -= 1;
+        if (scene.lives <= 0) scene.finish();
+      },
       end() { scene.finish(); },
     };
     this.instance = game.create(this.env);
   }
   layout() {
     this.exit = new DwellButton({
-      x: this.app.engine.field.w - 70, y: 70, r: 50, dwell: 1.5, icon: icons.close,
-      color: 'rgba(255,255,255,0.5)',
+      x: this.app.engine.field.w - 75, y: 95, r: 50, dwell: 1.5, icon: icons.close,
+      color: 'rgba(255,255,255,0.6)',
       onActivate: () => { this.app.sound.select(); this.app.menu(); },
     });
   }
@@ -109,13 +152,14 @@ export class PlayScene {
       return;
     }
     this.timeLeft -= dt;
-    this.instance.update(dt, ball);
+    // Das Tempo lässt die Spielwelt schneller oder langsamer laufen, die Rundenzeit bleibt gleich.
+    this.instance.update(dt * this.speed, ball);
     if (this.timeLeft <= 0) this.finish();
   }
   finish() {
     if (this.done) return;
     this.done = true;
-    const key = `${this.game.id}:${this.level}`;
+    const key = scoreKey(this.app, this.game, this.level);
     const best = this.app.config.highscores[key] || 0;
     const record = this.score > best;
     if (record) {
@@ -127,17 +171,30 @@ export class PlayScene {
   onClick(x, y) { clickButtons([this.exit], x, y); }
   draw(ctx) {
     const { w } = this.app.engine.field;
+    const c = this.env.palette;
     this.instance.draw(ctx);
-    // Zeitbalken, Punkte, Abbrechen-Button
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillRect(0, 0, w, 16);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, w * Math.max(0, this.timeLeft / this.duration), 16);
-    text(ctx, String(this.score), 40, 80, 90, '#fff', 'left');
+
+    // Zeitbalken aus einzelnen Segmenten
+    const segments = 30;
+    const sw = (w - 40) / segments;
+    const lit = Math.ceil(segments * Math.max(0, this.timeLeft / this.duration));
+    for (let i = 0; i < segments; i++) {
+      ctx.fillStyle = i < lit ? (lit <= 5 ? '#fff' : c[1]) : 'rgba(255,255,255,0.12)';
+      ctx.fillRect(20 + i * sw, 22, sw - 6, 20);
+    }
+    text(ctx, pad(this.score), 30, 100, 80, '#fff', 'left');
+    if (this.lives != null) {
+      for (let i = 0; i < (this.game.lives ?? 0); i++) {
+        const on = i < this.lives;
+        if (on) glow(ctx, c[3], 14);
+        heart(ctx, w / 2 - 60 + i * 60, 100, 46, on ? c[3] : 'rgba(255,255,255,0.15)');
+        noGlow(ctx);
+      }
+    }
     this.exit.draw(ctx);
     if (this.countdown > 0) {
       const n = Math.ceil(this.countdown - 0.5);
-      text(ctx, n > 0 ? String(n) : 'Los!', w / 2, 500, 300);
+      title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 500, n > 0 ? 420 : 260, c[1], c[3]);
     }
   }
 }
@@ -152,20 +209,27 @@ export class ResultScene extends ButtonScene {
     const colors = this.app.palette();
     this.buttons = [
       new DwellButton({
-        x: w / 2 - 190, y: 720, r: 110, color: colors[0], icon: icons.replay, label: 'Nochmal',
+        x: w / 2 - 200, y: 720, r: 110, color: colors[0], icon: icons.replay, label: 'Nochmal',
         onActivate: this.act(() => this.app.play(this.game, this.level)),
       }),
       new DwellButton({
-        x: w / 2 + 190, y: 720, r: 110, color: colors[2], icon: icons.home, label: 'Menü',
+        x: w / 2 + 200, y: 720, r: 110, color: colors[2], icon: icons.home, label: 'Menü',
         onActivate: this.act(() => this.app.menu()),
       }),
     ];
   }
   draw(ctx) {
     const cx = this.field.w / 2;
-    text(ctx, this.record ? 'Neuer Rekord!' : 'Geschafft!', cx, 140, 80, this.record ? this.app.palette()[1] : '#fff');
-    text(ctx, String(this.score), cx, 340, 240);
-    if (this.best) text(ctx, `Rekord ${this.best}`, cx, 500, 44, 'rgba(255,255,255,0.7)');
+    const c = this.app.palette();
+    if (this.record) {
+      ctx.globalAlpha = this.pulse();
+      title(ctx, 'Neuer Rekord!', cx, 130, 105, c[0], c[3]);
+      ctx.globalAlpha = 1;
+    } else {
+      title(ctx, 'Geschafft!', cx, 130, 110, c[1], c[3]);
+    }
+    text(ctx, pad(this.score), cx, 330, 220);
+    if (this.best) text(ctx, `Hi ${pad(this.best)}`, cx, 470, 50, c[1]);
     super.draw(ctx);
   }
 }

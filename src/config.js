@@ -7,6 +7,7 @@ const defaults = () => ({
   cameraId: null,
   ball: { preset: 'orange', ...BALL_PRESETS.orange },
   fieldShape: 'square', // 'square' = Quadrat, 'full' = ganze Projektionsfläche
+  speed: 1,             // Tempo: 0 = langsam, 1 = normal, 2 = schnell
   calib: null,          // { H, aspect, error }
   highscores: {},       // 'spiel:level' -> Punkte
 });

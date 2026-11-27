@@ -2,7 +2,23 @@
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
-Stand: Prototyp mit Kalibrierung, Ballerkennung und dem Spiel „Ziele treffen“.
+Stand: Prototyp mit Kalibrierung, Ballerkennung und fünf Spielen im Arcade-Look.
+
+## Spiele
+
+| Spiel | Worum es geht |
+| --- | --- |
+| **Ziele** | Leuchtende Ziele treffen. Je schneller nach dem Auftauchen, desto mehr Punkte (10 bis 20). |
+| **Wolke** | Ein Ziel treffen, aber um die Gewitterwolke herumdribbeln. Die Wolke pendelt (Mittel) oder stellt sich in den Weg (Schwer). |
+| **Linie** | Den Ball an einer geschwungenen Linie entlangführen. Ab Mittel pendeln Stachelbälle über die Linie. |
+| **Slalom** | Der Reihe nach durch die Tore. Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. |
+| **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. |
+
+Für alle Spiele gilt:
+
+- Weiße Stachelbälle und Wolken bedeuten Gefahr und kosten Punkte oder Leben.
+- In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit aus dem Kreis heraus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
+- Im Bildschirm „Stufe wählen“ schaltet der Button unten rechts das **Tempo** um: Langsam, Normal, Schnell. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
 
 ## Starten
 
@@ -44,13 +60,14 @@ Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Tas
 
 ## Ein neues Spiel hinzufügen
 
-Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` eingetragen. `src/games/targets.js` dient als Vorlage.
+Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` eingetragen. `src/games/targets.js` dient als Vorlage, `src/games/common.js` enthält Bausteine für mehrere Spiele (Stoppzone, Explosion).
 
 ```js
 export default {
   id: 'meinspiel',          // eindeutiger Name, auch für die Bestwerte
   name: 'Mein Spiel',       // Anzeige im Menü
   duration: 60,             // Rundenlänge in Sekunden
+  lives: 3,                 // optional: Leben, die App zeigt dann Herzen an
   icon(ctx, r) { /* Symbol fürs Menü um den Punkt (0, 0) zeichnen */ },
   create(env) {
     return {
@@ -63,11 +80,14 @@ export default {
 
 - `ball` enthält `x`, `y`, `vx`, `vy` und `visible`.
 - Das Spielfeld ist immer 1000 Einheiten hoch und `env.field.w` breit.
-- `env.addScore(n)` vergibt Punkte, `env.end()` beendet die Runde vorzeitig.
+- `env.addScore(n)` vergibt Punkte, `env.loseLife()` zieht ein Leben ab, `env.end()` beendet die Runde vorzeitig.
+- Das Tempo muss ein Spiel nicht beachten: Die App lässt `dt` entsprechend schneller oder langsamer laufen.
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
 - `env.palette` liefert Farben, die sich deutlich von der Ballfarbe unterscheiden. Nur diese (und Weiß/Grau) für große Flächen verwenden, sonst hält die Kamera Spielgrafik für den Ball.
 
-Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App.
+Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `glow`, `hazard` und `star`.
+
+Die Pixel-Schrift „Press Start 2P“ liegt unter `assets/fonts/` (SIL Open Font License).
 
 ## Tests
 

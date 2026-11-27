@@ -31,6 +31,7 @@ export class Sound {
   }
 
   select() { this.tone(660, 0.12, { type: 'triangle' }); this.tone(990, 0.15, { type: 'triangle', delay: 0.08 }); }
+  blip() { this.tone(1200, 0.05, { type: 'square', vol: 0.06 }); }
   tick() { this.tone(440, 0.12, { type: 'square', vol: 0.12 }); }
   go() { this.tone(880, 0.4, { type: 'square', vol: 0.15 }); }
   /** Treffer; step erhöht den Ton bei Serien. */

@@ -3,6 +3,8 @@
 // Spiele rechnen in "Feld-Einheiten": Das Spielfeld ist immer 1000 hoch und
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
 
+import { theme, glow, noGlow } from './ui.js';
+
 export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
 
 export class Engine {
@@ -40,6 +42,7 @@ export class Engine {
     f.scale = ph / 1000;
     f.w = pw / f.scale;
     f.h = 1000;
+    theme.px = f.scale;
     this.scene?.layout?.();
   }
 
@@ -111,6 +114,18 @@ export class Engine {
     requestAnimationFrame(loop);
   }
 
+  /** Dunkles Raster als Hintergrund. Bewusst schwach, damit es den Ball nicht überstrahlt. */
+  drawGrid(ctx) {
+    const f = this.field;
+    ctx.strokeStyle = `hsl(${(this.config.ball.h + 220) % 360} 80% 16%)`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const x0 = (f.w % 100) / 2;
+    for (let x = x0; x <= f.w; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, f.h); }
+    for (let y = 0; y <= f.h; y += 100) { ctx.moveTo(0, y); ctx.lineTo(f.w, y); }
+    ctx.stroke();
+  }
+
   frame(dt, now) {
     const { ctx, canvas, field: f, ball } = this;
     this.onFrame?.(dt);
@@ -130,24 +145,36 @@ export class Engine {
       ctx.beginPath();
       ctx.rect(0, 0, f.w, f.h);
       ctx.clip();
+      this.drawGrid(ctx);
       this.scene.draw(ctx);
       if (ball.visible) {
-        // Weißer Ring um den Ball: zeigt, dass die Kamera ihn sieht.
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, BALL_RADIUS + 12, 0, Math.PI * 2);
+        // Weißes Fadenkreuz um den Ball: zeigt, dass die Kamera ihn sieht.
+        const r = BALL_RADIUS + 14;
         ctx.lineWidth = 6;
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeStyle = '#fff';
+        glow(ctx, '#fff', 16);
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
+        for (let i = 0; i < 4; i++) {
+          const c = Math.cos((i * Math.PI) / 2), s = Math.sin((i * Math.PI) / 2);
+          ctx.moveTo(ball.x + c * r, ball.y + s * r);
+          ctx.lineTo(ball.x + c * (r + 16), ball.y + s * (r + 16));
+        }
         ctx.stroke();
+        noGlow(ctx);
       }
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.strokeRect(3, 3, f.w - 6, f.h - 6);
+      const edge = `hsl(${(this.config.ball.h + 200) % 360} 90% 55%)`;
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = edge;
+      glow(ctx, edge, 30);
+      ctx.strokeRect(4, 4, f.w - 8, f.h - 8);
+      noGlow(ctx);
       ctx.restore();
     }
 
     if (this.toast && now < this.toast.until) {
       const size = Math.round(canvas.height * 0.035);
-      ctx.font = `bold ${size}px system-ui, sans-serif`;
+      ctx.font = `${size * theme.scale}px ${theme.family}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const w = ctx.measureText(this.toast.msg).width + size * 2;

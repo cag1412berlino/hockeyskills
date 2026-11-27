@@ -9,6 +9,7 @@ import { applyHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
 import { MenuScene, LevelScene, PlayScene, ResultScene } from './scenes.js';
 import { games } from './games/index.js';
+import { usePixelFont } from './ui.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -300,6 +301,9 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------- Start ----------
+
+// Pixel-Schrift laden; bis dahin (oder falls sie fehlt) wird eine normale Schrift benutzt.
+document.fonts?.load('20px "Press Start 2P"').then((f) => { if (f.length) usePixelFont(); }).catch(() => {});
 
 buildSetup();
 app.menu();
