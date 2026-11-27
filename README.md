@@ -1,4 +1,4 @@
-# Hockey Skills
+# Blau-Weiss Skiller Academy
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
@@ -24,6 +24,10 @@ Für alle Spiele gilt:
 - **Stoppzone:** In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit hinaus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
 - **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne.
 - **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
+
+## Vereinslogo
+
+Die App zeigt im Menü und in der Einrichtung ein Logo, wenn die Datei `assets/logo.svg` oder `assets/logo.png` vorhanden ist. Am besten eignet sich ein Logo mit durchsichtigem Hintergrund; ein weißer Hintergrund erscheint auf dem Boden als heller Kasten. Name, Vereinsname und Blautöne stehen in `src/config.js` unter `BRAND`.
 
 ## Starten
 
@@ -91,7 +95,7 @@ export default {
 - `env.stage` (0 bis 3) und `env.ramp` (1 bis 1,6) sagen, wie weit die Runde fortgeschritten ist. Damit wird ein Spiel nach und nach schwieriger.
 - Das Tempo muss ein Spiel nicht beachten: Die App lässt `dt` entsprechend schneller oder langsamer laufen.
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
-- `env.palette` liefert Farben, die sich deutlich von der Ballfarbe unterscheiden. Nur diese (und Weiß/Grau) für große Flächen verwenden, sonst hält die Kamera Spielgrafik für den Ball.
+- `env.palette` liefert die vier Blautöne des Vereinsstils. Nur diese (und Weiß/Grau) für große Flächen verwenden: Orange, Gelb, Grün oder Pink könnte die Kamera für den Ball halten.
 
 Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `glow`, `orb`, `hazard` und `star`, für Funken und Punktetexte die Klasse `Fx` in `src/games/common.js`.
 

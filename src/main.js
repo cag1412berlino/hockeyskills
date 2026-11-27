@@ -1,5 +1,5 @@
 // Verbindet alles: Einrichtung, Kamera, Ballerkennung, Kalibrierung und Spiele.
-import { config, saveConfig, paletteFor } from './config.js';
+import { config, saveConfig, paletteFor, BRAND } from './config.js';
 import { Engine } from './engine.js';
 import { BallTracker, BALL_PRESETS } from './tracker.js';
 import { Camera } from './camera.js';
@@ -36,8 +36,9 @@ let calibrating = false;
 
 const app = {
   engine, config, sound, games,
+  logo: null, // Vereinslogo, sobald geladen
   save: saveConfig,
-  palette: () => paletteFor(config.ball.h),
+  palette: () => paletteFor(),
   menu: () => engine.setScene(new MenuScene(app)),
   levels: (game) => engine.setScene(new LevelScene(app, game)),
   play: (game, level) => engine.setScene(new PlayScene(app, game, level)),
@@ -300,6 +301,21 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------- Start ----------
+
+// Vereinslogo: assets/logo.svg oder assets/logo.png. Fehlt die Datei, bleibt der Platz leer.
+(function loadLogo([src, ...rest]) {
+  if (!src) return;
+  const img = new Image();
+  img.onload = () => {
+    app.logo = img;
+    $('#logo').src = src;
+    $('#logo').hidden = false;
+  };
+  img.onerror = () => loadLogo(rest);
+  img.src = src;
+})(['assets/logo.svg', 'assets/logo.png']);
+document.title = BRAND.name;
+$('#brand').textContent = BRAND.name;
 
 // Schrift vorab laden, damit schon das erste Bild stimmt.
 document.fonts?.load('600 20px "Fredoka"').catch(() => {});

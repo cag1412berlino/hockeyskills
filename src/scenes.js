@@ -1,5 +1,6 @@
 // Die Bildschirme der App: Spielauswahl, Schwierigkeit, Spiel, Ergebnis.
 import { DwellButton, updateButtons, clickButtons, icons, text, title, heart, star, glow, noGlow, tone } from './ui.js';
+import { BRAND } from './config.js';
 
 const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
 const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
@@ -57,7 +58,19 @@ export class MenuScene extends ButtonScene {
     });
   }
   draw(ctx) {
-    title(ctx, 'Hockey Skills', this.field.w / 2, 125, 120, this.app.palette()[1]);
+    // Kopf: Vereinslogo (falls vorhanden) links, daneben der Name in zwei Zeilen
+    const logo = this.app.logo;
+    const { w } = this.field;
+    const size = 150;
+    const cx = logo ? w / 2 + size / 2 + 10 : w / 2;
+    if (logo) {
+      const k = Math.min(size / logo.width, size / logo.height);
+      const lw = logo.width * k, lh = logo.height * k;
+      ctx.drawImage(logo, cx - 330 - size / 2 - lw / 2, 118 - lh / 2, lw, lh);
+    }
+    title(ctx, 'Blau-Weiss', cx, 78, 84, '#fff');
+    title(ctx, 'Skiller Academy', cx, 160, 84, this.app.palette()[0]);
+    text(ctx, BRAND.club, cx, 228, 28, tone(this.app.palette()[3], 80), 'center', 0);
     ctx.globalAlpha = this.pulse();
     text(ctx, 'Lege den Ball auf ein Spiel', this.field.w / 2, 945, 36, '#fff', 'center', 6);
     ctx.globalAlpha = 1;

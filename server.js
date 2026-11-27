@@ -34,5 +34,5 @@ createServer(async (req, res) => {
     res.end('Nicht gefunden');
   }
 }).listen(port, '127.0.0.1', () => {
-  console.log(`Hockey Skills läuft: http://localhost:${port}`);
+  console.log(`Blau-Weiss Skiller Academy läuft: http://localhost:${port}`);
 });

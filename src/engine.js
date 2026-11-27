@@ -131,10 +131,9 @@ export class Engine {
   /** Dunkler Farbverlauf mit langsam treibenden Sternen. Bewusst schwach, damit er den Ball nicht überstrahlt. */
   drawBackground(ctx) {
     const f = this.field;
-    const h = this.config.ball.h;
     const g = ctx.createRadialGradient(f.w / 2, f.h * 0.45, 60, f.w / 2, f.h / 2, f.h * 0.85);
-    g.addColorStop(0, `hsl(${(h + 215) % 360} 70% 11%)`);
-    g.addColorStop(1, `hsl(${(h + 250) % 360} 80% 3%)`);
+    g.addColorStop(0, 'hsl(216 80% 12%)');
+    g.addColorStop(1, 'hsl(224 85% 3%)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, f.w, f.h);
     ctx.fillStyle = '#fff';
@@ -150,7 +149,7 @@ export class Engine {
   /** Leuchtschweif und Ring um den Ball: zeigt, dass die Kamera ihn sieht. */
   drawBall(ctx) {
     const { ball, trail } = this;
-    const color = `hsl(${(this.config.ball.h + 180) % 360} 90% 65%)`;
+    const color = 'hsl(200 100% 72%)';
     ctx.lineCap = 'round';
     ctx.strokeStyle = color;
     for (let i = 1; i < trail.length; i++) {
@@ -211,7 +210,7 @@ export class Engine {
       this.scene.draw(ctx);
       if (ball.visible) this.drawBall(ctx);
       ctx.restore();
-      const edge = `hsl(${(this.config.ball.h + 200) % 360} 90% 60%)`;
+      const edge = 'hsl(212 100% 62%)';
       ctx.lineWidth = 4;
       ctx.strokeStyle = edge;
       glow(ctx, edge, 26);

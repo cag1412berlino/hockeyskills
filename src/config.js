@@ -30,7 +30,17 @@ export function saveConfig() {
   }
 }
 
-/** Spielfarben, die weit genug von der Ballfarbe entfernt sind, damit die Kamera sie nicht verwechselt. */
-export function paletteFor(ballHue) {
-  return [120, 160, 200, 240].map((d) => `hsl(${(ballHue + d) % 360} 90% 55%)`);
+/**
+ * Spielfarben im Vereinsstil Blau-Weiss: vier Blautöne von Königsblau bis Hellblau.
+ * Blau ist von allen Neon-Ballfarben (Orange, Gelb, Grün, Pink) weit entfernt,
+ * die Kamera verwechselt die Spielgrafik also nicht mit dem Ball.
+ */
+export const BRAND = {
+  name: 'Blau-Weiss Skiller Academy',
+  club: 'TC Blau-Weiss Berlin',
+  palette: ['hsl(212 90% 55%)', 'hsl(196 90% 55%)', 'hsl(226 90% 62%)', 'hsl(204 90% 72%)'],
+};
+
+export function paletteFor() {
+  return BRAND.palette;
 }
