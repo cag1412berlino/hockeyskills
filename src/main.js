@@ -7,8 +7,11 @@ import { SimCamera } from './simcam.js';
 import { Sound } from './sound.js';
 import { applyHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
-import { MenuScene, LevelScene, PlayScene, ResultScene } from './scenes.js';
-import { games } from './games/index.js';
+import {
+  MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene,
+  SessionSetupScene, IntermissionScene, SessionResultScene, bestLabel,
+} from './scenes.js';
+import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -37,16 +40,63 @@ const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera
 // ---------- Navigation zwischen den Bildschirmen ----------
 
 const app = {
-  engine, config, sound, games,
-  logo: null, // Vereinslogo, sobald geladen
+  engine, config, sound, games, categories, sessionPlan,
+  logo: null,    // Vereinslogo, sobald geladen
+  session: null, // laufendes Training
   save: saveConfig,
   palette: () => paletteFor(),
-  menu: () => engine.setScene(new MenuScene(app)),
-  levels: (game) => engine.setScene(new LevelScene(app, game)),
+  menu: () => {
+    app.session = null;
+    engine.setScene(new MenuScene(app));
+  },
+  category: (cat) => (cat.games.length > 1 ? engine.setScene(new CategoryScene(app, cat)) : app.levels(cat.games[0])),
+  levelsFor: (opts) => engine.setScene(new LevelScene(app, opts)),
+  levels: (game) => {
+    const cat = categories.find((c) => c.games.includes(game));
+    app.levelsFor({
+      title: game.name,
+      sub: (level) => bestLabel(app, game, level),
+      onPick: (level) => app.play(game, level),
+      onBack: () => (cat.games.length > 1 ? app.category(cat) : app.menu()),
+    });
+  },
   play: (game, level) => engine.setScene(new PlayScene(app, game, level)),
   result: (game, level, score, best, record) => {
     if (record) sound.win(); else sound.end();
     engine.setScene(new ResultScene(app, game, level, score, best, record));
+  },
+
+  // ----- Training: mehrere Übungen hintereinander -----
+  sessionSetup: () => engine.setScene(new SessionSetupScene(app)),
+  startSession: (kind, level) => {
+    app.session = { kind, level, plan: sessionPlan(kind), i: 0, results: [], seconds: SESSIONS[kind].seconds };
+    engine.setScene(new IntermissionScene(app, app.session));
+  },
+  playExercise: () => {
+    const s = app.session;
+    const game = s.plan[s.i];
+    engine.setScene(new PlayScene(app, game, s.level, {
+      seconds: s.seconds,
+      label: `Übung ${s.i + 1} von ${s.plan.length}`,
+      onFinish: (score, stars) => {
+        s.results.push({ game, score, stars });
+        s.i++;
+        if (s.i < s.plan.length) {
+          sound.end();
+          engine.setScene(new IntermissionScene(app, s));
+          return;
+        }
+        const total = s.results.reduce((sum, r) => sum + r.score, 0);
+        const key = `session:${s.kind}:${s.level}:${config.speed}`;
+        const best = config.highscores[key] || 0;
+        if (total > best) {
+          config.highscores[key] = total;
+          saveConfig();
+        }
+        sound.win();
+        engine.setScene(new SessionResultScene(app, s, Math.max(best, total), total > best));
+      },
+    }));
   },
 };
 window.hockey = app; // zum Ausprobieren in der Browser-Konsole

@@ -1,6 +1,7 @@
 // Die Bildschirme der App: Spielauswahl, Schwierigkeit, Spiel, Ergebnis.
 import { DwellButton, updateButtons, clickButtons, icons, text, title, heart, star, glow, noGlow, tone } from './ui.js';
 import { BRAND } from './config.js';
+import { SESSIONS } from './games/index.js';
 
 const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
 const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
@@ -9,9 +10,44 @@ const STREAK_STEPS = [3, 6, 10]; // ab so vielen schnellen Treffern in Folge gib
 const AWAY_PAUSE = 2.5;      // nach so vielen Sekunden ohne Ball pausiert das Spiel
 const scoreKey = (app, game, level) => `${game.id}:${level}:${app.config.speed}`;
 
-/** Wie viele der drei Sterne eine Punktzahl wert ist. */
-function medals(game, score) {
-  return (game.medals ?? []).filter((m) => score >= m).length;
+/** Wie viele der drei Sterne eine Punktzahl wert ist. Bei kürzeren Runden sinken die Schwellen mit. */
+export function medals(game, score, seconds = game.duration ?? 60) {
+  const k = seconds / (game.duration ?? 60);
+  return (game.medals ?? []).filter((m) => score >= m * k).length;
+}
+
+/**
+ * Ordnet Buttons in einem Raster an: bis vier in zwei Spalten, bis sechs in drei, sonst in vier.
+ * make(item, x, y, r, index) baut den einzelnen Button. Die letzte Reihe wird mittig gesetzt.
+ */
+function grid(items, w, make) {
+  const n = items.length;
+  const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  const cell = w / cols;
+  const step = rows > 2 ? 222 : 320;
+  const r = rows > 2 ? 66 : rows > 1 ? Math.min(112, cell * 0.32) : Math.min(150, cell * 0.3);
+  return items.map((item, i) => {
+    const row = Math.floor(i / cols);
+    const inRow = Math.min(cols, n - row * cols);
+    const x = w / 2 + ((i % cols) - (inRow - 1) / 2) * cell;
+    const y = rows > 2 ? 325 + row * step : rows > 1 ? 355 + row * step : 520;
+    return make(item, x, y, r, i);
+  });
+}
+
+/** Stoppuhr als Symbol für das Training. */
+function stopwatch(ctx, r) {
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = r * 0.06;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, r * 0.06, r * 0.36, 0, Math.PI * 2);
+  ctx.moveTo(0, r * 0.06); ctx.lineTo(0, -r * 0.16);
+  ctx.moveTo(0, r * 0.06); ctx.lineTo(r * 0.14, r * 0.14);
+  ctx.moveTo(-r * 0.1, -r * 0.46); ctx.lineTo(r * 0.1, -r * 0.46);
+  ctx.moveTo(0, -r * 0.46); ctx.lineTo(0, -r * 0.3);
+  ctx.stroke();
 }
 
 class ButtonScene {
@@ -37,28 +73,21 @@ class ButtonScene {
 
 export class MenuScene extends ButtonScene {
   layout() {
-    const { w } = this.field;
-    const games = this.app.games;
     const colors = this.app.palette();
-    const n = games.length;
-    const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
-    const rows = Math.ceil(n / cols);
-    const cell = w / cols;
-    // Ab drei Reihen rücken die Buttons enger zusammen und werden etwas kleiner.
-    const step = rows > 2 ? 222 : 320;
-    const r = rows > 2 ? 66 : rows > 1 ? Math.min(112, cell * 0.32) : 150;
-    this.buttons = games.map((game, i) => {
-      const row = Math.floor(i / cols);
-      const inRow = Math.min(cols, n - row * cols); // letzte Reihe mittig setzen
-      return new DwellButton({
-        x: w / 2 + ((i % cols) - (inRow - 1) / 2) * cell,
-        y: rows > 2 ? 325 + row * step : rows > 1 ? 355 + row * step : 520,
-        r,
-        color: colors[i % colors.length],
-        icon: game.icon, label: game.name,
-        onActivate: this.act(() => this.app.levels(game)),
-      });
-    });
+    const items = [
+      ...this.app.categories.map((cat) => ({
+        name: cat.name, icon: cat.games[0].icon,
+        sub: cat.games.length > 1 ? `${cat.games.length} Übungen` : '',
+        go: () => this.app.category(cat),
+      })),
+      { name: 'Training', icon: stopwatch, sub: 'alles am Stück', go: () => this.app.sessionSetup() },
+    ];
+    this.buttons = grid(items, this.field.w, (item, x, y, r, i) => new DwellButton({
+      x, y: y + 10, r: r * 0.92,
+      color: i === items.length - 1 ? '#fff' : colors[i % colors.length],
+      icon: item.icon, label: item.name, sub: item.sub,
+      onActivate: this.act(item.go),
+    }));
   }
   draw(ctx) {
     // Kopf: Vereinslogo (falls vorhanden) links, daneben der Name in zwei Zeilen
@@ -75,7 +104,7 @@ export class MenuScene extends ButtonScene {
     title(ctx, 'Skiller Academy', cx, 160, 84, this.app.palette()[0]);
     text(ctx, BRAND.club, cx, 228, 28, tone(this.app.palette()[3], 80), 'center', 0);
     ctx.globalAlpha = this.pulse();
-    text(ctx, 'Lege den Ball auf ein Spiel', this.field.w / 2, 962, 30, '#fff', 'center', 6);
+    text(ctx, 'Lege den Ball auf einen Kreis', this.field.w / 2, 962, 30, '#fff', 'center', 6);
     ctx.globalAlpha = 1;
     // Buttons leicht versetzt schweben lassen
     this.buttons.forEach((b, i) => {
@@ -87,27 +116,51 @@ export class MenuScene extends ButtonScene {
   }
 }
 
-export class LevelScene extends ButtonScene {
-  constructor(app, game) {
+/** Die Übungen einer Kategorie. */
+export class CategoryScene extends ButtonScene {
+  constructor(app, cat) {
     super(app);
-    this.game = game;
+    this.cat = cat;
+  }
+  layout() {
+    const colors = this.app.palette();
+    this.buttons = grid(this.cat.games, this.field.w, (game, x, y, r, i) => new DwellButton({
+      x, y: y - 40, r,
+      color: colors[i % colors.length],
+      icon: game.icon, label: game.name,
+      onActivate: this.act(() => this.app.levels(game)),
+    }));
+    this.buttons.push(new DwellButton({
+      x: 110, y: 880, r: 66, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+    }));
+  }
+  draw(ctx) {
+    title(ctx, this.cat.name, this.field.w / 2, 130, 110, this.app.palette()[1]);
+    super.draw(ctx);
+  }
+}
+
+/**
+ * Stufenwahl. opts: title, sub(level) = Zeile unter dem Button, onPick(level), onBack().
+ */
+export class LevelScene extends ButtonScene {
+  constructor(app, opts) {
+    super(app);
+    this.opts = opts;
   }
   layout() {
     const { w } = this.field;
     const colors = this.app.palette();
     const r = Math.min(140, w * 0.125);
-    this.buttons = [1, 2, 3].map((level) => {
-      const best = this.app.config.highscores[scoreKey(this.app, this.game, level)];
-      return new DwellButton({
-        x: (w / 3) * (level - 0.5), y: 480, r,
-        color: colors[level - 1],
-        icon: icons.stars(level), label: LEVEL_NAMES[level - 1],
-        sub: best ? `${'★'.repeat(medals(this.game, best))} Rekord ${best}`.trim() : '',
-        onActivate: this.act(() => this.app.play(this.game, level)),
-      });
-    });
+    this.buttons = [1, 2, 3].map((level) => new DwellButton({
+      x: (w / 3) * (level - 0.5), y: 480, r,
+      color: colors[level - 1],
+      icon: icons.stars(level), label: LEVEL_NAMES[level - 1],
+      sub: this.opts.sub?.(level) ?? '',
+      onActivate: this.act(() => this.opts.onPick(level)),
+    }));
     this.buttons.push(new DwellButton({
-      x: 110, y: 870, r: 70, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+      x: 110, y: 870, r: 70, icon: icons.back, onActivate: this.act(() => this.opts.onBack()),
     }));
     // Tempo-Button: schaltet reihum Langsam, Normal, Schnell.
     const speed = this.app.config.speed;
@@ -122,7 +175,7 @@ export class LevelScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, this.game.name, this.field.w / 2, 140, 120, this.app.palette()[1]);
+    title(ctx, this.opts.title, this.field.w / 2, 140, 110, this.app.palette()[1]);
     ctx.globalAlpha = this.pulse();
     text(ctx, 'Wähle eine Stufe', this.field.w / 2, 255, 36, '#fff', 'center', 6);
     ctx.globalAlpha = 1;
@@ -130,12 +183,19 @@ export class LevelScene extends ButtonScene {
   }
 }
 
+/** Bestwert-Zeile für die Stufenwahl eines Spiels. */
+export function bestLabel(app, game, level) {
+  const best = app.config.highscores[scoreKey(app, game, level)];
+  return best ? `${'★'.repeat(medals(game, best))} Rekord ${best}`.trim() : '';
+}
+
 export class PlayScene {
-  constructor(app, game, level) {
-    Object.assign(this, { app, game, level });
+  /** session (optional): { seconds, label, onFinish(score, stars) } – eine Übung innerhalb eines Trainings. */
+  constructor(app, game, level, session = null) {
+    Object.assign(this, { app, game, level, session });
     this.score = 0;
     this.shownScore = 0;
-    this.duration = game.duration ?? 60;
+    this.duration = session?.seconds ?? game.duration ?? 60;
     this.timeLeft = this.duration;
     this.elapsed = 0;
     this.lives = game.lives ?? null;
@@ -249,6 +309,11 @@ export class PlayScene {
   finish() {
     if (this.done) return;
     this.done = true;
+    if (this.session) {
+      // Im Training zählt die Übung für die Gesamtwertung, nicht für den Einzelrekord.
+      this.session.onFinish(this.score, medals(this.game, this.score, this.duration));
+      return;
+    }
     const key = scoreKey(this.app, this.game, this.level);
     const best = this.app.config.highscores[key] || 0;
     const record = this.score > best;
@@ -304,6 +369,7 @@ export class PlayScene {
       }
     }
     this.exit.draw(ctx);
+    if (this.session) text(ctx, this.session.label, w / 2, 975, 28, 'rgba(255,255,255,0.75)', 'center', 0);
 
     if (this.banner) {
       const a = this.banner.age;
@@ -368,6 +434,155 @@ export class ResultScene extends ButtonScene {
     const shown = Math.round(this.score * Math.min(1, this.time / 1.2));
     text(ctx, shown, cx, 440, 190, '#fff', 'center', 14);
     if (this.best) text(ctx, `Rekord ${this.best}`, cx, 565, 44, tone(c[1], 75), 'center', 6);
+    super.draw(ctx);
+  }
+}
+
+/** Auswahl der Trainingslänge. */
+export class SessionSetupScene extends ButtonScene {
+  layout() {
+    const { w } = this.field;
+    const colors = this.app.palette();
+    this.buttons = Object.entries(SESSIONS).map(([kind, def], i) => {
+      const count = this.app.sessionPlan(kind).length;
+      return new DwellButton({
+        x: (w / 3) * (i + 0.5), y: 500, r: Math.min(135, w * 0.12),
+        color: colors[i], icon: icons.stars(i + 1), label: def.name,
+        sub: `${count} Übungen · ${Math.round((count * (def.seconds + 10)) / 60)} Min`,
+        onActivate: this.act(() => this.app.levelsFor({
+          title: `Training ${def.name}`,
+          sub: (level) => {
+            const best = this.app.config.highscores[`session:${kind}:${level}:${this.app.config.speed}`];
+            return best ? `Rekord ${best}` : '';
+          },
+          onPick: (level) => this.app.startSession(kind, level),
+          onBack: () => this.app.sessionSetup(),
+        })),
+      });
+    });
+    this.buttons.push(new DwellButton({
+      x: 110, y: 870, r: 70, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+    }));
+  }
+  draw(ctx) {
+    title(ctx, 'Training', this.field.w / 2, 140, 110, this.app.palette()[1]);
+    text(ctx, 'Alle Schwerpunkte hintereinander, mit kurzen Pausen', this.field.w / 2, 255, 34, '#fff', 'center', 6);
+    super.draw(ctx);
+  }
+}
+
+const BREAK = 7; // Sekunden Pause zwischen zwei Übungen
+
+/** Pause zwischen zwei Übungen: zeigt, was als Nächstes kommt, und zählt herunter. */
+export class IntermissionScene extends ButtonScene {
+  constructor(app, session) {
+    super(app);
+    this.session = session;
+    this.left = BREAK;
+  }
+  layout() {
+    const { w } = this.field;
+    this.buttons = [
+      // Ball auf "Los" überspringt die Pause
+      new DwellButton({
+        x: w / 2, y: 800, r: 85, dwell: 0.7, color: this.app.palette()[1], icon: icons.speed(1), label: 'Los',
+        onActivate: this.act(() => this.app.playExercise()),
+      }),
+      new DwellButton({
+        x: w - 90, y: 100, r: 46, dwell: 1.5, icon: icons.close, onActivate: this.act(() => this.app.menu()),
+      }),
+    ];
+  }
+  update(dt, ball) {
+    super.update(dt, ball);
+    if (this.app.engine.scene !== this) return; // ein Button hat schon weitergeschaltet
+    this.left -= dt;
+    if (this.left <= 0) this.app.playExercise();
+  }
+  draw(ctx) {
+    const { w } = this.field;
+    const c = this.app.palette();
+    const { plan, i, results } = this.session;
+    const game = plan[i];
+    const total = results.reduce((sum, r) => sum + r.score, 0);
+    text(ctx, `Übung ${i + 1} von ${plan.length}`, w / 2, 90, 44, tone(c[3], 80), 'center', 6);
+    if (results.length) text(ctx, `Bisher ${total} Punkte`, 40, 100, 30, '#fff', 'left', 0);
+
+    // Fortschritt: ein Punkt pro Übung
+    plan.forEach((g, k) => {
+      ctx.beginPath();
+      ctx.arc(w / 2 + (k - (plan.length - 1) / 2) * 36, 150, k === i ? 11 : 7, 0, Math.PI * 2);
+      ctx.fillStyle = k < i ? tone(c[1], 65) : k === i ? '#fff' : 'rgba(255,255,255,0.2)';
+      ctx.fill();
+    });
+
+    // Symbol der nächsten Übung mit ablaufendem Ring
+    ctx.save();
+    ctx.translate(w / 2, 360);
+    ctx.beginPath();
+    ctx.arc(0, 0, 118, -Math.PI / 2, -Math.PI / 2 + (this.left / BREAK) * Math.PI * 2);
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = c[1];
+    glow(ctx, c[1], 20);
+    ctx.stroke();
+    noGlow(ctx);
+    game.icon(ctx, 150);
+    ctx.restore();
+    title(ctx, game.name, w / 2, 545, 90, c[1]);
+    if (game.hint) text(ctx, game.hint, w / 2, 630, 36, '#fff', 'center', 6);
+    super.draw(ctx);
+  }
+}
+
+/** Auswertung eines Trainings: Gesamtpunkte, Sterne und jede Übung einzeln. */
+export class SessionResultScene extends ButtonScene {
+  constructor(app, session, best, record) {
+    super(app);
+    Object.assign(this, { session, best, record });
+    this.total = session.results.reduce((sum, r) => sum + r.score, 0);
+    this.stars = session.results.reduce((sum, r) => sum + r.stars, 0);
+  }
+  layout() {
+    const { w } = this.field;
+    const colors = this.app.palette();
+    this.buttons = [
+      new DwellButton({
+        x: w - 250, y: 890, r: 62, color: colors[0], icon: icons.replay,
+        onActivate: this.act(() => this.app.startSession(this.session.kind, this.session.level)),
+      }),
+      new DwellButton({
+        x: w - 100, y: 890, r: 62, color: colors[2], icon: icons.home,
+        onActivate: this.act(() => this.app.menu()),
+      }),
+    ];
+  }
+  draw(ctx) {
+    const { w } = this.field;
+    const c = this.app.palette();
+    const { results } = this.session;
+    title(ctx, this.record ? 'Neuer Rekord!' : 'Training geschafft!', w / 2, 95, 84, this.record ? c[0] : c[1]);
+    const shown = Math.round(this.total * Math.min(1, this.time / 1.5));
+    text(ctx, shown, w / 2, 215, 130, '#fff', 'center', 12);
+    glow(ctx, c[1], 18);
+    star(ctx, w / 2 - 185, 318, 22, tone(c[1], 70));
+    noGlow(ctx);
+    text(ctx, `${this.stars} von ${results.length * 3} Sternen`, w / 2 + 25, 320, 38, tone(c[1], 80), 'center', 6);
+
+    // Liste der Übungen, bei vielen in zwei Spalten
+    const cols = results.length > 9 ? 2 : 1;
+    const perCol = Math.ceil(results.length / cols);
+    const rowH = Math.min(48, 440 / perCol);
+    const colW = cols > 1 ? w / 2 - 40 : 560;
+    results.forEach((r, k) => {
+      const x = (cols > 1 ? 40 : w / 2 - colW / 2) + Math.floor(k / perCol) * (w / 2);
+      const y = 385 + (k % perCol) * rowH;
+      const size = Math.min(32, rowH * 0.7);
+      text(ctx, r.game.name, x, y, size, '#fff', 'left', 0);
+      for (let i = 0; i < 3; i++) star(ctx, x + colW - 190 + i * (size * 0.9), y, size * 0.36, i < r.stars ? tone(c[1], 70) : 'rgba(255,255,255,0.15)');
+      text(ctx, r.score, x + colW - 20, y, size, tone(c[3], 82), 'right', 0);
+    });
+    if (this.best) text(ctx, `Rekord ${this.best}`, 40, 890, 34, tone(c[1], 75), 'left', 0);
     super.draw(ctx);
   }
 }

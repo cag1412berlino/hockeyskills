@@ -177,3 +177,77 @@ export function drawPickup(ctx, p, kind, color, time) {
   noGlow(ctx);
   ctx.globalAlpha = 1;
 }
+
+/** Macht aus Eckpunkten [{x, y}, …] eine dichte Punktfolge mit etwa `step` Einheiten Abstand. */
+export function resample(points, step = 10) {
+  const out = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i], b = points[i + 1];
+    const n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / step));
+    for (let s = 0; s < n; s++) out.push({ x: a.x + ((b.x - a.x) * s) / n, y: a.y + ((b.y - a.y) * s) / n });
+  }
+  out.push({ ...points[points.length - 1] });
+  return out;
+}
+
+/**
+ * Nächstgelegener Punkt einer Punktfolge zum Ball, gesucht nur zwischen den Stellen from und to.
+ * So kann man einem Weg folgen, ohne in einen benachbarten Abschnitt hinüberzuspringen.
+ */
+export function nearestOnPath(path, ball, from, to) {
+  let k = Math.max(0, from), d = Infinity;
+  for (let i = Math.max(0, from); i <= Math.min(path.length - 1, to); i++) {
+    const di = Math.hypot(ball.x - path[i].x, ball.y - path[i].y);
+    if (di < d) { d = di; k = i; }
+  }
+  return { k, d };
+}
+
+/** Erkennt, ob der Ball ruhig liegt: `seconds` lang höchstens `eps` Einheiten Bewegung. */
+export class Rest {
+  constructor(seconds = 0.6, eps = 22) {
+    this.seconds = seconds;
+    this.eps = eps;
+    this.reset();
+  }
+
+  reset() {
+    this.anchor = null;
+    this.t = 0;
+  }
+
+  get progress() {
+    return Math.min(1, this.t / this.seconds);
+  }
+
+  /** Gibt true zurück, sobald der Ball lange genug ruhig liegt. */
+  update(dt, ball) {
+    if (!ball.visible) { this.reset(); return false; }
+    if (!this.anchor || Math.hypot(ball.x - this.anchor.x, ball.y - this.anchor.y) > this.eps) {
+      this.anchor = { x: ball.x, y: ball.y };
+      this.t = 0;
+      return false;
+    }
+    this.t += dt;
+    return this.t >= this.seconds;
+  }
+}
+
+/** Zielscheibe aus drei Ringen; rings = Radien von innen nach außen. */
+export function drawBullseye(ctx, t, rings, color, time) {
+  rings.slice().reverse().forEach((r, i) => {
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = tone(color, 8 + i * 7, 70);
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = tone(color, 45 + i * 12);
+    if (i === 2) glow(ctx, color, 18);
+    ctx.stroke();
+    noGlow(ctx);
+  });
+  ctx.beginPath();
+  ctx.arc(t.x, t.y, 7 + 2 * Math.sin(time * 6), 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+}

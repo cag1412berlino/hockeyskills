@@ -2,22 +2,44 @@
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
-Stand: Prototyp mit Kalibrierung, Ballerkennung und zehn Spielen.
+Stand: Prototyp mit Kalibrierung, Ballerkennung, 18 Übungen in fünf Schwerpunkten und einem Trainingsmodus.
 
-## Spiele
+## Übungen
 
-| Spiel | Worum es geht | Besonderheiten |
+Das Menü zeigt fünf Schwerpunkte und das Training. Insgesamt gibt es 18 Übungen.
+
+| Schwerpunkt | Übung | Worum es geht |
 | --- | --- | --- |
-| **Ziele** | Leuchtende Kugeln treffen. Je schneller nach dem Auftauchen, desto mehr Punkte (10 bis 20). | Doppel-Kugeln zerfallen in zwei kleine, die Uhr schenkt 5 Sekunden, Stachelbälle kosten Punkte. |
-| **Wolke** | Ein Ziel treffen, aber um die Gewitterwolke herumdribbeln. | Die Wolke verändert ständig ihre Form und Größe. Sie pendelt (Mittel) oder stellt sich in den Weg (Schwer). Später wandert das Ziel und eine zweite kleine Wolke kreist. |
-| **Rennen** | Die Bahn läuft ununterbrochen durchs Feld. Auf der Bahn bleiben und Sterne an den Ecken sammeln. | Kurven, harte Schnitte nach links und rechts und Rückzieher, bei denen es ein Stück zurückgeht. |
-| **Linie** | Den Ball an einer geschwungenen Linie entlangführen. | Am Stopp-Punkt muss der Ball kurz ruhig liegen. Ab Mittel pendeln Stachelbälle über die Linie. |
-| **Slalom** | Der Reihe nach durch die Tore. | Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. Später gibt es ein schmales Bonus-Tor. |
-| **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. | Der Schild fängt einen Treffer ab, die Schneeflocke bremst alles. Später fliegen Stachelbälle im Zickzack. |
-| **Fangen** | Zwei, drei oder vier Fänger (je nach Stufe) jagen den Ball. Drei Leben. | Jeder Fänger jagt anders: direkt, den Weg abschneidend, von der Seite, groß und langsam. Sie wenden träge, Haken schlagen hilft. Die Schneeflocke friert sie ein. |
-| **Pendel** | Vorhand-Rückhand-Wechsel: Der Ball muss zwischen zwei Feldern hin und her. | Ein Ring zieht sich um das aktive Feld zusammen; wer vorher ankommt, ist „im Takt“ und bekommt dreifache Punkte. Später wandert und dreht sich das Feldpaar. |
-| **Stopp** | Sterne sammeln, solange der Rahmen blau ist. Bei „Stopp!“ muss der Ball sofort still liegen. Drei Leben. | Die Vorwarnung wird kürzer, der erlaubte Spielraum kleiner. |
-| **Draht** | Den Ball durch einen schmalen, gewundenen Gang führen, ohne die Wand zu berühren. | Wer anstößt, muss zum letzten Kontrollpunkt zurück. Der Gang wird enger. |
+| **Treffen** | Ziele | Leuchtende Kugeln treffen, je schneller desto mehr Punkte. Doppel-Kugeln, Zeit-Bonus, Stachelbälle. |
+| | Wolke | Ein Ziel treffen, aber um die wabernde Gewitterwolke herumdribbeln. |
+| | Ausweichen | Sterne sammeln und Stachelbällen ausweichen. Schild und Zeitlupe als Extras. Drei Leben. |
+| | Fangen | Zwei bis vier Fänger jagen den Ball, jeder auf seine Art. Haken schlagen hilft. Drei Leben. |
+| **Führen** | Linie | Den Ball an einer geschwungenen Linie entlangführen, mit Stopp-Punkt und pendelnden Stachelbällen. |
+| | Slalom | Der Reihe nach durch die Tore, später mit Bonus-Tor und beweglichen Toren. |
+| | Rennen | Die Bahn läuft ununterbrochen durchs Feld: Kurven, harte Schnitte, Rückzieher. |
+| | Draht | Durch einen schmalen Gang, ohne die Wand zu berühren. Fehler führen zum letzten Kontrollpunkt zurück. |
+| | Achter | Den Ball in einer Acht um zwei Hütchen führen, später andersherum. |
+| | Lichtkegel | Ein Lichtkreis wandert durchs Feld, der Ball muss darin bleiben. |
+| | Zeichnen | Formen nachfahren (Kreis, Dreieck, Stern, Herz …), gewertet wird die Genauigkeit. |
+| **Wechsel** | Pendel | Vorhand-Rückhand-Wechsel zwischen zwei Feldern, im Takt gibt es dreifache Punkte. |
+| | Tippen | Den Ball so oft wie möglich über eine Linie und zurück ziehen. |
+| | Rhythmus | Kugeln laufen auf Bahnen herunter; der Ball muss rechtzeitig im richtigen Kreis liegen. |
+| **Stoppen** | Stopp | Sterne sammeln; bei „Stopp!“ muss der Ball sofort still liegen. Drei Leben. |
+| | Punktlandung | Den Ball genau auf der Zielscheibe zum Liegen bringen. |
+| | Zielrollen | Den Ball anschieben und loslassen, sodass er im Ziel ausrollt. Rückmeldung „zu kurz“ oder „zu weit“. |
+| **Tricks** | Tricks | Ein Geisterball zeigt eine Umspielbewegung um einen Verteidiger, das Kind macht sie nach: Seitzieher, Umlaufen, V-Zieher, Doppelzieher, Rückzieher, Zickzack, jeweils nach rechts und links. |
+
+### Training
+
+„Training“ spielt Übungen aus allen Schwerpunkten hintereinander, wie ein Zirkel:
+
+- **Kurz:** eine zufällige Übung je Schwerpunkt (5 Übungen, etwa 4 Minuten)
+- **Mittel:** zwei je Schwerpunkt (9 Übungen, etwa 8 Minuten)
+- **Komplett:** alle 18 Übungen (etwa 14 Minuten)
+
+Jede Übung dauert 35 bis 40 Sekunden. Dazwischen liegen 7 Sekunden Pause, in der die nächste Übung angekündigt wird; wer den Ball auf „Los“ legt, überspringt die Pause. Am Ende gibt es Gesamtpunkte, Sterne und eine Liste aller Übungen. Rekorde werden je Länge, Stufe und Tempo gespeichert.
+
+Die Tricks sind in `src/games/tricks.js` als einfache Punktlisten beschrieben und lassen sich dort anpassen oder ergänzen.
 
 Für alle Spiele gilt:
 
@@ -91,12 +113,13 @@ Nach dem ersten Laden mit Internet startet die App auch ohne Verbindung, zum Bei
 
 ## Ein neues Spiel hinzufügen
 
-Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` eingetragen. `src/games/targets.js` dient als Vorlage, `src/games/common.js` enthält Bausteine für mehrere Spiele (Effekte, Stoppzone).
+Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` in eine Kategorie eingetragen. Es erscheint dann im Menü und im Training. `src/games/targets.js` dient als Vorlage, `src/games/common.js` enthält Bausteine für mehrere Spiele (Effekte, Stoppzone).
 
 ```js
 export default {
   id: 'meinspiel',          // eindeutiger Name, auch für die Bestwerte
   name: 'Mein Spiel',       // Anzeige im Menü
+  hint: 'Ein Satz, worum es geht',
   duration: 60,             // Rundenlänge in Sekunden
   lives: 3,                 // optional: Leben, die App zeigt dann Herzen an
   medals: [150, 300, 450],  // optional: Punkte für einen, zwei und drei Sterne
