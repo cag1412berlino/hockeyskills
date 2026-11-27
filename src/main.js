@@ -1,7 +1,7 @@
 // Startpunkt: verbindet Einrichtungsseite, Kamera, Ballerkennung und Kalibrierung mit der App.
 import { config, saveConfig, BRAND } from './config.js';
 import { Engine, setFieldMeters } from './engine.js';
-import { BallTracker, BALL_PRESETS } from './tracker.js';
+import { BallTracker, BALL_PRESETS, mergeColors } from './tracker.js';
 import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
 import { Sound, Voice, Music } from './sound.js';
@@ -92,21 +92,29 @@ async function setFakeBall(on) {
   if (!on || !source || calibrating) return;
   calibrating = true;
   try {
-    const dot = (color) => (ctx, cw, ch) => {
-      if (!color) return;
-      ctx.fillStyle = color;
+    // An fünf Stellen des Felds malen und messen: Je nach Blickwinkel sieht die Kamera die Farbe anders.
+    const [tl, tr, br, bl] = engine.fieldCorners();
+    const at = (u, v) => ({ x: tl.x + (tr.x - tl.x) * u + (bl.x - tl.x) * v, y: tl.y + (tr.y - tl.y) * u + (bl.y - tl.y) * v });
+    const dot = (p) => (ctx, cw, ch) => {
+      if (!p) return;
+      ctx.fillStyle = fakeCss();
       ctx.beginPath();
-      ctx.arc(cw / 2, ch / 2, Math.min(cw, ch) * 0.04, 0, Math.PI * 2);
+      ctx.arc(p.x * cw, p.y * ch, Math.min(cw, ch) * 0.035, 0, Math.PI * 2);
       ctx.fill();
     };
     engine.override = dot(null);
-    await wait(700);
+    await wait(600);
     const ref = await calibrationIO.grabGray();
-    engine.override = dot(fakeCss());
-    await wait(700);
-    const img = await calibrationIO.grabGray();
-    const spot = ref && img && findBrightSpot(ref.data, img.data, img.w, img.h);
-    const learned = spot && tracker.sampleColor((spot.x + 0.5) / img.w, (spot.y + 0.5) / img.h, 0.2);
+    const samples = [];
+    for (const [u, v] of [[0.5, 0.5], [0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]]) {
+      engine.override = dot(at(u, v));
+      await wait(450);
+      const img = await calibrationIO.grabGray();
+      const spot = ref && img && findBrightSpot(ref.data, img.data, img.w, img.h);
+      const c = spot && tracker.sampleColor((spot.x + 0.5) / img.w, (spot.y + 0.5) / img.h, 0.2);
+      if (c) samples.push(c);
+    }
+    const learned = mergeColors(samples);
     if (learned) fakeColor = { preset: 'fake', ...learned };
     engine.showToast(learned ? 'Test-Ball an: Maus bewegen' : 'Test-Ball an (Farbe nicht gelernt, es gilt die Ballfarbe)', 2.5);
   } finally {
@@ -283,7 +291,7 @@ function renderChecklist() {
   const steps = [
     ['Kamera läuft', !!source],
     ['Ball erkannt', !!source && quality() >= 80],
-    ['Kalibriert', !!config.calib],
+    [config.calib?.missing?.length ? `Kalibriert, aber es fehlt: ${config.calib.missing.join(', ')}` : 'Kalibriert', !!config.calib && !config.calib.missing?.length],
   ];
   const list = $('#checklist');
   if (list.children.length !== steps.length) {
@@ -661,14 +669,19 @@ async function calibrate(kind) {
   setupEl.hidden = true;
   try {
     const result = kind === 'auto'
-      ? await autoCalibrate(calibrationIO)
+      ? await autoCalibrate(calibrationIO, engine.fieldCorners())
       : await manualCalibrate(calibrationIO, engine.fieldCorners());
     config.calib = { ...result, aspect: stage.width / stage.height };
     saveConfig();
     mode = 'camera';
     engine.override = null;
     startPlaying();
-    engine.showToast('Kalibrierung fertig ✔');
+    const pct = Math.round((result.seen ?? 1) * 100);
+    if (result.missing?.length) {
+      engine.showToast(`Achtung: Kamera sieht nur ${pct} % vom Feld. Es fehlt: ${result.missing.join(', ')}`, 8);
+    } else {
+      engine.showToast('Kalibrierung fertig ✔ Die Kamera sieht das ganze Feld');
+    }
   } catch (err) {
     engine.override = null;
     showSetup(true);

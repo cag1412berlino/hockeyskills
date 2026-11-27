@@ -117,6 +117,26 @@ export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array
   return best;
 }
 
+/**
+ * Fasst mehrere gelernte Farben zu einer zusammen, die alle abdeckt (z. B. derselbe Ball an
+ * verschiedenen Stellen des Felds). Liefert null, wenn nichts gelernt wurde.
+ */
+export function mergeColors(list) {
+  if (!list.length) return null;
+  const rad = Math.PI / 180;
+  const mean = Math.atan2(
+    list.reduce((a, c) => a + Math.sin(c.h * rad), 0),
+    list.reduce((a, c) => a + Math.cos(c.h * rad), 0)) / rad;
+  const h = Math.round((mean + 360) % 360);
+  const away = (c) => Math.abs(((c.h - h + 540) % 360) - 180);
+  return {
+    h,
+    hTol: Math.min(40, Math.max(...list.map((c) => away(c) + c.hTol))),
+    sMin: Math.min(...list.map((c) => c.sMin)),
+    vMin: Math.min(...list.map((c) => c.vMin)),
+  };
+}
+
 /** Holt Bilder aus der Kamera (verkleinert) und sucht darin den Ball. */
 export class BallTracker {
   constructor(procWidth = 480) {

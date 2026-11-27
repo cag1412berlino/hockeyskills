@@ -18,7 +18,7 @@ const LAPTOP = { x: 96, y: 318 };
 const STEPS = [
   { t: 5.5, title: 'Der Beamer wirft das Spielfeld auf den Boden', sub: 'Er hängt oben oder steht seitlich erhöht. Das Feld ist 2 bis 3 Meter groß.' },
   { t: 5.5, title: 'Die Kamera schaut auf dasselbe Feld', sub: 'Sie muss das ganze Feld sehen. Am besten sitzt sie direkt neben dem Beamer.' },
-  { t: 7, title: 'Einmal kalibrieren', sub: 'Der Beamer zeigt fünf weiße Punkte, die Kamera findet sie. Jetzt weiß die App, wo das Feld liegt.' },
+  { t: 7, title: 'Einmal kalibrieren', sub: 'Der Beamer zeigt weiße Punkte, die Kamera findet sie. Jetzt weiß die App, wo das Feld liegt.' },
   { t: 6.5, title: 'Die Kamera erkennt den neonfarbenen Ball', sub: 'Sie sucht nur nach seiner Farbe, etwa 30 Mal in der Sekunde.' },
   { t: 8, title: 'Der Laptop rechnet, der Beamer zeichnet', sub: 'Kamera → Laptop → Beamer: Das Spiel reagiert sofort auf den Ball.' },
   { t: 6.5, title: 'Gesteuert wird mit dem Ball', sub: 'Ball eine Sekunde auf einen Knopf legen, fertig. Keine Maus, keine Tastatur.' },

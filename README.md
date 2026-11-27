@@ -112,13 +112,13 @@ Ganz oben in der Einrichtung läuft die Animation **„So funktioniert es“**: 
 2. **Ballfarbe** wählen. Im Kamerabild leuchtet alles türkis, was die App für den Ball hält. Passt das nicht, im Kamerabild auf den Ball klicken; die App lernt dann dessen Farbe.
 3. **Bild drehen**, bis die Schrift vom Platz des Kindes aus richtig herum steht (auch mit Taste `R`). Die Drehung beginnt bei jedem Start wieder bei 0°.
 4. **Vollbild** einschalten und **kalibrieren**:
-   - *Automatisch*: Die App projiziert nacheinander fünf weiße Punkte und sucht sie im Kamerabild. Währenddessen nicht durchs Bild laufen.
+   - *Automatisch*: Die App projiziert nacheinander 16 weiße Punkte als Raster über das ganze Spielfeld und sucht jeden im Kamerabild (etwa 10 Sekunden). Aus allen gefundenen Punkten berechnet sie die Lage des Felds; falsch erkannte Punkte sortiert sie aus. Währenddessen nicht durchs Bild laufen.
    - *Manuell*: Die App zeigt ein Standbild der Kamera, darin die vier Ecken des Spielfelds im Uhrzeigersinn anklicken (oben links beginnen). Das geht auch ohne Beamer, etwa mit vier Klebeband-Markierungen auf dem Boden.
 5. **Spielen**. Gesteuert wird mit dem Ball: Ball etwa eine Sekunde auf einen Button legen.
 
 Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Taste `C`).
 
-Die Kamera muss die **ganze Projektion** sehen, mit etwas Rand an allen vier Seiten. Passt die Kalibrierung nicht zusammen (etwa weil ein Punkt außerhalb des Kamerabilds lag), meldet die App das und übernimmt sie nicht.
+Die Kamera sollte das **ganze Spielfeld** sehen, mit etwas Rand an allen vier Seiten. Sieht sie nur einen Teil, klappt die Kalibrierung trotzdem, aber die App meldet danach, wie viel Prozent des Felds die Kamera sieht und an welcher Seite ein Stück fehlt (auch in der Checkliste der Einrichtung). Dort wird der Ball nicht erkannt.
 
 Oben in der Einrichtung zeigt eine kleine Checkliste, was schon erledigt ist: Kamera läuft, Ball erkannt, kalibriert.
 
