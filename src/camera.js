@@ -10,8 +10,14 @@ export class Camera {
     return devices.filter((d) => d.kind === 'videoinput');
   }
 
-  async start(deviceId) {
+  /**
+   * mode 'sharp': volle Auflösung (Full HD), meist 30 Bilder pro Sekunde.
+   * mode 'fast': 1280 × 720 mit so vielen Bildern pro Sekunde wie möglich (60, wenn die Kamera kann) –
+   * halbiert die Wartezeit auf das nächste Kamerabild.
+   */
+  async start(deviceId, mode = 'sharp') {
     this.stop();
+    if (mode === 'fast') return this.open(deviceId, { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 30 } }).catch(() => this.open(deviceId, { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } }));
     // Volle Auflösung (Full HD) anfordern; was die Kamera nicht kann, gibt sie so gut es geht.
     const full = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } };
     let settings = await this.open(deviceId, full);

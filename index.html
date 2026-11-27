@@ -30,6 +30,14 @@
           <select id="camera-select" aria-label="Kamera"></select>
           <button id="btn-camera">Kamera starten</button>
         </div>
+        <div class="row">
+          <label>Kamera-Modus
+            <select id="camera-mode">
+              <option value="sharp">Scharf (Full HD)</option>
+              <option value="fast">Schnell (bis 60 Bilder pro Sekunde)</option>
+            </select>
+          </label>
+        </div>
         <canvas id="preview" width="480" height="270"></canvas>
         <p id="track-status" class="status">Kamera ist aus.</p>
         <label><input type="checkbox" id="lock-auto"> Kamera-Automatik sperren (Belichtung, Weißabgleich)</label>
@@ -105,7 +113,8 @@
         </div>
         <p class="hint">Damit der Ring um den Ball und die Trefferflächen zur echten Ballgröße passen.</p>
         <label>Vorhalt <input type="range" id="latency" min="0" max="250" step="10"> <span id="latency-value"></span></label>
-        <p class="hint">Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft. Zu viel lässt ihn vorauseilen und zittern.</p>
+        <div class="row"><button id="btn-latency">Verzögerung messen (mit Beamer)</button></div>
+        <p class="hint">Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft. Zu viel lässt ihn vorauseilen und zittern. „Verzögerung messen“ lässt das Feld ein paar Mal hell aufblitzen, misst, wie lange es dauert, bis die Kamera das sieht, und stellt den Vorhalt passend ein (nach dem Kalibrieren, Feld frei lassen).</p>
         <label>Projektion abdunkeln <input type="range" id="dim" min="0" max="60" step="5"> <span id="dim-value"></span></label>
         <p class="hint">Erhöhen, wenn der Ball im projizierten Bild schlechter erkannt wird als auf dunklem Boden.</p>
       </details>

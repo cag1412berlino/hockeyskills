@@ -47,7 +47,7 @@ const recorder = new Recorder();
 let recognition = null; // laufender Erkennungstest oder null
 let lastTrackTime = 0;
 const recent = [];      // die letzten Kamerabilder: Ball erkannt oder nicht (für die Erkennungsquote)
-const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0 };
+const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0, work: 0 };
 
 // ---------- Die App: Navigation, Abrechnung, Training (siehe app.js) ----------
 
@@ -164,15 +164,37 @@ async function toggleRecording() {
   engine.showToast(`Aufnahme läuft (höchstens ${MAX_SECONDS} s, Taste V beendet)`, 3);
 }
 
+// Jedes neue Kamerabild sofort auswerten, sobald es da ist (nicht erst beim nächsten Neuzeichnen):
+// spart bis zu ein Bild Wartezeit. Ältere Browser ohne diese Möglichkeit fragen bei jedem Neuzeichnen nach.
+const frameCallbacks = typeof video.requestVideoFrameCallback === 'function';
+let frameWaiters = [];   // für die Verzögerungsmessung: wartet auf das nächste Kamerabild
+function onVideoFrame() {
+  video.requestVideoFrameCallback(onVideoFrame);
+  const t = performance.now();
+  if (frameWaiters.length) { const w = frameWaiters; frameWaiters = []; w.forEach((fn) => fn(t)); }
+  if (source === video && !calibrating) trackFrame();
+}
+if (frameCallbacks) video.requestVideoFrameCallback(onVideoFrame);
+
 engine.onFrame = () => {
   countFps();
-  if (!source || calibrating) return;
+  if (!source || (calibrating && !frameWaiters.length)) return;
   if (sim) {
     sim.render();
+    if (frameWaiters.length) { const w = frameWaiters; frameWaiters = []; const t = performance.now(); w.forEach((fn) => fn(t)); }
+    if (calibrating) return;
   } else {
+    if (calibrating) return;
+    if (frameCallbacks) return; // das erledigt onVideoFrame
     if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
     lastVideoTime = video.currentTime;
   }
+  trackFrame();
+};
+
+/** Ein Kamerabild auswerten: Ball suchen, Statistik, Aufnahme, Vorschau. */
+function trackFrame() {
+  const started = performance.now();
   tracker.useRegion = setupEl.hidden && !recognition; // im Spiel nur im Feld suchen, in der Einrichtung überall
   detection = tracker.process(source, searchColor());
   fps.tracked++;
@@ -186,9 +208,10 @@ engine.onFrame = () => {
       `Bild ${fps.render}/s Kamera ${fps.camera}/s erkannt ${quality()} %${fakeBall ? ' Test-Ball' : ''}`);
     if (recorder.seconds >= MAX_SECONDS) toggleRecording();
   }
+  fps.work = fps.work * 0.9 + (performance.now() - started) * 0.1; // Rechenzeit je Kamerabild (geglättet)
   if (!setupEl.hidden) drawPreview(preview);
   if (!debugEl.hidden) drawPreview($('#debug-view'));
-};
+}
 
 // ---------- Einrichtung ----------
 
@@ -303,7 +326,7 @@ function countFps() {
   fps.since = now;
   if (!debugEl.hidden) {
     $('#debug-info').textContent =
-      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder · Kamera ${source?.videoWidth || source?.width || 0}×${source?.videoHeight || source?.height || 0}, ausgewertet ${tracker.frame?.width || 0}×${tracker.frame?.height || 0} · Qualität ${['voll', 'mittel', 'sparsam'][engine.quality]}`;
+      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder · Auswertung ${(fps.work || 0).toFixed(1)} ms · Kamera ${source?.videoWidth || source?.width || 0}×${source?.videoHeight || source?.height || 0}, ausgewertet ${tracker.frame?.width || 0}×${tracker.frame?.height || 0} · Qualität ${['voll', 'mittel', 'sparsam'][engine.quality]}`;
   }
 }
 
@@ -449,6 +472,62 @@ function drawPreview(target) {
   }
 }
 
+/**
+ * Verzögerung messen: Das Feld blitzt ein paar Mal hell auf; gemessen wird, wie lange es vom Befehl
+ * „hell“ bis zum ersten Kamerabild dauert, in dem das Feld hell ist. Das ist genau die Zeit, um die
+ * der Ring dem Ball hinterherhinkt (Zeichnen + Beamer + Kamera + Auswertung). Der Vorhalt wird passend gesetzt.
+ */
+async function measureLatency() {
+  if (!source || !config.calib) return setMessage('Für die Messung zuerst die Kamera starten und kalibrieren.');
+  if (!frameCallbacks && !sim) return setMessage('Dieser Browser kann die Verzögerung nicht messen. Den Vorhalt bitte von Hand einstellen.');
+  setMessage();
+  updateRegion();
+  calibrating = true;
+  setupEl.hidden = true;
+  const crop = tracker.fieldCrop?.();
+  const brightness = () => {
+    const img = tracker.grab(source, crop);
+    if (!img) return 0;
+    let sum = 0, n = 0;
+    for (let i = 0; i < img.data.length; i += 4 * 7) { sum += img.data[i] * 0.3 + img.data[i + 1] * 0.59 + img.data[i + 2] * 0.11; n++; }
+    return sum / n;
+  };
+  const nextFrame = () => new Promise((res) => frameWaiters.push(res));
+  const fill = (color) => (ctx, cw, ch) => { ctx.fillStyle = color; ctx.fillRect(0, 0, cw, ch); };
+  const results = [];
+  try {
+    for (let round = 0; round < 6; round++) {
+      engine.override = fill('#000');
+      await wait(700);
+      let ref = 0;
+      for (let k = 0; k < 3; k++) { await nextFrame(); ref += brightness() / 3; }
+      engine.override = fill('#fff');
+      const t0 = performance.now();
+      const samples = [];
+      while (performance.now() - t0 < 900) {
+        const t = await nextFrame();
+        samples.push({ t, b: brightness() });
+      }
+      const white = Math.max(...samples.map((q) => q.b));
+      if (white - ref < 8) continue; // Kamera sieht das Feld nicht hell werden
+      const hit = samples.find((q) => q.b >= ref + (white - ref) * 0.5);
+      if (hit) results.push(hit.t - t0);
+    }
+  } finally {
+    engine.override = null;
+    calibrating = false;
+    setupEl.hidden = false;
+  }
+  if (results.length < 3) return setMessage('Die Messung hat nicht geklappt: Die Kamera hat das Aufblitzen nicht gesehen. Ist das Feld im Kamerabild und der Raum nicht zu hell?');
+  results.sort((a, b) => a - b);
+  const median = results[Math.floor(results.length / 2)];
+  // Ganz vorhalten lässt den Ring bei Richtungswechseln überschießen; gut drei Viertel sind ein guter Kompromiss.
+  config.latency = Math.max(0, Math.min(250, Math.round((median * 0.8) / 10) * 10));
+  saveConfig();
+  refreshSetup();
+  setMessage(`Gemessene Verzögerung: ${Math.round(median)} ms (Kamera + Beamer + Rechnen). Vorhalt auf ${config.latency} ms gestellt.${median > 150 ? ' Das ist viel – am Beamer den Spielmodus (Game Mode) einschalten und Bildverbesserungen ausschalten, und den Kamera-Modus „Schnell“ probieren.' : ''}`);
+}
+
 async function startCamera(deviceId) {
   setMessage();
   try {
@@ -458,7 +537,7 @@ async function startCamera(deviceId) {
       $('#track-status').textContent = 'Simulierte Kamera (Maus = Ball).';
       return;
     }
-    const settings = await camera.start(deviceId);
+    const settings = await camera.start(deviceId, config.cameraMode || 'sharp');
     source = video;
     config.cameraId = settings.deviceId ?? deviceId ?? null;
     saveConfig();
@@ -611,6 +690,9 @@ function buildSetup() {
 
   // Feinabstimmung für den Aufbau
   $('#field-meters').onchange = (e) => { config.fieldMeters = Number(e.target.value); saveConfig(); refreshSetup(); };
+  $('#camera-mode').value = config.cameraMode || 'sharp';
+  $('#camera-mode').onchange = (e) => { config.cameraMode = e.target.value; saveConfig(); if (source === video) startCamera(config.cameraId); };
+  $('#btn-latency').onclick = measureLatency;
   $('#latency').oninput = (e) => { config.latency = Number(e.target.value); saveConfig(); refreshSetup(); };
   $('#dim').oninput = (e) => { config.dim = Number(e.target.value) / 100; saveConfig(); refreshSetup(); };
 
