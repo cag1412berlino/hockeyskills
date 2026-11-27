@@ -84,7 +84,7 @@ Für alle Spiele gilt:
 
 ## Vereinslogo
 
-Die App zeigt im Menü und in der Einrichtung ein Logo, wenn die Datei `assets/logo.svg` oder `assets/logo.png` vorhanden ist. Am besten eignet sich ein Logo mit durchsichtigem Hintergrund; ein weißer Hintergrund erscheint auf dem Boden als heller Kasten. Name, Vereinsname und Blautöne stehen in `src/config.js` unter `BRAND`.
+Das Logo des TC Blau-Weiss liegt als `assets/logo.svg` bei. Die App zeigt im Menü und in der Einrichtung ein Logo, wenn die Datei `assets/logo.svg` oder `assets/logo.png` vorhanden ist. Am besten eignet sich ein Logo mit durchsichtigem Hintergrund; ein weißer Hintergrund erscheint auf dem Boden als heller Kasten. Name, Vereinsname und Blautöne stehen in `src/config.js` unter `BRAND`.
 
 ## Starten
 
