@@ -81,11 +81,22 @@ export function shape(move, k = 1) {
   const made = move.gen ? move.gen() : { pts: move.pts, label: '' };
   const sx = move.gen ? 1 : 0.85 + Math.random() * 0.45; // seitlich 85 % bis 130 %
   const sy = move.gen ? 1 : 0.92 + Math.random() * 0.2;  // vor/zurück 92 % bis 112 %
-  // Kein Punkt näher als 100 am Verteidiger (wichtig für die verkleinerten Ketten)
-  const pts = made.pts.map(([x, y]) => {
-    const px = x * sx * k, py = y * sy * k, d = Math.hypot(px, py);
-    return d > 0 && d < 100 ? [(px / d) * 100, (py / d) * 100] : [px, py];
+  // Kein Stück des Wegs näher als 100 am Verteidiger (wichtig für die verkleinerten Ketten):
+  // erst fein unterteilen, dann zu nahe Punkte nach außen schieben
+  const scaled = made.pts.map(([x, y]) => [x * sx * k, y * sy * k]);
+  const pts = [];
+  scaled.forEach(([x, y], i) => {
+    if (i > 0) {
+      const [px, py] = scaled[i - 1];
+      const n = Math.ceil(Math.hypot(x - px, y - py) / 20);
+      for (let j = 1; j < n; j++) pts.push([px + ((x - px) * j) / n, py + ((y - py) * j) / n]);
+    }
+    pts.push([x, y]);
   });
+  for (const q of pts) {
+    const d = Math.hypot(q[0], q[1]);
+    if (d > 0 && d < 100) { q[0] = (q[0] / d) * 100; q[1] = (q[1] / d) * 100; }
+  }
   return { pts, label: made.label };
 }
 
