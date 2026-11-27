@@ -4,10 +4,10 @@ import { ButtonScene, grid } from './scenebase.js';
 import { TOPICS, variants } from './games/tricks.js';
 
 /** Symbol eines Themas: der Weg eines typischen Tricks um einen Punkt (den Verteidiger). */
-function topicIcon(topicId) {
+function topicIcon(topicId, lefty = false) {
   // Jedes Thema zeigt seinen typischen Trick in der richtigen Richtung
   const name = topicId === 'runde' ? 'Rückzieher' : TOPICS.find((t) => t.id === topicId)?.icon;
-  const v = variants(3, topicId === 'runde' ? 'alle' : topicId).find((x) => x.move.name === name) ?? variants(3, topicId)[0];
+  const v = variants(3, topicId === 'runde' ? 'alle' : topicId, lefty).find((x) => x.move.name === name) ?? variants(3, topicId, lefty)[0];
   return (ctx, r) => {
     const k = r / 520;
     ctx.fillStyle = '#fff';
@@ -35,7 +35,7 @@ export class TrickMenuScene extends ButtonScene {
     const items = [{ id: 'runde', name: 'Runde auf Zeit' }, ...TOPICS];
     this.buttons = grid(items, this.field.w, (t, x, y, r, i) => new DwellButton({
       x, y: y + 20, r: r * 0.92, color: i === 0 ? '#fff' : accent ?? colors[i % 4],
-      icon: topicIcon(t.id), label: t.name, sub: i === 0 ? 'mit Sternen' : '',
+      icon: topicIcon(t.id, !!app.profile.lefty), label: t.name, sub: i === 0 ? 'mit Sternen' : '',
       onActivate: this.act(() => (t.id === 'runde' ? app.trickLevels(this.game) : app.trickTopic(t.id))),
     }));
     this.buttons.push(new DwellButton({ x: 90, y: 920, r: 54, icon: icons.back, onActivate: this.act(() => app.menu()) }));

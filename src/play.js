@@ -118,6 +118,8 @@ export class PlayScene {
       field: app.engine.field,
       level: this.level,
       topic: this.game.topic ?? null,
+      /** Linkshänder: Vorhand und Rückhand gespiegelt. */
+      lefty: !!this.player()?.lefty,
       duration: this.duration,
       palette: this.colors,
       sound: demo ? new Proxy({}, { get: () => nothing }) : app.sound,

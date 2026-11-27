@@ -249,7 +249,7 @@ export default {
   name: 'Linie',
   duration: 60,
   scale: 0.4,
-  medals: [[320, 1320, 2730], [20, 390, 960], [20, 50, 380]],
+  medals: [[270, 1340, 2670], [20, 400, 930], [20, 70, 360]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;

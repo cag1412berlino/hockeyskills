@@ -504,7 +504,7 @@ export default {
   duration: 60,
   endless: { lives: 3 }, // als einzelne Übung endlos mit drei Herzen
   scale: 0.8,
-  medals: [[290, 1060, 1970], [50, 630, 1430], [20, 240, 700]],
+  medals: [[310, 1060, 2180], [50, 620, 1440], [20, 230, 760]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

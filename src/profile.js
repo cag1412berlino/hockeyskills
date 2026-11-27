@@ -34,6 +34,7 @@ export function newProfile(name) {
     id: Math.random().toString(36).slice(2, 10),
     name,
     birthYear: null,   // Geburtsjahr (aus dem eingetragenen Alter), für faire Ranglisten nach Altersklasse
+    lefty: false,      // Linkshänder: Vorhand und Rückhand im Tricktrainer gespiegelt
     xp: 0,
     highscores: {},
     badges: {},        // Abzeichen-id -> Datum
@@ -64,6 +65,7 @@ export function completeProfile(saved) {
   if (!Number.isFinite(p.xp)) p.xp = 0;
   if (!Number.isFinite(p.birthYear)) p.birthYear = null;
   if (!Array.isArray(p.news)) p.news = [];
+  p.lefty = !!p.lefty;
   // Ältere Spielstände kannten den Rundenrekord noch nicht: aus dem Verlauf nachtragen.
   if (!p.stats.maxScore) p.stats.maxScore = Math.max(0, ...p.history.map((h) => h.s || 0));
   return p;

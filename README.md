@@ -135,6 +135,10 @@ Die elf Tricks (die meisten in beide Richtungen):
 | Drehung | vor dem Verteidiger eine ganze Runde um sich selbst, dann vorbei |
 | Rückwärtsdrehung | abdrehen, mit dem Rücken zum Verteidiger herum und seitlich weg |
 
+Damit es nicht eintönig wird, ist jeder Trick jedes Mal etwas anders: Vorhand- und Rückhandzieher mal kurz, mal lang („Langer Rückhandzieher“), alle anderen etwas breiter oder schmaler und näher oder weiter vom Verteidiger. Auf „Mittel“ und „Schwer“ macht der Verteidiger einen Schritt auf den Ball zu, wenn man ihm zu nahe kommt – je länger man trödelt, desto entschlossener. **Trick-Ketten:** zwei Verteidiger schräg hintereinander, an jedem ein anderer Trick, doppelte Punkte. Sie kommen im eigenen Thema „Trick-Ketten“ und auf „Schwer“ bei jedem dritten Trick.
+
+**Linkshänder:** In der Einrichtung lässt sich je Spieler „Linkshänder“ ankreuzen. Dann sind Vorhand und Rückhand gespiegelt: Der Vorhandzieher geht nach rechts, das Thema „Vorhand“ übt alles, was rechts vorbeigeht.
+
 Neue Tricks lassen sich in `src/games/tricks.js` als Weg aus wenigen Punkten ergänzen. Lupfer und andere Tricks in der Luft (3D) kann die Kamera von oben nicht erkennen.
 
 ## Gewertet wird nur mit echtem Ball

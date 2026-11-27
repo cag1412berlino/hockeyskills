@@ -68,24 +68,47 @@ export const TOPICS = [
   { id: 'dribbeln', name: 'Dribbeln', sub: 'Indisch, Zickzack, Bogen', icon: 'Indisches Dribbling' },
   { id: 'drehung', name: 'Drehungen', sub: 'Drehung, Rückwärtsdrehung', icon: 'Drehung' },
   { id: 'taeuschen', name: 'Täuschen', sub: 'Antäuschen und weg', icon: 'Körpertäuschung' },
+  { id: 'kette', name: 'Trick-Ketten', sub: 'zwei Verteidiger hintereinander', icon: 'Rückzieher' },
   { id: 'alle', name: 'Alle Tricks', sub: 'alles gemischt', icon: 'Doppelzieher' },
 ];
+
+/**
+ * Weg eines Tricks für dieses eine Mal: Zieher haben ihre eigene Zufallsweite, alle anderen
+ * werden etwas breiter oder schmaler und näher oder weiter gezogen. k verkleinert den ganzen Trick
+ * (für Trick-Ketten). Liefert { pts, label }.
+ */
+export function shape(move, k = 1) {
+  const made = move.gen ? move.gen() : { pts: move.pts, label: '' };
+  const sx = move.gen ? 1 : 0.85 + Math.random() * 0.45; // seitlich 85 % bis 130 %
+  const sy = move.gen ? 1 : 0.92 + Math.random() * 0.2;  // vor/zurück 92 % bis 112 %
+  // Kein Punkt näher als 100 am Verteidiger (wichtig für die verkleinerten Ketten)
+  const pts = made.pts.map(([x, y]) => {
+    const px = x * sx * k, py = y * sy * k, d = Math.hypot(px, py);
+    return d > 0 && d < 100 ? [(px / d) * 100, (py / d) * 100] : [px, py];
+  });
+  return { pts, label: made.label };
+}
 
 /** Richtung, in der ein Weg am Verteidiger vorbeigeht: 1 = rechts, -1 = links. */
 const exitSide = (move) => Math.sign(move.pts[move.pts.length - 1][0]) || 1;
 
-/** Alle Varianten (Trick + Richtung) für eine Stufe oder ein Thema. */
-export function variants(level, topic = null) {
+/**
+ * Alle Varianten (Trick + Richtung) für eine Stufe oder ein Thema.
+ * lefty: Linkshänder – Vorhand und Rückhand sind dann gespiegelt (Vorhandzieher nach rechts).
+ */
+export function variants(level, topic = null, lefty = false) {
   const out = [];
+  const hand = lefty ? -1 : 1;
+  const pick = topic === 'kette' ? 'alle' : topic;
   for (const move of MOVES) {
     for (const mirror of [1, -1]) {
       const side = exitSide(move) * mirror;
-      if (move.only && side !== move.only) continue;
-      // Vorhand: alles, was links vorbeigeht (mit der Vorhand gezogen), Rückhand: alles nach rechts
-      if (topic === 'vorhand' && side > 0) continue;
-      if (topic === 'rueckhand' && side < 0) continue;
-      if (topic && !['alle', 'vorhand', 'rueckhand'].includes(topic) && !move.topics.includes(topic)) continue;
-      if (!topic && move.diff > level) continue;
+      if (move.only && side !== move.only * hand) continue;
+      // Vorhand: alles, was auf der Vorhandseite vorbeigeht (Rechtshänder links), Rückhand: die andere Seite
+      if (pick === 'vorhand' && side * hand > 0) continue;
+      if (pick === 'rueckhand' && side * hand < 0) continue;
+      if (pick && !['alle', 'vorhand', 'rueckhand'].includes(pick) && !move.topics.includes(pick)) continue;
+      if (!pick && move.diff > level) continue;
       out.push({ move, mirror, side });
     }
   }
@@ -110,8 +133,13 @@ class Tricks {
     this.done = {};      // geschafft je Trick (Dauertraining)
     this.fx = new Fx();
     this.guard = new OffTrack({ grace: 0.25, every: 0.4, start: 2, step: 2 });
-    this.defender = { x: env.field.w / 2, y: 530 };
-    this.pool = variants(env.level, env.topic ?? null);
+    this.home = { x: env.field.w / 2, y: 530 };
+    this.defenders = [{ ...this.home }];
+    this.pool = variants(env.level, env.topic ?? null, env.lefty);
+    // Trick-Ketten: im Thema „Trick-Ketten“ immer, auf „Schwer“ jeder dritte Trick
+    this.chains = env.topic === 'kette' ? 1 : env.level === 3 && !env.topic ? 1 / 3 : 0;
+    // Auf „Mittel“ und „Schwer“ macht der Verteidiger einen Schritt auf den Ball zu
+    this.lunge = { 1: 0, 2: 22, 3: 42 }[env.level];
     this.deck = [];
     this.current = null;
     this.load();
@@ -126,18 +154,37 @@ class Tricks {
     return this.deck.pop();
   }
 
-  /** Bereitet den nächsten Trick vor. */
+  /** Bereitet den nächsten Trick vor (oder eine Kette aus zwei Tricks gegen zwei Verteidiger). */
   load() {
     this.current = this.draw_();
-    const { move, mirror, side } = this.current;
-    const { x, y } = this.defender;
-    const dir = side > 0 ? ' →' : ' ←';
-    const made = move.gen ? move.gen() : { pts: move.pts, label: '' };
-    const full = made.label ? `${made.label} ${move.name}` : move.name;
-    this.name = `${full}${dir}`;
-    this.path = resample(made.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
+    const chain = Math.random() < this.chains;
+    this.chainOf = chain ? [this.current, this.draw_()] : null;
+    if (chain) {
+      // Zwei Verteidiger schräg hintereinander; der zweite steht auf der Seite, zu der der erste Trick hinausführt
+      const [a, b] = this.chainOf;
+      const cx = this.home.x;
+      const d1 = { x: cx - a.side * 130, y: 700 }, d2 = { x: cx + a.side * 130, y: 330 };
+      this.defenders = [d1, d2];
+      const pa = shape(a.move, 0.75), pb = shape(b.move, 0.75);
+      const pts = [
+        ...pa.pts.map(([px, py]) => ({ x: d1.x + px * a.mirror, y: d1.y + py })),
+        ...pb.pts.map(([px, py]) => ({ x: d2.x + px * b.mirror, y: d2.y + py })),
+      ];
+      this.path = resample(pts);
+      const name = (v, made) => (made.label ? `${made.label} ${v.move.name}` : v.move.name);
+      this.name = `${name(a, pa)} + ${name(b, pb)}`;
+      this.env.say(`Trick-Kette: ${name(a, pa)}, dann ${name(b, pb)}`);
+    } else {
+      const { move, mirror, side } = this.current;
+      this.defenders = [{ ...this.home }];
+      const { x, y } = this.home;
+      const made = shape(move);
+      const full = made.label ? `${made.label} ${move.name}` : move.name;
+      this.name = `${full}${side > 0 ? ' →' : ' ←'}`;
+      this.path = resample(made.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
+      this.env.say(move.only ? full : `${full} nach ${side > 0 ? 'rechts' : 'links'}`);
+    }
     this.ghostTime = (this.path.length * 10) / GHOST_SPEED;
-    this.env.say(move.only ? full : `${full} nach ${side > 0 ? 'rechts' : 'links'}`);
     this.state = 'show'; // 'show' = vormachen, 'ready' = Ball zum Start, 'do' = nachmachen
     this.t = 0;
     this.idx = 0;
@@ -157,6 +204,29 @@ class Tricks {
     this.state = 'show';
     this.t = 0;
     this.idx = 0;
+    this.resetDefenders();
+  }
+
+  resetDefenders() {
+    for (const d of this.defenders) { d.dx = 0; d.dy = 0; }
+  }
+
+  /** Auf Mittel und Schwer greift der Verteidiger an: ein Schritt auf den Ball zu, wenn er nah ist. */
+  moveDefenders(dt, ball) {
+    for (const d of this.defenders) {
+      d.dx ??= 0; d.dy ??= 0;
+      let gx = 0, gy = 0;
+      const dist = Math.hypot(ball.x - d.x, ball.y - d.y);
+      if (this.state === 'do' && this.lunge && ball.visible && dist < 240) {
+        // je länger man trödelt, desto entschlossener greift er an
+        const k = Math.min(1, 0.5 + this.t / Math.max(1, this.ghostTime * 1.5));
+        gx = ((ball.x - d.x) / dist) * this.lunge * k;
+        gy = ((ball.y - d.y) / dist) * this.lunge * k;
+      }
+      const step = Math.min(1, dt * 5);
+      d.dx += (gx - d.dx) * step;
+      d.dy += (gy - d.dy) * step;
+    }
   }
 
   update(dt, ball) {
@@ -165,6 +235,7 @@ class Tricks {
     this.t += dt;
     this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
     fx.update(dt);
+    this.moveDefenders(dt, ball);
     if (this.state !== 'do') this.guard.update(dt, false, env, fx, ball);
 
     if (this.state === 'show') {
@@ -187,8 +258,10 @@ class Tricks {
     }
 
     // Nachmachen
-    if (Math.hypot(ball.x - this.defender.x, ball.y - this.defender.y) < REACH + BALL_RADIUS * 0.5) {
-      return this.fail('Der Verteidiger hat ihn!', ball);
+    for (const d of this.defenders) {
+      if (Math.hypot(ball.x - d.x - d.dx, ball.y - d.y - d.dy) < REACH + BALL_RADIUS * 0.5) {
+        return this.fail('Der Verteidiger hat ihn!', ball);
+      }
     }
     if (this.t > this.limit()) return this.fail('Zu langsam!', ball);
     const { k, d } = nearestOnPath(path, ball, this.idx - 6, this.idx + 14);
@@ -207,10 +280,10 @@ class Tricks {
     if (this.idx >= path.length - 3) {
       const accuracy = Math.max(0, 1 - this.devSum / this.devN / (p.tol * 0.8));
       const quick = this.t < this.ghostTime * 1.5; // fast so flott wie der Geisterball
-      const points = env.combo(10 + Math.round(10 * accuracy) + (quick ? 10 : 0), 20);
+      const points = env.combo((10 + Math.round(10 * accuracy) + (quick ? 10 : 0)) * (this.chainOf ? 2 : 1), 20);
       env.sound.win();
       // nicht in den Namen des Tricks hineinschreiben, der oben steht
-      fx.text(ball.x, Math.max(400, ball.y - 50), `${quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
+      fx.text(ball.x, Math.max(400, ball.y - 50), `${this.chainOf ? 'Kette geschafft! ' : quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
       fx.burst(ball.x, ball.y, env.palette[1], 26);
       this.n++;
       this.done[this.current.move.name] = (this.done[this.current.move.name] || 0) + 1;
@@ -257,16 +330,18 @@ class Tricks {
     ctx.strokeStyle = tone(c1, 70);
     ctx.stroke();
 
-    // Verteidiger mit Reichweite
-    const d = this.defender;
-    ctx.beginPath();
-    ctx.arc(d.x, d.y, REACH + 8, 0, Math.PI * 2);
-    ctx.setLineDash([6, 10]);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.stroke();
-    ctx.setLineDash([]);
-    villain(ctx, 'brute', d.x, d.y, REACH * 0.8, this.time, this.look);
+    // Verteidiger mit Reichweite (folgt seinem Angriffsschritt)
+    for (const d of this.defenders) {
+      const x = d.x + (d.dx || 0), y = d.y + (d.dy || 0);
+      ctx.beginPath();
+      ctx.arc(x, y, REACH + 8, 0, Math.PI * 2);
+      ctx.setLineDash([6, 10]);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = Math.hypot(d.dx || 0, d.dy || 0) > 8 ? '#ffffff' : 'rgba(255,255,255,0.4)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      villain(ctx, 'brute', x, y, REACH * (this.chainOf ? 0.7 : 0.8), this.time, this.look);
+    }
 
     if (state === 'show') {
       // Geisterball macht den Trick vor
@@ -293,7 +368,7 @@ class Tricks {
       ctx.beginPath(); ctx.moveTo(env.field.w / 2 - 160, 262); ctx.lineTo(env.field.w / 2 - 160 + 320 * left, 262); ctx.stroke();
     }
 
-    text(ctx, this.name, env.field.w / 2, 205, 52, tone(c1, 80), 'center', 8);
+    text(ctx, this.name, env.field.w / 2, 205, this.chainOf ? 38 : 52, tone(c1, 80), 'center', 8);
     if (this.n > 0) text(ctx, `${this.n} geschafft`, env.field.w / 2, 150, 24, 'rgba(255,255,255,0.7)', 'center', 0, 500);
     const sub = state === 'show' ? 'Schau zu …' : state === 'ready' ? 'Ball zum Startpunkt' : '';
     if (sub) text(ctx, sub, env.field.w / 2, 262, 32, '#fff', 'center', 0);
@@ -308,8 +383,8 @@ export default module.default = {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.85,
-  medals: [[130, 760, 1220], [60, 600, 1060], [20, 430, 900]],
+  scale: 1.05,
+  medals: [[170, 860, 1420], [60, 540, 1280], [20, 50, 170]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

@@ -180,7 +180,7 @@ export default {
   duration: 60,
   lives: 3,
   scale: 1.05,
-  medals: [[220, 630, 1240], [200, 550, 1110], [170, 470, 950]],
+  medals: [[220, 610, 1270], [200, 570, 1220], [170, 460, 1010]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;

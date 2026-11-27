@@ -352,3 +352,35 @@ test('Tricks: elf Tricks, Themen fürs Dauertraining, Dauertraining endet erst a
   assert.equal(result.heldLabel, 'Geübt');
   assert.ok(result.stars >= 1, `${result.stars} Sterne nach ${Math.round(result.held)} s`);
 });
+
+test('Tricks: Linkshänder gespiegelt, jeder Trick variiert, Ketten halten Abstand zu beiden Verteidigern', async () => {
+  const { MOVES, variants, shape, topicGame } = await import('../src/games/tricks.js');
+  const side = (lefty, name) => variants(1, null, lefty).find((v) => v.move.name === name).side;
+  assert.equal(side(false, 'Vorhandzieher'), -1);
+  assert.equal(side(true, 'Vorhandzieher'), 1, 'Linkshänder ziehen mit der Vorhand nach rechts');
+  assert.ok(variants(1, 'vorhand', true).every((v) => v.side > 0));
+  // Formen variieren und kommen dem Verteidiger nie zu nah
+  for (const m of MOVES) {
+    const xs = new Set();
+    for (let i = 0; i < 40; i++) {
+      const { pts } = shape(m);
+      xs.add(Math.round(Math.max(...pts.map(([x]) => Math.abs(x)))));
+      for (const [x, y] of pts) assert.ok(Math.hypot(x, y) > 88, `${m.name}: ${x},${y}`);
+    }
+    assert.ok(xs.size > 5, `${m.name} variiert`);
+  }
+  // Ketten: der ganze Weg bleibt im Feld und weg von beiden Verteidigern
+  const env = {
+    field: { w: 1000, h: 1000 }, level: 3, topic: 'kette', lefty: false, stage: 0, ramp: 1, mult: 1, palette: ['#fff', '#fff', '#fff', '#fff'],
+    sound: new Proxy({}, { get: () => () => {} }), say() {}, banner() {}, addScore() {}, combo: () => 1, miss() {}, shake() {},
+  };
+  const t = topicGame('kette').create(env);
+  for (let i = 0; i < 60; i++) {
+    t.load();
+    assert.equal(t.defenders.length, 2);
+    for (const q of t.path) {
+      assert.ok(q.x > 20 && q.x < 980 && q.y > 100 && q.y < 1000, `${t.name}: ${Math.round(q.x)},${Math.round(q.y)}`);
+      for (const d of t.defenders) assert.ok(Math.hypot(q.x - d.x, q.y - d.y) > 80, `${t.name} zu nah am Verteidiger`);
+    }
+  }
+});

@@ -355,7 +355,12 @@ function renderPlayers() {
       refreshSetup();
       app.menu();
     };
-    row.append(pick, name, age, rank, del);
+    const lefty = document.createElement('label');
+    lefty.className = 'lefty';
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !!p.lefty });
+    box.onchange = () => { p.lefty = box.checked; saveConfig(); };
+    lefty.append(box, ' Linkshänder');
+    row.append(pick, name, age, lefty, rank, del);
     return row;
   }));
 }
