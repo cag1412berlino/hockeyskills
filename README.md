@@ -59,7 +59,13 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 - **Sprachansagen:** Erklärung, „Stopp!“, Ergebnis und neue Abzeichen werden vorgelesen, für Kinder, die noch nicht lesen.
 - **Zufallsereignisse:** In einer Runde kann es zehn Sekunden doppelte Punkte, fünf Sekunden Zeitlupe oder einen Glücksstern geben.
 - **Anpassende Schwierigkeit:** Nach Fehlern wird die Übung unauffällig etwas langsamer (bis 25 %), bei langen Serien etwas schneller (bis 15 %).
-- **Themenwelten:** Weltraum, Unterwasser, Eis und Nachtwald, zufällig je Runde oder fest gewählt. Alle bleiben dunkel und bläulich.
+- **Themenwelten:** Vier gemalte, bunte Welten, zufällig je Runde oder fest gewählt:
+  - *Weltraum* in Violett und Pink mit Farbnebeln, Planeten und Sternschnuppen. Die Ziele sind kleine Außerirdische, zu sammeln gibt es Sterne, und unter dem Ball leuchten Waben auf.
+  - *Unterwasser* in Türkis und Grün mit Lichtstrahlen, Seegras, Korallen und Fischschwärmen. Die Ziele sind Fische, zu sammeln gibt es Muscheln, und der Ball zieht Wellenringe.
+  - *Eis* mit Polarlicht, Eiskristallen und Schneefall. Die Ziele sind Schneewesen, zu sammeln gibt es Kristalle, und der Ball hinterlässt eine Spur im Schnee.
+  - *Nachtwald* in Grün und Pink mit großen Blättern, leuchtenden Blüten und Glühwürmchen. Die Ziele sind Glühkäfer, zu sammeln gibt es Blüten, und hinter dem Ball gehen kleine Blumen auf.
+- **Die Welt blüht auf:** Mit steigender Serie wird der Hintergrund farbiger und lebendiger, nach einem Fehler verblasst er wieder.
+- **Farben nach Schwerpunkt:** Treffen ist Pink, Führen Grün, Wechsel Violett, Stoppen Türkis, Tricks Zitronengelb. Menü, Rahmen und Maskottchen bleiben blau-weiß.
 - **Musik:** Eine leise, im Browser erzeugte Begleitung, die mit der Serie schneller und voller wird.
 - **Skilli:** Das Maskottchen begrüßt im Menü und freut sich im Ergebnis mit.
 
@@ -169,7 +175,8 @@ export default {
 - Damit die Übung vorgemacht und austariert werden kann, braucht sie in `src/bots.js` einen Eintrag in `goals`: eine Funktion, die sagt, wo ein Spieler den Ball gerade hinhaben möchte.
 - Das Tempo muss ein Spiel nicht beachten: Die App lässt `dt` entsprechend schneller oder langsamer laufen.
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
-- `env.palette` liefert die vier Blautöne des Vereinsstils. Nur diese (und Weiß/Grau) für große Flächen verwenden: Orange, Gelb, Grün oder Pink könnte die Kamera für den Ball halten.
+- `env.palette` liefert die vier Farben der aktuellen Themenwelt. Sie sind automatisch so gewählt, dass sie mindestens 40 Grad Farbton von der Ballfarbe entfernt liegen. Für eigene Farben `bright(farbton)` aus `src/themes.js` verwenden, dann gilt dieselbe Regel.
+- `creature(...)` zeichnet das freundliche Wesen der aktuellen Welt, `collectible(...)` das Sammelstück, `villain(...)` einen Bösewicht (alle in `src/ui.js`).
 
 Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `title`, `caption`, `glow`, `orb`, `villain` und `star`, für Funken und Punktetexte die Klasse `Fx` in `src/games/common.js`.
 
@@ -205,6 +212,7 @@ Die Tests prüfen die Rechenkerne (Kalibrierung, Ballerkennung, Profile und Abze
 
 ## Bekannte Grenzen des Prototyps
 
+- Die bunten Welten werfen mehr farbiges Licht auf den Boden als die frühere blaue Fassung. Ob das die Ballerkennung stört, zeigt erst der Test mit Beamer; notfalls in der Einrichtung eine ruhigere Welt fest einstellen.
 - Mit echter Hardware ist die Erkennung noch nicht erprobt. Farbiges Beamerlicht auf dem Ball kann dessen Farbe verfälschen; siehe „Wenn der Ball nicht zuverlässig erkannt wird“.
 - Die Anzeige läuft dem Ball um die Verzögerung von Kamera und Beamer hinterher (geschätzt etwa eine Zehntelsekunde). Bei schnellen Bewegungen sitzt der Ring deshalb etwas hinter dem Ball.
 - Punkte, Sterne-Schwellen und Geschwindigkeiten beruhen auf simulierten Spielern und sind noch nicht mit Kindern erprobt.

@@ -2,7 +2,7 @@
 // ohne die Wand zu berühren. Wer anstößt, muss zum letzten Kontrollpunkt zurück.
 // Kein Tempo-Spiel: Es zählt, wie weit man sauber kommt. Mit jeder Stufe wird der Gang enger.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, star, text, tone } from '../ui.js';
+import { glow, noGlow, collectible, text, tone } from '../ui.js';
 import { Fx } from './common.js';
 import { spline } from './line.js';
 
@@ -140,7 +140,7 @@ class Wire {
       ctx.stroke();
     }
     glow(ctx, c1, 22);
-    star(ctx, path[last].x, path[last].y, 36 + 4 * Math.sin(this.time * 5), tone(c1, 68), this.time);
+    collectible(ctx, path[last].x, path[last].y, 36 + 4 * Math.sin(this.time * 5), tone(c1, 68), this.time);
     noGlow(ctx);
 
     if (!this.running) {

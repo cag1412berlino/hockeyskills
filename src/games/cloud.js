@@ -3,7 +3,7 @@
 // Auf "Mittel" pendelt sie, auf "Schwer" stellt sie sich in den Weg. In späten Stufen
 // wandert das Ziel und eine zweite kleine Wolke kreist um die große.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, orb, eyes } from '../ui.js';
+import { glow, noGlow, creature, eyes } from '../ui.js';
 import { Fx, StopZones } from './common.js';
 
 const LEVELS = {
@@ -195,7 +195,7 @@ class Cloud {
     this.stops.draw(ctx);
     if (t) {
       const k = Math.min(1, this.roundTime / 0.3);
-      orb(ctx, t.x, t.y, t.r * k * (1.25 - 0.25 * k), t.color, this.look);
+      creature(ctx, t.x, t.y, t.r * k * (1.25 - 0.25 * k), t.color, this.look, this.time);
       this.cloud.draw(ctx, this.time, this.look);
       if (this.hasMini) this.mini.draw(ctx, this.time, this.look);
     }

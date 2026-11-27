@@ -80,7 +80,7 @@ export class MenuScene extends ButtonScene {
     const daily = app.daily();
     const items = [
       ...app.categories.map((cat) => ({
-        name: cat.name, icon: cat.games[0].icon,
+        name: cat.name, icon: cat.games[0].icon, color: app.accentOf(cat),
         sub: cat.games.length > 1 ? `${cat.games.length} Übungen` : '',
         go: () => app.category(cat),
       })),
@@ -90,7 +90,7 @@ export class MenuScene extends ButtonScene {
     ];
     this.buttons = grid(items, w, (item, x, y, r, i) => new DwellButton({
       x, y: y + 10, r,
-      color: item.white ? '#fff' : colors[i % colors.length],
+      color: item.white ? '#fff' : item.color ?? colors[i % colors.length],
       icon: item.icon, label: item.name, sub: item.sub,
       onActivate: this.act(item.go),
     }));
@@ -147,10 +147,10 @@ export class CategoryScene extends ButtonScene {
     this.cat = cat;
   }
   layout() {
-    const colors = this.app.palette();
-    this.buttons = grid(this.cat.games, this.field.w, (game, x, y, r, i) => new DwellButton({
+    const color = this.app.accentOf(this.cat);
+    this.buttons = grid(this.cat.games, this.field.w, (game, x, y, r) => new DwellButton({
       x, y: y - 40, r,
-      color: colors[i % colors.length],
+      color,
       icon: game.icon, label: game.name,
       sub: '★'.repeat(this.app.profile.stats.best[game.id] || 0),
       onActivate: this.act(() => this.app.levels(game)),
@@ -160,7 +160,7 @@ export class CategoryScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, this.cat.name, this.field.w / 2, 130, 86, this.app.palette()[1]);
+    title(ctx, this.cat.name, this.field.w / 2, 130, 86, this.app.accentOf(this.cat));
     super.draw(ctx);
   }
 }
@@ -198,7 +198,7 @@ export class LevelScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, this.opts.title, this.field.w / 2, 140, 86, this.app.palette()[1]);
+    title(ctx, this.opts.title, this.field.w / 2, 140, 86, this.opts.color ?? this.app.palette()[1]);
     ctx.globalAlpha = this.pulse();
     caption(ctx, 'Wähle eine Stufe', this.field.w / 2, 240, 22, '#fff', 'center');
     ctx.globalAlpha = 1;
@@ -227,7 +227,8 @@ export class ResultScene extends ButtonScene {
     super(app);
     Object.assign(this, r);
     this.lines = rewardLines(r.rewards, app.profile);
-    this.party = r.record || r.stars === 3 || r.rewards?.rankUp ? new Confetti(app.engine.field.w, [...app.palette(), '#fff']) : null;
+    this.accent = app.accentOf(r.game) ?? app.palette()[1];
+    this.party = r.record || r.stars === 3 || r.rewards?.rankUp ? new Confetti(app.engine.field.w, [...app.worldPalette(), '#fff']) : null;
     const said = [r.record ? 'Neuer Rekord!' : 'Geschafft!', `${r.score} Punkte.`];
     if (r.stars) said.push(r.stars === 1 ? 'Ein Stern.' : `${r.stars} Sterne.`);
     if (r.rewards?.rankUp) said.push(`Du bist jetzt ${rankOf(app.profile.xp).name}!`);
@@ -266,8 +267,8 @@ export class ResultScene extends ButtonScene {
     for (let i = 0; i < 3; i++) {
       const on = i < this.stars && this.time > 0.3 + i * 0.35;
       const grow = on ? Math.min(1, (this.time - 0.3 - i * 0.35) / 0.2) : 1;
-      if (on) glow(ctx, c[1], 26);
-      star(ctx, cx + (i - 1) * 140, 230 - (i === 1 ? 20 : 0), 52 * (on ? 0.6 + 0.4 * grow : 1), on ? tone(c[1], 70) : 'rgba(255,255,255,0.13)');
+      if (on) glow(ctx, this.accent, 26);
+      star(ctx, cx + (i - 1) * 140, 230 - (i === 1 ? 20 : 0), 52 * (on ? 0.6 + 0.4 * grow : 1), on ? tone(this.accent, 70) : 'rgba(255,255,255,0.13)');
       noGlow(ctx);
     }
     // Die Punktzahl zählt hoch

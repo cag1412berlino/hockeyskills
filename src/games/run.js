@@ -3,7 +3,7 @@
 // bei denen es ein Stück zurückgeht – wie die Richtungswechsel beim Hockey.
 // Auf der Bahn bleiben bringt Punkte, Sterne an den Ecken bringen Serien.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, villain, randomVillain, star, tone } from '../ui.js';
+import { glow, noGlow, villain, randomVillain, collectible, tone } from '../ui.js';
 import { Fx } from './common.js';
 
 const LEVELS = {
@@ -191,7 +191,7 @@ class Run {
       if (y < -80 || y > field.h + 80) continue;
       if (it.kind === 'star') {
         glow(ctx, c1, 20);
-        star(ctx, it.x, y, 34 + 4 * Math.sin(this.time * 6 + it.d), tone(c1, 68), this.time * 2);
+        collectible(ctx, it.x, y, 34 + 4 * Math.sin(this.time * 6 + it.d), tone(c1, 68), this.time * 2);
         noGlow(ctx);
       } else if (it.kind === 'hazard') {
         villain(ctx, it.face, it.x, y, 32, this.time, this.look, Math.PI / 2);

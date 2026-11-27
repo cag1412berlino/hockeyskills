@@ -11,7 +11,7 @@ import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileSc
 import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { newProfile, rankOf, recordRound, recordEvent, dailyGame, dateString, summarize } from './profile.js';
-import { THEMES, randomTheme } from './themes.js';
+import { THEMES, randomTheme, worldPalette, bright, setBallHue } from './themes.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -56,6 +56,13 @@ const app = {
   get profile() { return currentProfile(); },
   save: saveConfig,
   palette: () => paletteFor(),
+  /** Die bunten Spielfarben der gerade gezeigten Themenwelt. */
+  worldPalette: () => worldPalette(engine.theme),
+  /** Farbe des Schwerpunkts, zu dem eine Übung (oder der Schwerpunkt selbst) gehört; sonst null. */
+  accentOf: (x) => {
+    const cat = categories.find((c) => c === x || c.games.includes(x));
+    return cat ? bright(cat.hue) : null;
+  },
   today: () => dateString(),
   daily: () => dailyGame(games),
 
@@ -63,6 +70,7 @@ const app = {
   show(scene) {
     if (!(scene instanceof PlayScene)) engine.theme = config.theme === 'auto' ? 'space' : config.theme;
     engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
+    engine.bloomTo(0.35);
     engine.setScene(scene);
   },
   menu: () => {
@@ -76,17 +84,21 @@ const app = {
     const cat = categories.find((c) => c.games.includes(game));
     app.levelsFor({
       title: game.name,
+      color: app.accentOf(game),
       sub: (level) => bestLabel(app, game, level),
       onPick: (level) => app.play(game, level),
       onBack: () => (cat.games.length > 1 ? app.category(cat) : app.menu()),
     });
   },
-  /** Startet eine Übung; bei "auto" bekommt jede Runde eine zufällige Themenwelt. */
-  playScene: (scene) => {
+  /**
+   * Startet eine Übung. Erst wird die Themenwelt gewählt (bei "auto" zufällig), dann der
+   * Spielbildschirm gebaut, damit er gleich die Farben und Wesen dieser Welt bekommt.
+   */
+  playScene: (make) => {
     if (config.theme === 'auto') engine.theme = randomTheme();
-    engine.setScene(scene);
+    engine.setScene(make());
   },
-  play: (game, level) => app.playScene(new PlayScene(app, game, level)),
+  play: (game, level) => app.playScene(() => new PlayScene(app, game, level)),
   result: (r) => {
     if (r.record) sound.win(); else sound.end();
     app.show(new ResultScene(app, r));
@@ -148,7 +160,7 @@ const app = {
     const s = app.session;
     const { game, who } = s.plan[s.i];
     const duel = s.kind === 'duel';
-    app.playScene(new PlayScene(app, game, s.level, {
+    app.playScene(() => new PlayScene(app, game, s.level, {
       seconds: s.seconds,
       label: duel ? `${s.names[who]} · Runde ${Math.floor(s.i / 2) + 1} von 3` : `Übung ${s.i + 1} von ${s.plan.length}`,
       onFinish: (score, stars, rewards) => {
@@ -230,6 +242,7 @@ function refreshSetup() {
   for (const radio of document.querySelectorAll('input[name=shape]')) {
     radio.checked = radio.value === config.fieldShape;
   }
+  setBallHue(config.ball.h); // Spielfarben meiden den Farbbereich um den Ball
   $('#tolerance').value = config.ball.hTol;
   $('#tolerance-value').textContent = `±${config.ball.hTol}°`;
   $('#rotation').value = String(config.rotation);
@@ -643,6 +656,7 @@ $('#brand').textContent = BRAND.name;
 // Schrift vorab laden, damit schon das erste Bild stimmt.
 for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
+setBallHue(config.ball.h);
 sound.muted = config.muted;
 voice.enabled = config.voice;
 music.enabled = config.music;

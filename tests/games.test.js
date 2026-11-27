@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PlayScene } from '../src/scenes.js';
-import { games } from '../src/games/index.js';
+import { games, categories } from '../src/games/index.js';
 import { newProfile } from '../src/profile.js';
 import { makeFinale } from '../src/session.js';
 import { Bot, SKILLS, goals } from '../src/bots.js';
@@ -226,5 +226,43 @@ test('Kamera-Störungen: Auch mit Zittern, Verzögerung und Aussetzern bleibt je
   for (const game of games) {
     const clean = avg(game, false), noisy = avg(game, true);
     assert.ok(noisy > clean * 0.25, `${game.name}: ${Math.round(noisy)} statt ${Math.round(clean)} Punkte`);
+  }
+});
+
+test('Farben: Spielfarben meiden den Bereich um die Ballfarbe', async () => {
+  const { setBallHue, safeHue, worldPalette, THEME_IDS } = await import('../src/themes.js');
+  const { BALL_PRESETS } = await import('../src/tracker.js');
+  const apart = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+  for (const ball of Object.values(BALL_PRESETS)) {
+    setBallHue(ball.h);
+    for (let h = 0; h < 360; h += 5) assert.ok(apart(safeHue(h), ball.h) >= 40, `Farbton ${h} bei Ball ${ball.name}`);
+    for (const id of THEME_IDS) {
+      for (const color of worldPalette(id)) {
+        const hue = Number(/hsl\((\d+)/.exec(color)[1]);
+        assert.ok(apart(hue, ball.h) >= 39, `${id}: ${color} bei Ball ${ball.name}`);
+      }
+    }
+    for (const cat of categories) assert.ok(apart(safeHue(cat.hue), ball.h) >= 40);
+  }
+  setBallHue(18);
+});
+
+test('Themenwelten: Hintergrund und Bodenspuren lassen sich in jeder Welt zeichnen', async () => {
+  const { THEMES, Floor } = await import('../src/themes.js');
+  const field = { w: 1000, h: 1000 };
+  const dots = Array.from({ length: 10 }, (_, i) => ({ x: i / 10, y: i / 10, r: 1, a: 0.2, v: 5, tw: 1 }));
+  for (const [id, world] of Object.entries(THEMES)) {
+    assert.equal(world.hues.length, 4);
+    world.paint(fakeCtx, field, 3.2, 0.7, dots);
+    const floor = new Floor();
+    const ball = { x: 100, y: 500, visible: true };
+    for (let i = 0; i < 120; i++) {
+      ball.x += 6;
+      floor.update(1 / 60, ball, id);
+    }
+    assert.ok(floor.marks.length > 0, `${world.name} hinterlässt Spuren`);
+    floor.draw(fakeCtx, ball, 80);
+    for (let i = 0; i < 300; i++) floor.update(1 / 60, { visible: false }, id);
+    assert.equal(floor.marks.length, 0, 'Spuren verblassen wieder');
   }
 });

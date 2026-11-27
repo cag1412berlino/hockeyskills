@@ -3,7 +3,7 @@
 // Wer ankommt, bevor er geschlossen ist, ist "im Takt" und bekommt dreifache Punkte.
 // Später wandert das Feldpaar durchs Feld und dreht sich (quer, schräg, vor und zurück).
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, orb, tone } from '../ui.js';
+import { glow, noGlow, creature, tone } from '../ui.js';
 import { Fx } from './common.js';
 
 const LEVELS = {
@@ -104,7 +104,7 @@ class Pendulum {
 
     [a, b].forEach((pad, i) => {
       if (i === this.active) {
-        orb(ctx, pad.x, pad.y, p.r * (1 + 0.04 * Math.sin(this.time * 8)), c1, this.look);
+        creature(ctx, pad.x, pad.y, p.r * (1 + 0.04 * Math.sin(this.time * 8)), c1, this.look, this.time);
         // Takt-Ring: zieht sich zusammen, solange man noch im Takt ist
         const left = 1 - this.since / this.beat();
         if (left > 0) {

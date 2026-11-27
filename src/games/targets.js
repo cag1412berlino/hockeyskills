@@ -3,7 +3,7 @@
 // Besondere Ziele: Doppel-Kugeln zerfallen in zwei kleine, die Uhr schenkt Zeit,
 // Stachelbällen (ab "Schwer" oder späten Stufen) muss man ausweichen.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, villain, randomVillain, orb, text } from '../ui.js';
+import { glow, noGlow, villain, randomVillain, creature, text } from '../ui.js';
 import { Fx, StopZones } from './common.js';
 
 const LEVELS = {
@@ -161,7 +161,7 @@ class Targets {
         noGlow(ctx);
         text(ctx, '+5', t.x, t.y + r * 1.25, 36, '#fff', 'center', 6);
       } else {
-        orb(ctx, t.x, t.y, r, t.color, this.look);
+        creature(ctx, t.x, t.y, r, t.color, this.look, this.time);
         if (t.kind === 'split') {
           // zweiter Ring zeigt: hier steckt mehr drin
           ctx.beginPath();

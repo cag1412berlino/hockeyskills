@@ -4,6 +4,7 @@
 export const theme = {
   family: '"Fredoka", system-ui, sans-serif',
   px: 1, // Bildschirm-Pixel pro Feld-Einheit (für den Leuchteffekt)
+  world: 'space', // aktuelle Themenwelt: bestimmt, wie Wesen und Sammelstücke aussehen
 };
 
 /** Sanftes Leuchten für alles, was danach gezeichnet wird. Mit noGlow wieder ausschalten. */
@@ -151,6 +152,135 @@ export function hazard(ctx, x, y, r, rot = 0, look = null) {
   noGlow(ctx);
   ctx.stroke();
   eyes(ctx, x, y + r * 0.06, r * 0.78, look?.x ?? x, look?.y ?? y + 1, true);
+}
+
+// ---------- Wesen und Sammelstücke der Themenwelten ----------
+
+/**
+ * Freundliches Wesen der aktuellen Welt (das, was man treffen oder einsammeln soll):
+ * im Weltraum ein kleiner Außerirdischer, unter Wasser ein Fisch, im Eis ein Schneewesen,
+ * im Nachtwald ein Glühkäfer. Der Körper ist immer eine Kugel mit Radius r in der Farbe color.
+ */
+export function creature(ctx, x, y, r, color, look = null, time = 0) {
+  const light = tone(color, 74), dark = tone(color, 34);
+  ctx.lineCap = 'round';
+  if (theme.world === 'sea') {
+    // Schwanzflosse auf der Seite, von der der Ball nicht kommt, dazu Rückenflosse
+    const s = look && look.x < x ? 1 : -1;
+    const wag = Math.sin(time * 9 + x) * r * 0.12;
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(x + s * r * 0.8, y);
+    ctx.lineTo(x + s * r * 1.5, y - r * 0.5 + wag);
+    ctx.lineTo(x + s * r * 1.32, y);
+    ctx.lineTo(x + s * r * 1.5, y + r * 0.5 + wag);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.35, y - r * 0.85); ctx.quadraticCurveTo(x, y - r * 1.5, x + r * 0.4, y - r * 0.82);
+    ctx.fill();
+  } else if (theme.world === 'ice') {
+    // runde Ohren und ein weißer Schal
+    for (const s of [-1, 1]) orb(ctx, x + s * r * 0.66, y - r * 0.7, r * 0.3, color);
+  } else if (theme.world === 'jungle') {
+    // schwirrende Flügel und Fühler
+    const flap = 0.55 + 0.35 * Math.sin(time * 26 + y);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(x + s * r * 0.75, y - r * 0.6, r * 0.62, r * 0.3 * flap, s * -0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (theme.world === 'space' || theme.world === 'jungle') {
+    // Fühler mit Kugeln (Außerirdischer) bzw. feine Fühler (Käfer)
+    const bob = Math.sin(time * 5 + x) * r * 0.06;
+    ctx.strokeStyle = light;
+    ctx.lineWidth = Math.max(1.5, r * 0.05);
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x + s * r * 0.3, y - r * 0.9);
+      ctx.quadraticCurveTo(x + s * r * 0.36, y - r * 1.25, x + s * r * 0.56 + bob, y - r * 1.38);
+      ctx.stroke();
+      if (theme.world === 'space') {
+        ctx.fillStyle = light;
+        ctx.beginPath(); ctx.arc(x + s * r * 0.56 + bob, y - r * 1.38, r * 0.1, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  orb(ctx, x, y, r, color, look);
+  if (theme.world === 'ice') {
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.96, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.lineWidth = r * 0.16;
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.stroke();
+  }
+}
+
+/**
+ * Sammelstück der aktuellen Welt: Stern (Weltraum), Muschel (Unterwasser),
+ * Kristall (Eis) oder Blüte (Nachtwald). rot dreht bzw. bewegt es.
+ */
+export function collectible(ctx, x, y, r, color, rot = 0) {
+  if (theme.world === 'sea') {
+    // Muschel: Fächer mit Rillen
+    ctx.beginPath();
+    ctx.moveTo(x, y + r * 0.8);
+    for (let i = 0; i <= 10; i++) {
+      const a = Math.PI * (1.08 + (0.84 * i) / 10);
+      const rr = r * (i % 2 ? 0.94 : 1.04);
+      ctx.lineTo(x + Math.cos(a) * rr, y + r * 0.25 + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = Math.max(1.5, r * 0.05);
+    ctx.beginPath();
+    for (let i = 1; i < 10; i += 2) {
+      const a = Math.PI * (1.08 + (0.84 * i) / 10);
+      ctx.moveTo(x, y + r * 0.7); ctx.lineTo(x + Math.cos(a) * r * 0.88, y + r * 0.25 + Math.sin(a) * r * 0.88);
+    }
+    ctx.stroke();
+  } else if (theme.world === 'ice') {
+    // Kristall: geschliffener Edelstein
+    const w = r * 0.8, sway = Math.sin(rot * 2) * 0.08;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(sway);
+    ctx.beginPath();
+    ctx.moveTo(0, -r); ctx.lineTo(w, -r * 0.3); ctx.lineTo(0, r); ctx.lineTo(-w, -r * 0.3);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(0, -r); ctx.lineTo(w, -r * 0.3); ctx.lineTo(0, -r * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = Math.max(1.5, r * 0.05);
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w, -r * 0.3); ctx.lineTo(w, -r * 0.3);
+    ctx.moveTo(0, -r); ctx.lineTo(0, r);
+    ctx.stroke();
+    ctx.restore();
+  } else if (theme.world === 'jungle') {
+    // Blüte mit fünf Blättern
+    ctx.fillStyle = color;
+    for (let i = 0; i < 5; i++) {
+      const a = rot * 0.5 + (i * Math.PI * 2) / 5;
+      ctx.beginPath();
+      ctx.ellipse(x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55, r * 0.5, r * 0.32, a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x, y, r * 0.24, 0, Math.PI * 2); ctx.fill();
+  } else {
+    star(ctx, x, y, r, color, rot);
+  }
 }
 
 // ---------- Bösewichte ----------

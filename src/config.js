@@ -54,9 +54,8 @@ export function saveConfig() {
 }
 
 /**
- * Spielfarben im Vereinsstil Blau-Weiss: vier Blautöne von Königsblau bis Hellblau.
- * Blau ist von allen Neon-Ballfarben (Orange, Gelb, Grün, Pink) weit entfernt,
- * die Kamera verwechselt die Spielgrafik also nicht mit dem Ball.
+ * Vereinsfarben Blau-Weiss für Menü, Rahmen und Anzeigen: vier Blautöne von Königsblau bis Hellblau.
+ * Die Spielwelten bringen eigene, bunte Farben mit (siehe themes.js).
  */
 export const BRAND = {
   name: 'Blau-Weiss Skiller Academy',

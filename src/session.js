@@ -146,7 +146,7 @@ export class IntermissionScene extends ButtonScene {
     noGlow(ctx);
     game.icon(ctx, 150);
     ctx.restore();
-    title(ctx, game.name, w / 2, 545, 70, c[1]);
+    title(ctx, game.name, w / 2, 545, 70, this.app.accentOf(game) ?? c[1]);
     if (game.hint) text(ctx, game.hint, w / 2, 622, 28, 'rgba(255,255,255,0.85)', 'center', 0, 400);
     mascot(ctx, 120, 800, 56, 'happy', this.time, this.look);
     super.draw(ctx);
@@ -161,7 +161,7 @@ export class SessionResultScene extends ButtonScene {
     this.total = session.results.reduce((sum, r) => sum + r.score, 0);
     this.stars = session.results.reduce((sum, r) => sum + r.stars, 0);
     this.lines = rewardLines({ xp: session.results.reduce((sum, r) => sum + (r.rewards?.xp ?? 0), 0), badges, rankUp: session.results.some((r) => r.rewards?.rankUp) }, app.profile);
-    this.party = new Confetti(app.engine.field.w, [...app.palette(), '#fff']);
+    this.party = new Confetti(app.engine.field.w, [...app.worldPalette(), '#fff']);
     app.voice.say(`Training geschafft! ${this.total} Punkte und ${this.stars} Sterne.${record ? ' Neuer Rekord!' : ''}`);
   }
   layout() {

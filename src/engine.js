@@ -3,7 +3,7 @@
 // Spiele rechnen in "Feld-Einheiten": Das Spielfeld ist immer 1000 hoch und
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
 import { theme, glow, noGlow, star } from './ui.js';
-import { THEMES } from './themes.js';
+import { THEMES, Floor } from './themes.js';
 
 export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
 const MAX_HEIGHT = 1440;       // höchste Bildhöhe in Pixeln, mit der gerechnet wird
@@ -28,9 +28,13 @@ export class Engine {
     this.time = 0;
     this.shakeAmt = 0;
     this.fade = 0;             // Überblendung beim Szenenwechsel
-    this.theme = 'space';      // Themenwelt des Hintergrunds
+    this.world = 'space';      // Themenwelt, siehe theme
+    this.bloom = 0.3;          // 0..1: wie farbig und lebendig der Hintergrund gerade ist
+    this.bloomGoal = 0.3;
+    this.floor = new Floor();  // Spuren, die der Ball am Boden hinterlässt
     this.trailStyle = 0;       // Ballschweif: 0 = schlicht, 1 = Funken, 2 = Sternchen (per Rang freigeschaltet)
     this.sparks = [];
+    theme.world = this.world;
     // Schwebende Teilchen des Hintergrunds: Position 0..1, Größe, Helligkeit, Tempo, Flackern
     this.stars = Array.from({ length: 60 }, () => ({
       x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.2,
@@ -80,6 +84,20 @@ export class Engine {
     const dx = px - (f.x + f.pw / 2), dy = py - (f.y + f.ph / 2);
     const c = Math.cos(-f.rot), s = Math.sin(-f.rot);
     return { x: (dx * c - dy * s) / f.scale + f.w / 2, y: (dx * s + dy * c) / f.scale + f.h / 2 };
+  }
+
+  /** Themenwelt: bestimmt Hintergrund, Bodenspuren und das Aussehen der Wesen. */
+  get theme() { return this.world; }
+  set theme(id) {
+    if (id === this.world) return;
+    this.world = id;
+    theme.world = id;
+    this.floor.marks = [];
+  }
+
+  /** Lässt den Hintergrund aufblühen (1) oder verblassen (0); der Übergang ist weich. */
+  bloomTo(level) {
+    this.bloomGoal = Math.max(0, Math.min(1, level));
   }
 
   setScene(scene) {
@@ -148,23 +166,12 @@ export class Engine {
     requestAnimationFrame(loop);
   }
 
-  /** Dunkler Farbverlauf mit schwebenden Teilchen der Themenwelt. Bewusst schwach, damit er den Ball nicht überstrahlt. */
+  /** Gemalter Hintergrund der Themenwelt. Bleibt dunkel, damit er den Ball nicht überstrahlt. */
   drawBackground(ctx) {
     const f = this.field;
-    const world = THEMES[this.theme] ?? THEMES.space;
-    const g = ctx.createRadialGradient(f.w / 2, f.h * 0.45, 60, f.w / 2, f.h / 2, f.h * 0.85);
-    g.addColorStop(0, world.inner);
-    g.addColorStop(1, world.outer);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, f.w, f.h);
-    // feines Punktraster als Struktur
-    ctx.fillStyle = 'rgba(255,255,255,0.045)';
-    for (let x = (f.w % 50) / 2; x <= f.w; x += 50) {
-      for (let y = 25; y < f.h; y += 50) ctx.fillRect(x - 1, y - 1, 2, 2);
-    }
-    ctx.fillStyle = ctx.strokeStyle = '#fff';
-    for (const p of this.stars) world.draw(ctx, p, f, this.time);
-    ctx.globalAlpha = 1;
+    (THEMES[this.world] ?? THEMES.space).paint(ctx, f, this.time, this.bloom, this.stars);
+    // Spuren des Balls; direkt um den Ball bleibt es frei, damit kein farbiges Licht auf ihn fällt
+    this.floor.draw(ctx, this.ball, BALL_RADIUS * 2.4);
     // Ränder weich abdunkeln
     const v = ctx.createRadialGradient(f.w / 2, f.h / 2, f.h * 0.45, f.w / 2, f.h / 2, Math.hypot(f.w, f.h) / 2);
     v.addColorStop(0, 'rgba(0,0,8,0)');
@@ -248,6 +255,8 @@ export class Engine {
     this.time += dt;
     this.onFrame?.(dt);
     this.updateBall(dt);
+    this.bloom += (this.bloomGoal - this.bloom) * Math.min(1, dt * 1.5);
+    if (!this.paused) this.floor.update(dt, this.ball, this.world);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#000';

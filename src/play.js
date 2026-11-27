@@ -60,6 +60,10 @@ export class PlayScene {
       }
     }
 
+    // Spielfarben kommen aus der Themenwelt, die Leitfarbe der Anzeigen vom Schwerpunkt der Übung.
+    this.colors = app.worldPalette?.() ?? app.palette();
+    this.accent = app.accentOf?.(game) ?? this.colors[1];
+
     this.env = this.makeEnv();
     this.instance = game.create(this.env);
 
@@ -88,7 +92,7 @@ export class PlayScene {
       field: app.engine.field,
       level: this.level,
       duration: this.duration,
-      palette: app.palette(),
+      palette: this.colors,
       sound: demo ? new Proxy({}, { get: () => nothing }) : app.sound,
       get score() { return demo ? 0 : scene.score; },
       get timeLeft() { return scene.timeLeft; },
@@ -220,6 +224,8 @@ export class PlayScene {
     this.double = Math.max(0, this.double - dt);
     this.slow = Math.max(0, this.slow - dt);
     this.app.music.intensity(this.multiplier());
+    // Je höher die Serie, desto farbiger und lebendiger wird die Welt.
+    this.app.engine.bloomTo?.(0.25 + 0.25 * (this.multiplier() - 1));
 
     const stage = Math.min(STAGES - 1, Math.floor(this.elapsed / (this.duration / STAGES)));
     if (stage > this.stage) {
@@ -292,7 +298,7 @@ export class PlayScene {
       ctx.fillStyle = 'rgba(0,0,10,0.55)';
       ctx.fillRect(0, 0, w, 150);
       caption(ctx, "So geht's", w / 2, 36, 18, 'rgba(255,255,255,0.7)', 'center');
-      title(ctx, this.game.name, w / 2, 78, 52, c[1]);
+      title(ctx, this.game.name, w / 2, 78, 52, this.accent);
       if (this.game.hint) text(ctx, this.game.hint, w / 2, 124, 26, 'rgba(255,255,255,0.9)', 'center', 0, 400);
       this.exit.draw(ctx);
       return;
@@ -317,7 +323,7 @@ export class PlayScene {
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw, 36); ctx.stroke();
     if (frac > 0) {
-      const bar = frac < 0.15 ? '#fff' : tone(c[1], 68);
+      const bar = frac < 0.15 ? '#fff' : tone(this.accent, 68);
       ctx.strokeStyle = bar;
       glow(ctx, bar, 14);
       ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw * frac, 36); ctx.stroke();
@@ -340,8 +346,8 @@ export class PlayScene {
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (this.streakLeft / this.streakWindow) * Math.PI * 2);
-      ctx.strokeStyle = tone(c[0], 70);
-      glow(ctx, c[0], 14);
+      ctx.strokeStyle = tone(this.accent, 70);
+      glow(ctx, this.accent, 14);
       ctx.stroke();
       noGlow(ctx);
       text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
@@ -375,11 +381,11 @@ export class PlayScene {
       ctx.arc(w / 2, 500, 210, -Math.PI / 2, -Math.PI / 2 + phase * Math.PI * 2);
       ctx.lineWidth = 4;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = tone(c[1], 70);
-      glow(ctx, c[1], 18);
+      ctx.strokeStyle = tone(this.accent, 70);
+      glow(ctx, this.accent, 18);
       ctx.stroke();
       noGlow(ctx);
-      title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 505, (n > 0 ? 250 : 150) * beat, c[1]);
+      title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 505, (n > 0 ? 250 : 150) * beat, this.accent);
       if (this.game.hint) text(ctx, this.game.hint, w / 2, 800, 34, 'rgba(255,255,255,0.9)', 'center', 0, 400);
     } else if (this.paused || this.userPaused) {
       ctx.fillStyle = 'rgba(0,0,10,0.6)';

@@ -1,5 +1,5 @@
 // Gemeinsame Bausteine für mehrere Spiele: Effekte und die Stoppzone.
-import { glow, noGlow, text, star, tone } from '../ui.js';
+import { glow, noGlow, text, collectible, tone } from '../ui.js';
 
 /** Sammelt alle kurzlebigen Effekte eines Spiels: Funken, Druckwellen, Punktetexte, Blitz. */
 export class Fx {
@@ -136,10 +136,10 @@ export function randomSpot(field, ball, away = 320) {
   return s;
 }
 
-/** Pulsierender Stern zum Einsammeln. */
+/** Pulsierendes Sammelstück der aktuellen Welt (Stern, Muschel, Kristall oder Blüte). */
 export function drawStar(ctx, s, color, time, r = 44) {
   glow(ctx, color, 26);
-  star(ctx, s.x, s.y, r + 5 * Math.sin(time * 6), tone(color, 68), time * 1.5);
+  collectible(ctx, s.x, s.y, r + 5 * Math.sin(time * 6), tone(color, 68), time * 1.5);
   noGlow(ctx);
 }
 

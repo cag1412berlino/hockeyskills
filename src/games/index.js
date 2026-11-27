@@ -20,11 +20,12 @@ import roll from './roll.js';
 import tricks from './tricks.js';
 
 export const categories = [
-  { id: 'treffen', name: 'Treffen', games: [targets, cloud, dodge, chase] },
-  { id: 'fuehren', name: 'Führen', games: [line, slalom, run, wire, eight, spotlight, trace] },
-  { id: 'wechsel', name: 'Wechsel', games: [pendulum, taps, rhythm] },
-  { id: 'stoppen', name: 'Stoppen', games: [stop, spot, roll] },
-  { id: 'tricks', name: 'Tricks', games: [tricks] },
+  // hue = Farbton des Schwerpunkts (wird an die Ballfarbe angepasst)
+  { id: 'treffen', name: 'Treffen', hue: 325, games: [targets, cloud, dodge, chase] },
+  { id: 'fuehren', name: 'Führen', hue: 140, games: [line, slalom, run, wire, eight, spotlight, trace] },
+  { id: 'wechsel', name: 'Wechsel', hue: 272, games: [pendulum, taps, rhythm] },
+  { id: 'stoppen', name: 'Stoppen', hue: 178, games: [stop, spot, roll] },
+  { id: 'tricks', name: 'Tricks', hue: 66, games: [tricks] },
 ];
 
 export const games = categories.flatMap((c) => c.games);

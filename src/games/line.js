@@ -2,7 +2,7 @@
 // Unterwegs gibt es einen Stopp-Punkt: dort muss der Ball kurz ruhig liegen.
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, villain, star, tone, text } from '../ui.js';
+import { glow, noGlow, villain, collectible, tone, text } from '../ui.js';
 import { Fx, Rest } from './common.js';
 
 const LEVELS = {
@@ -221,7 +221,7 @@ class Line {
 
     // Ziel und aktuelle Stelle ("hier geht es weiter")
     glow(ctx, c1, 22);
-    star(ctx, path[last].x, path[last].y, 40 + 5 * Math.sin(this.time * 5), tone(c1, 68), this.time);
+    collectible(ctx, path[last].x, path[last].y, 40 + 5 * Math.sin(this.time * 5), tone(c1, 68), this.time);
     noGlow(ctx);
     const pulse = 26 + 10 * Math.sin(this.time * 7);
     ctx.beginPath();
