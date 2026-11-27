@@ -1,6 +1,8 @@
 // Spielerprofile: Punkte über alle Übungen (XP), Rang, Abzeichen, Verlauf, Übung des Tages.
 // Reine Rechenlogik ohne Browser, damit sie sich testen lässt.
 
+import { advanceMissions } from './quests.js';
+
 export const RANKS = [
   // Eine ordentliche Runde bringt rund 500 bis 1000 Punkte.
   { xp: 0, name: 'Anfänger' },
@@ -39,6 +41,9 @@ export function newProfile(name) {
     history: [],       // { d: Datum, g: Übung, l: Stufe, s: Punkte, st: Sterne }
     days: { last: null, streak: 0 },
     daily: null,       // Datum, an dem der Tagesbonus zuletzt geholt wurde
+    missions: null,    // Tagesaufgaben: { day, list, chest } (siehe quests.js)
+    items: {},         // Sammelstücke aus der Schatzkiste: id -> Datum
+    gear: { trail: null, hat: null }, // was davon gerade angelegt ist
     stats: { rounds: 0, stars: 0, maxMult: 0, played: {}, best: {}, hard3: false, flawless: 0, sessions: {}, dailyCount: 0, duelWins: 0, maxScore: 0, hardPlayed: {} },
   };
 }
@@ -52,7 +57,8 @@ export function completeProfile(saved) {
   const p = { ...fresh, ...saved };
   p.days = { ...fresh.days, ...saved?.days };
   p.stats = { ...fresh.stats, ...saved?.stats };
-  for (const key of ['highscores', 'badges', 'seen']) if (!p[key] || typeof p[key] !== 'object') p[key] = {};
+  p.gear = { ...fresh.gear, ...saved?.gear };
+  for (const key of ['highscores', 'badges', 'seen', 'items']) if (!p[key] || typeof p[key] !== 'object') p[key] = {};
   for (const key of ['played', 'best', 'sessions', 'hardPlayed']) if (!p.stats[key] || typeof p.stats[key] !== 'object') p.stats[key] = {};
   if (!Array.isArray(p.history)) p.history = [];
   if (!Number.isFinite(p.xp)) p.xp = 0;
@@ -68,7 +74,7 @@ export function dateString(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function dayBefore(day) {
+export function dayBefore(day) {
   const [y, m, d] = day.split('-').map(Number);
   return dateString(new Date(y, m - 1, d - 1));
 }
@@ -155,6 +161,8 @@ export const BADGES = [
   { id: 'xp100k', sym: '100k', name: 'Hunderttausend', desc: 'Sammle insgesamt 100.000 Punkte und erreiche den Rang „Profi“.', test: (p) => p.xp >= 100000 },
   { id: 'legend', sym: '♛', name: 'Legende', desc: 'Sammle 160.000 Punkte und erreiche den Rang „Legende“.', test: (p) => p.xp >= 160000 },
   { id: 'president', sym: '1M', name: 'Clubpräsident', desc: 'Sammle eine Million Punkte und werde Clubpräsident, der höchste Rang.', test: (p) => p.xp >= 1000000 },
+  { id: 'chest1', sym: '▣', name: 'Schatzsucher', desc: 'Erledige an einem Tag alle drei Tagesaufgaben und öffne die Schatzkiste.', test: (p) => (p.stats.chests || 0) >= 1 },
+  { id: 'chest10', sym: '▣10', name: 'Schatzmeister', desc: 'Öffne zehn Schatzkisten.', test: (p) => (p.stats.chests || 0) >= 10 },
   { id: 'collector', sym: '30', name: 'Sammler', desc: 'Hole 30 andere Abzeichen.', test: (p) => Object.keys(p.badges).filter((id) => id !== 'collector').length >= 30 },
 ];
 
@@ -194,6 +202,7 @@ const PROGRESS = {
   xp100k: (p) => [p.xp, 100000],
   legend: (p) => [p.xp, 160000],
   president: (p) => [p.xp, 1000000],
+  chest10: (p) => [p.stats.chests || 0, 10],
   collector: (p) => [Object.keys(p.badges).filter((id) => id !== 'collector').length, 30],
 };
 
@@ -247,7 +256,13 @@ export function recordRound(p, r, categories, day = dateString()) {
     p.history.push({ d: day, g: r.gameId, l: r.level, s: Math.round(r.score), st: r.stars });
     if (p.history.length > 400) p.history.splice(0, p.history.length - 400);
   }
-  return { xp, dailyBonus, rankUp: rankOf(p.xp).index > before, badges: awardBadges(p, categories, day) };
+  // Tagesaufgaben: erledigte melden, bei allen dreien geht die Schatzkiste auf
+  const quest = r.counts !== false ? advanceMissions(p, r, categories, day) : { done: [], chest: null };
+  if (quest.chest) p.xp += quest.chest.xp;
+  return {
+    xp, dailyBonus, missions: quest.done, chest: quest.chest,
+    rankUp: rankOf(p.xp).index > before, badges: awardBadges(p, categories, day),
+  };
 }
 
 /** Verbucht ein beendetes Training ('short', 'medium', 'full', 'custom') oder einen Duellsieg ('duel'). */

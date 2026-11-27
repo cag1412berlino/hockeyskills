@@ -388,6 +388,55 @@ export function villain(ctx, kind, x, y, r, time = 0, look = null, dir = 0) {
   (VILLAIN_SHAPES[kind] ?? VILLAIN_SHAPES.spike)(ctx, x, y, r, time, look, dir);
 }
 
+let mascotHat = null;
+/** Legt fest, welche Kopfbedeckung der Trainer trägt (id eines Sammelstücks oder null). */
+export function setMascotHat(id) {
+  mascotHat = id;
+}
+
+/**
+ * Zeichnet eine Kopfbedeckung. Der Ursprung ist die Kopfmitte des Trainers, der Scheitel liegt bei y = -50.
+ */
+export function drawHat(ctx, id, time = 0) {
+  const INK = '#141a33';
+  const edge = (w = 5) => { ctx.lineWidth = w; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(); };
+  const paint = (color, w = 5) => { ctx.fillStyle = color; ctx.fill(); edge(w); };
+  ctx.save();
+  if (id === 'hat_cap') {
+    ctx.beginPath(); ctx.moveTo(-42, -30); ctx.bezierCurveTo(-42, -74, 42, -74, 42, -30); ctx.closePath(); paint('#1e7fe0');
+    ctx.beginPath(); ctx.moveTo(20, -32); ctx.quadraticCurveTo(62, -34, 70, -22); ctx.quadraticCurveTo(44, -24, 20, -24); ctx.closePath(); paint('#16407f');
+    ctx.beginPath(); ctx.arc(0, -64, 4.5, 0, Math.PI * 2); paint('#ffffff', 3);
+  } else if (id === 'hat_beanie') {
+    ctx.beginPath(); ctx.moveTo(-43, -26); ctx.bezierCurveTo(-44, -80, 44, -80, 43, -26); ctx.closePath(); paint('#ffffff');
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = '#1e7fe0'; ctx.fillRect(-50, -56, 100, 11);
+    ctx.restore();
+    ctx.beginPath(); ctx.roundRect(-46, -36, 92, 15, 7); paint('#1e7fe0');
+    ctx.beginPath(); ctx.arc(0, -76 + Math.sin(time * 5) * 1.5, 10, 0, Math.PI * 2); paint('#1e7fe0', 4);
+  } else if (id === 'hat_party') {
+    ctx.beginPath(); ctx.moveTo(-26, -34); ctx.lineTo(4, -100); ctx.lineTo(30, -36); ctx.closePath(); paint('#ffd23f');
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = '#1e7fe0'; ctx.lineWidth = 7;
+    for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-40, -44 - i * 18); ctx.lineTo(40, -32 - i * 18); ctx.stroke(); }
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(4, -100, 8, 0, Math.PI * 2); paint('#ffffff', 4);
+  } else if (id === 'hat_wizard') {
+    ctx.beginPath(); ctx.moveTo(-34, -34); ctx.quadraticCurveTo(-8, -70, 18, -108); ctx.quadraticCurveTo(18, -66, 36, -34); ctx.closePath(); paint('#2a2f8f');
+    ctx.beginPath(); ctx.ellipse(0, -33, 54, 10, 0, 0, Math.PI * 2); paint('#2a2f8f');
+    ctx.fillStyle = '#ffe36a';
+    for (const [sx, sy, sr] of [[-6, -56, 5], [12, -78, 4], [14, -48, 3.5]]) {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) { const an = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? sr * 0.45 : sr; ctx.lineTo(sx + Math.cos(an) * rr, sy + Math.sin(an) * rr); }
+      ctx.fill();
+    }
+  } else if (id === 'hat_tophat') {
+    ctx.beginPath(); ctx.roundRect(-30, -96, 60, 62, 5); paint('#1b1f33');
+    ctx.fillStyle = '#1e7fe0'; ctx.fillRect(-28, -52, 56, 11);
+    ctx.beginPath(); ctx.ellipse(0, -34, 52, 9, 0, 0, Math.PI * 2); paint('#1b1f33');
+  }
+  ctx.restore();
+}
+
 /**
  * Der Trainer, das Maskottchen: eine Comic-Figur mit grauen Haaren, Brille und weißer
  * Vereins-Trainingsjacke. Er atmet, blinzelt, schaut dem Ball nach und winkt ab und zu.
@@ -577,6 +626,7 @@ export function mascot(ctx, x, y, r, mood = 'happy', time = 0, look = null) {
     ctx.moveTo(-15, 25); ctx.quadraticCurveTo(0, 30, 15, 25); ctx.quadraticCurveTo(0, 41, -15, 25); ctx.closePath();
     fill('#ffffff', 4);
   }
+  if (mascotHat) drawHat(ctx, mascotHat, time);
   ctx.restore();
 
   // --- rechter Arm: winkt, jubelt oder hängt ---

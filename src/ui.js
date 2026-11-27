@@ -26,6 +26,18 @@ const stroke = (ctx, r) => {
 
 /** Symbole, jeweils um den Nullpunkt gezeichnet, r = Radius des Buttons. */
 export const icons = {
+  /** Schatzkiste: Sammlung und Tagesaufgaben */
+  chest(ctx, r) {
+    stroke(ctx, r);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.42, -r * 0.06); ctx.quadraticCurveTo(-r * 0.42, -r * 0.42, 0, -r * 0.42);
+    ctx.quadraticCurveTo(r * 0.42, -r * 0.42, r * 0.42, -r * 0.06);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.rect(-r * 0.42, -r * 0.06, r * 0.84, r * 0.42); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.roundRect(-r * 0.08, -r * 0.14, r * 0.16, r * 0.2, r * 0.04); ctx.fill();
+  },
   /** Pokal: Punkte-Rangliste */
   trophy(ctx, r) {
     stroke(ctx, r);

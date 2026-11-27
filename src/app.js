@@ -5,6 +5,8 @@ import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileSc
 import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { rankOf, recordRound, recordEvent, dailyGame, dateString } from './profile.js';
+import { CollectionScene } from './collection.js';
+import { setMascotHat } from './ui.js';
 import { randomTheme, worldPalette, bright } from './themes.js';
 
 /** Drei zufällige, verschiedene Einträge einer Liste. */
@@ -44,6 +46,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       // Bei fester Themenwelt gilt sie überall; bei "auto" bleibt im Menü die Welt der letzten Runde stehen.
       if (config.theme !== 'auto') engine.theme = config.theme;
       engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
+      app.applyGear();
       engine.bloomTo(0.35);
       engine.setScene(scene);
     },
@@ -96,6 +99,13 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     profileScene: () => app.show(new ProfileScene(app)),
     playerPick: () => app.show(new PlayerPickScene(app)),
     leaderboard: () => app.show(new LeaderboardScene(app)),
+    collection: () => app.show(new CollectionScene(app)),
+    /** Legt an, was der aktuelle Spieler aus seiner Sammlung gewählt hat (Ballschweif, Mütze des Trainers). */
+    applyGear() {
+      const gear = app.profile.gear ?? {};
+      engine.trailLook = gear.trail ? gear.trail.replace('trail_', '') : null;
+      setMascotHat(gear.hat ?? null);
+    },
     setPlayer: (id) => {
       config.current = id;
       saveConfig();

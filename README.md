@@ -49,7 +49,7 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 
 - In der Einrichtung lassen sich mehrere **Spieler** anlegen. Jeder hat eigene Bestwerte, einen Rang und ein Album.
 - Alle Punkte aus allen Übungen zählen für den **Rang**: Anfänger, Dribbler, Trickser, Techniker, Spielmacher, Kapitän, Profi, Legende und ganz oben, mit einer Million Punkten, Clubpräsident. Höhere Ränge schalten Funken und Sternchen im Ballschweif frei.
-- Es gibt 41 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
+- Es gibt 43 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
 - Der Kreis oben rechts im Menü führt zum Profil mit Rang und Album; dort lässt sich auch der Spieler wechseln. Liegt der Ball auf einem Abzeichen, steht unten, wie man es bekommt, bei zählbaren mit Fortschritt („7 von 10“); mit Sprachansagen wird es auch vorgelesen.
 - Die Einrichtung zeigt unter „Verlauf“ je Übung Runden, Bestwert, den Schnitt der letzten fünf Runden und die Tendenz.
 
@@ -81,6 +81,15 @@ Für alle Spiele gilt:
 - **Stoppzone:** In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit hinaus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
 - **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne. Die Schwellen sind je Übung und Stufe mit simulierten Spielern ermittelt (siehe „Austarieren“).
 - **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
+
+## Was zum Wiederkommen motiviert
+
+- **Nächstes Ziel:** Nach jeder Runde sagt der Trainer, was am nächsten liegt: der nächste Stern („Noch 40 Punkte bis zum dritten Stern“), eine offene Tagesaufgabe, der nächste Platz in der Wochenliste, ein fast erreichtes Abzeichen oder der nächste Rang.
+- **Jagd auf den eigenen Rekord:** Während der Runde steht oben, ob man gerade vor oder hinter dem Tempo seines Rekords liegt. Wird er geknackt, erscheint sofort „Neuer Rekord!“.
+- **Drei Tagesaufgaben:** Jeden Tag drei kleine Aufgaben, für alle Spieler dieselben (zum Beispiel „Hole 5 Sterne“ oder „Spiele eine Übung aus Stoppen“). Unten rechts im Menü zeigen drei Punkte den Stand.
+- **Schatzkiste:** Sind alle drei Aufgaben erledigt, geht die Kiste auf: 500 Bonuspunkte und ein neues Sammelstück. Danach ist für heute Schluss mit Aufgaben, morgen gibt es neue.
+- **Sammlung:** Zehn Sammelstücke – fünf bunte Ballschweife und fünf Mützen für den Trainer. Im Profil führt der Knopf mit der Kiste zur Sammlung; dort lässt sich an- und ablegen, was man schon hat.
+- **Krone der Woche:** Wer die Wochenliste anführt, trägt im Menü und in der Spielerwahl eine Krone am Namen. Beim ersten Start einer neuen Woche ruft der Trainer den Sieger der Vorwoche aus.
 
 ## Gewertet wird nur mit echtem Ball
 
@@ -275,6 +284,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
+| `src/quests.js`, `src/goals.js`, `src/collection.js` | Tagesaufgaben, Schatzkiste und Sammelstücke; nächste Ziele und Krone der Woche; Bildschirm „Sammlung“ |
 | `src/profile.js` | Spielerprofile, Rang, Abzeichen, Verlauf, Übung des Tages |
 | `src/bots.js` | Simulierte Spieler fürs Vormachen und Austarieren |
 | `src/tracker.js`, `src/calibration.js`, `src/homography.js`, `src/camera.js`, `src/simcam.js` | Ballerkennung, Kalibrierung und Kamera (echt und simuliert) |

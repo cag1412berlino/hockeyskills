@@ -3,13 +3,29 @@
 // Spiele rechnen in "Feld-Einheiten": Das Spielfeld ist immer 1000 hoch und
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
 import { theme, glow, noGlow, star } from './ui.js';
-import { THEMES, Floor } from './themes.js';
+import { THEMES, Floor, safeHue } from './themes.js';
 
 /**
  * Ballgröße in Feld-Einheiten, großzügig für Treffer-Abfragen. Sie hängt davon ab, wie groß
  * das projizierte Feld wirklich ist: Auf einem 3-Meter-Feld ist der Ball im Verhältnis kleiner.
  */
 export let BALL_RADIUS = 35;
+
+/**
+ * Farben eines freigeschalteten Ballschweifs (siehe quests.js). Jede Farbe hält Abstand zur
+ * Ballfarbe, damit die Kamera den Schweif nicht mit dem Ball verwechselt.
+ */
+export function trailColors(look) {
+  const hsl = (h, l = 62) => `hsl(${Math.round(safeHue(h))} 95% ${l}%)`;
+  switch (look) {
+    case 'rainbow': return [0, 40, 60, 130, 200, 270].map((h) => hsl(h));
+    case 'fire': return [hsl(8), hsl(24), hsl(44, 66)];
+    case 'ice': return [hsl(190, 78), hsl(205, 70), '#ffffff'];
+    case 'stars': return ['#ffffff', hsl(225, 80)];
+    case 'gold': return [hsl(46), hsl(38, 56), hsl(52, 76)];
+    default: return ['hsl(200 100% 72%)'];
+  }
+}
 
 /** Stellt die tatsächliche Kantenlänge des Felds in Metern ein (Höhe der Projektion). */
 export function setFieldMeters(meters) {
@@ -61,6 +77,7 @@ export class Engine {
     this.bloom = 0.3;          // 0..1: wie farbig und lebendig der Hintergrund gerade ist
     this.bloomGoal = 0.3;
     this.floor = new Floor();  // Spuren, die der Ball am Boden hinterlässt
+    this.trailLook = null;     // Schweif aus der Sammlung ('rainbow', 'fire', …) oder null
     this.trailStyle = 0;       // Ballschweif: 0 = schlicht, 1 = Funken, 2 = Sternchen (per Rang freigeschaltet)
     this.sparks = [];
     theme.world = this.world;
@@ -270,14 +287,17 @@ export class Engine {
   drawBall(ctx) {
     const { ball, trail } = this;
     const color = 'hsl(200 100% 72%)';
+    const looks = trailColors(this.trailLook);
+    const fancy = !!this.trailLook;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = color;
     for (let i = 1; i < trail.length; i++) {
+      // Sammel-Schweife sind bunt gestreift, kräftiger und etwas breiter
+      ctx.strokeStyle = looks[(i + Math.floor(this.time * 10)) % looks.length];
       // Nicht auf den Ball selbst leuchten: farbiges Licht würde seine Farbe für die Kamera verfälschen.
       if (Math.hypot(trail[i].x - ball.x, trail[i].y - ball.y) < BALL_RADIUS * 2) continue;
       const k = i / trail.length;
-      ctx.globalAlpha = k * 0.4;
-      ctx.lineWidth = 2 + k * BALL_RADIUS * 0.7;
+      ctx.globalAlpha = k * (fancy ? 0.75 : 0.4);
+      ctx.lineWidth = 2 + k * BALL_RADIUS * (fancy ? 0.95 : 0.7);
       ctx.beginPath();
       ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
       ctx.lineTo(trail[i].x, trail[i].y);
@@ -285,14 +305,15 @@ export class Engine {
     }
     ctx.globalAlpha = 1;
     // Freigeschaltete Schweife: Funken oder Sternchen, die hinter dem Ball zurückbleiben
-    if (this.trailStyle && Math.hypot(ball.vx, ball.vy) > 120 && Math.random() < 0.5) {
+    const sparkle = this.trailLook === 'stars' || this.trailLook === 'gold' ? 2 : this.trailStyle;
+    if (sparkle && Math.hypot(ball.vx, ball.vy) > 120 && Math.random() < 0.5) {
       this.sparks.push({ x: ball.x + (Math.random() - 0.5) * 50, y: ball.y + (Math.random() - 0.5) * 50, age: 0 });
     }
     this.sparks = this.sparks.filter((q) => (q.age += 1 / 60) < 0.6);
     for (const q of this.sparks) {
       if (Math.hypot(q.x - ball.x, q.y - ball.y) < BALL_RADIUS * 2) continue;
       ctx.globalAlpha = 1 - q.age / 0.6;
-      if (this.trailStyle >= 2) star(ctx, q.x, q.y, 9 * (1 - q.age), '#fff');
+      if (sparkle >= 2) star(ctx, q.x, q.y, 9 * (1 - q.age), this.trailLook === 'gold' ? looks[0] : '#fff');
       else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(q.x, q.y, 4 * (1 - q.age) + 1, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.globalAlpha = 1;

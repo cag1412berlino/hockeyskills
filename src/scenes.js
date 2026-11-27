@@ -1,8 +1,10 @@
 // Die Bildschirme rund ums Spielen: Hauptmenü, Schwerpunkt, Stufenwahl, Ergebnis, Profil.
 import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
 import { BRAND } from './config.js';
-import { ButtonScene, grid, medals, scoreKey, LEVEL_NAMES, SPEEDS } from './scenebase.js';
-import { rankOf, BADGES, badgeProgress, weekStats, ageOf, ageClass } from './profile.js';
+import { ButtonScene, grid, medals, scoreKey, thresholds, LEVEL_NAMES, SPEEDS } from './scenebase.js';
+import { todaysMissions } from './quests.js';
+import { nextGoals, weekLeader } from './goals.js';
+import { rankOf, BADGES, badgeProgress, weekStats, weekStart, dayBefore, ageOf, ageClass } from './profile.js';
 
 export { PlayScene } from './play.js';
 export { medals } from './scenebase.js';
@@ -94,6 +96,14 @@ export class MenuScene extends ButtonScene {
       icon: item.icon, label: item.name, sub: item.sub,
       onActivate: this.act(item.go),
     }));
+    // Einmal je Woche den Sieger der Vorwoche ausrufen
+    const week = weekStart(app.today());
+    if (app.config.weekSeen !== week) {
+      this.champion = app.config.weekSeen ? weekLeader(app.config.profiles, dayBefore(week)) : null;
+      app.config.weekSeen = week;
+      app.save();
+      if (this.champion) app.voice.say(`Sieger der letzten Woche: ${this.champion.name}!`);
+    }
     // Spieler-Button oben rechts: führt zu Rang und Abzeichen
     this.buttons.push(new DwellButton({
       x: w - 82, y: 84, r: 50, color: colors[3], icon: initial(app.profile.name),
@@ -105,8 +115,17 @@ export class MenuScene extends ButtonScene {
   line() {
     const { app } = this;
     const p = app.profile;
+    const today = app.today();
     const lines = [`Hallo ${p.name}!`, 'Lege den Ball auf einen Kreis'];
-    if (p.daily !== app.today()) lines.push(`Heute doppelte Punkte bei „${app.daily().name}“`);
+    // Montags (oder beim ersten Start der Woche): Wer hat die letzte Woche gewonnen?
+    if (this.champion) lines.unshift(`Sieger der letzten Woche: ${this.champion.name}!`);
+    const quest = todaysMissions(p, app.categories, today);
+    if (quest.chest) lines.push('Alle Aufgaben geschafft – morgen gibt es neue!');
+    else for (const m of quest.list) if (m.n < m.target) lines.push(`Aufgabe: ${m.text}${m.target > 1 && m.n ? ` (${m.n.toLocaleString('de-DE')} von ${m.target.toLocaleString('de-DE')})` : ''}`);
+    const leader = weekLeader(app.config.profiles, today);
+    if (leader === p) lines.push('Du trägst die Krone der Woche!');
+    else if (leader) lines.push(`${leader.name} führt diese Woche – hol dir die Krone!`);
+    if (p.daily !== today) lines.push(`Heute doppelte Punkte bei „${app.daily().name}“`);
     if (p.days.streak >= 2) lines.push(`${p.days.streak} Tage in Folge – stark!`);
     return lines[Math.floor(this.time / 4) % lines.length];
   }
@@ -126,7 +145,8 @@ export class MenuScene extends ButtonScene {
     }
     title(ctx, 'Blau-Weiss', cx, 78, 66, '#fff');
     title(ctx, 'Skiller Academy', cx, 160, 66, c[0]);
-    caption(ctx, `${BRAND.club}  ·  ${app.profile.name}, ${rankOf(app.profile.xp).name}`, cx, 222, 19, tone(c[3], 82), 'center');
+    const crown = weekLeader(app.config.profiles, app.today()) === app.profile ? '♛ ' : '';
+    caption(ctx, `${BRAND.club}  ·  ${crown}${app.profile.name}, ${rankOf(app.profile.xp).name}`, cx, 222, 19, tone(c[3], 82), 'center');
 
     // Buttons leicht versetzt schweben lassen (der Spieler-Button oben rechts bleibt ruhig)
     this.buttons.forEach((b, i) => {
@@ -137,6 +157,26 @@ export class MenuScene extends ButtonScene {
     });
     mascot(ctx, 76, 918, 62, 'happy', this.time, this.look);
     bubble(ctx, this.line(), 150, 900, 26);
+    // Tagesaufgaben unten rechts: drei Punkte und die Schatzkiste
+    const quest = todaysMissions(app.profile, app.categories, app.today());
+    quest.list.forEach((m, i) => {
+      const done = m.n >= m.target;
+      ctx.beginPath();
+      ctx.arc(w - 208 + i * 38, 950, 12, 0, Math.PI * 2);
+      ctx.fillStyle = done ? '#7dffb0' : 'rgba(255,255,255,0.12)';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = done ? '#7dffb0' : 'rgba(255,255,255,0.5)';
+      ctx.stroke();
+      if (done) text(ctx, '✔', w - 208 + i * 38, 951, 15, '#0b1d4a', 'center', 0, 600);
+    });
+    ctx.save();
+    ctx.translate(w - 70, 946);
+    if (quest.chest) glow(ctx, '#ffd76a', 20);
+    ctx.globalAlpha = quest.chest ? 1 : 0.7;
+    icons.chest(ctx, 46);
+    noGlow(ctx);
+    ctx.restore();
   }
 }
 
@@ -218,6 +258,9 @@ export function rewardLines(rewards, profile) {
   if (rewards.practice) return ['Übungsmodus: nicht gewertet'];
   const lines = [`+${rewards.xp} Punkte${rewards.dailyBonus ? ' (Tagesbonus x2)' : ''}`];
   if (rewards.rankUp) lines.push(`Aufstieg: ${rankOf(profile.xp).name}!`);
+  // Das Wichtigste zuerst: Im Ergebnis ist nur Platz für vier Zeilen.
+  if (rewards.chest) lines.push(`Schatzkiste! +${rewards.chest.xp} Punkte${rewards.chest.item ? ` · neu: ${rewards.chest.item.name}` : ''}`);
+  for (const m of rewards.missions ?? []) lines.push(`Aufgabe geschafft: ${m}`);
   for (const b of rewards.badges ?? []) lines.push(`Neues Abzeichen: ${b.name}`);
   return lines;
 }
@@ -227,7 +270,10 @@ export class ResultScene extends ButtonScene {
   constructor(app, r) {
     super(app);
     Object.assign(this, r);
-    this.lines = rewardLines(r.rewards, app.profile);
+    this.lines = rewardLines(r.rewards, app.profile).slice(0, 4);
+    // Was als Nächstes in Reichweite liegt, sagt der Trainer in seiner Sprechblase
+    const goals = nextGoals(app.profile, app.config.profiles, { score: r.score, stars: r.stars, thresholds: thresholds(r.game, r.level) }, app.categories, app.today());
+    this.goals = (app.practice() ? goals.filter((g) => g.includes('Stern')) : goals).slice(0, 3);
     this.accent = app.accentOf(r.game) ?? app.palette()[1];
     this.party = r.record || r.stars === 3 || r.rewards?.rankUp ? new Confetti(app.engine.field.w, [...app.worldPalette(), '#fff']) : null;
     const said = [r.record ? 'Neuer Rekord!' : 'Geschafft!', `${r.score} Punkte.`];
@@ -279,10 +325,11 @@ export class ResultScene extends ButtonScene {
     // Was es fürs Profil gab, erscheint Zeile für Zeile
     this.lines.forEach((line, i) => {
       if (this.time < 1.2 + i * 0.5) return;
-      text(ctx, line, cx, 575 + i * 44, i ? 30 : 26, i ? '#fff' : tone(c[3], 82), 'center', 0, i ? 500 : 400);
+      text(ctx, line, cx, 562 + i * 40, i ? 28 : 26, i ? '#fff' : tone(c[3], 82), 'center', 0, i ? 500 : 400);
     });
     drawRank(ctx, this.app.profile, 230, 800, 300, c);
     mascot(ctx, 110, 860, 62, this.stars >= 2 || this.record ? 'cheer' : this.stars ? 'happy' : 'sad', this.time, this.look);
+    if (this.goals.length && this.time > 2) bubble(ctx, this.goals[Math.floor((this.time - 2) / 3.5) % this.goals.length], 190, 738, 22);
     super.draw(ctx);
     this.party?.draw(ctx);
   }
@@ -306,15 +353,19 @@ export class ProfileScene extends ButtonScene {
       }));
     }
     this.buttons.push(new DwellButton({
-      x: w - 70, y: 800, r: 40, color: colors[1], icon: icons.trophy,
+      x: w - 70, y: 74, r: 42, color: colors[1], icon: icons.trophy,
       onActivate: this.act(() => this.app.leaderboard()),
+    }));
+    this.buttons.push(new DwellButton({
+      x: 70, y: 74, r: 42, color: colors[0], icon: icons.chest,
+      onActivate: this.act(() => this.app.collection()),
     }));
     // Album: acht Abzeichen je Reihe
     const cols = 8, cell = Math.min(150, (w - 64) / cols);
     this.spots = BADGES.map((badge, i) => ({
       badge,
       x: w / 2 + ((i % cols) - (cols - 1) / 2) * cell,
-      y: 296 + Math.floor(i / cols) * 98,
+      y: 290 + Math.floor(i / cols) * 92,
     }));
     this.chosen ??= null;
   }
@@ -545,7 +596,7 @@ export class PlayerPickScene extends ButtonScene {
     const colors = app.palette();
     this.buttons = grid(app.config.profiles.slice(0, 8), this.field.w, (p, x, y, r, i) => new DwellButton({
       x, y: y - 20, r, color: p.id === app.config.current ? '#fff' : colors[i % colors.length],
-      icon: initial(p.name), label: p.name, sub: rankOf(p.xp).name,
+      icon: initial(p.name), label: `${weekLeader(app.config.profiles, app.today()) === p ? '♛ ' : ''}${p.name}`, sub: rankOf(p.xp).name,
       onActivate: this.act(() => app.setPlayer(p.id)),
     }));
     this.buttons.push(new DwellButton({

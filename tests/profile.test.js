@@ -145,3 +145,55 @@ test('Rang: mit einer Million Punkten wird man Clubpräsident', () => {
   assert.ok(r.rankUp);
   assert.ok(p.badges.president);
 });
+
+test('Tagesaufgaben: drei am Tag, für alle gleich, morgen andere; Kiste bringt Punkte und Sammelstück', async () => {
+  const { missionsFor, todaysMissions, ITEMS, CHEST_XP } = await import('../src/quests.js');
+  const a = missionsFor('2026-11-27', categories), b = missionsFor('2026-11-27', categories);
+  assert.equal(a.length, 3);
+  assert.deepEqual(a, b, 'gleicher Tag, gleiche Aufgaben');
+  assert.equal(new Set(a.map((m) => m.type)).size, 3, 'drei verschiedene Arten');
+  const days = new Set();
+  for (let d = 1; d <= 28; d++) days.add(missionsFor(`2026-02-${String(d).padStart(2, '0')}`, categories).map((m) => m.text).join('|'));
+  assert.ok(days.size > 20, 'die Tage unterscheiden sich');
+
+  const p = newProfile('Test');
+  let chest = null, done = 0, xp = 0;
+  for (const g of games) {
+    const before = p.xp;
+    const r = recordRound(p, round({ gameId: g.id, level: 2, score: 900, stars: 3, maxMult: 4 }), categories, '2026-11-27');
+    done += r.missions.length;
+    xp += p.xp - before;
+    chest ??= r.chest;
+  }
+  assert.equal(done, 3);
+  assert.equal(chest.xp, CHEST_XP);
+  assert.equal(chest.item.id, ITEMS[0].id);
+  assert.equal(p.gear.trail, ITEMS[0].id, 'das neue Sammelstück ist gleich angelegt');
+  assert.equal(xp, games.length * 900 + CHEST_XP, 'Rundenpunkte plus Kiste');
+  assert.ok(p.badges.chest1);
+  assert.equal(todaysMissions(p, categories, '2026-11-27').chest, true);
+  // Am nächsten Tag gibt es neue Aufgaben und die nächste Kiste
+  const next = todaysMissions(p, categories, '2026-11-28');
+  assert.equal(next.chest, false);
+  assert.ok(next.list.every((m) => m.n === 0));
+  for (const g of games) recordRound(p, round({ gameId: g.id, level: 2, score: 900, stars: 3, maxMult: 4 }), categories, '2026-11-28');
+  assert.equal(Object.keys(p.items).length, 2);
+  assert.equal(p.gear.hat, ITEMS[1].id);
+});
+
+test('Nächste Ziele: Stern, Aufgabe, Wochenplatz, Abzeichen, Rang', async () => {
+  const { nextGoals, weekLeader } = await import('../src/goals.js');
+  const a = newProfile('A'), b = newProfile('B');
+  for (let i = 0; i < 3; i++) recordRound(b, round({ score: 100, stars: 0 }), categories, '2026-11-26');
+  for (let i = 0; i < 6; i++) recordRound(a, round({ score: 100, stars: 0 }), categories, '2026-11-20'); // Vorwoche
+  recordRound(a, round({ score: 100, stars: 1 }), categories, '2026-11-27');
+  const goals = nextGoals(a, [a, b], { score: 460, stars: 1, thresholds: [200, 500, 900] }, categories, '2026-11-27');
+  assert.equal(goals[0], 'Noch 40 Punkte bis zum zweiten Stern');
+  assert.ok(goals.some((g) => g.startsWith('Aufgabe: ') || g.startsWith('Nur noch eine Aufgabe')), goals.join(' / '));
+  assert.ok(goals.includes('Noch 3 Spiele bis Platz 1 der Woche'), goals.join(' / '));
+  assert.ok(goals.includes('Abzeichen „Fleißig“: 7 von 10'), goals.join(' / '));
+  assert.ok(goals.at(-1).endsWith('bis „Dribbler“'));
+  assert.equal(weekLeader([a, b], '2026-11-27'), b);
+  assert.equal(weekLeader([a, b], '2026-11-30'), null, 'neue Woche, noch niemand');
+  assert.equal(nextGoals(a, [a], { score: 950, stars: 3, thresholds: [200, 500, 900] }, categories, '2026-11-27').some((g) => g.includes('bis zum')), false);
+});

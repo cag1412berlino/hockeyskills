@@ -51,6 +51,9 @@ export class PlayScene {
     this.slow = 0;
     this.lucky = null;       // Glücksstern { x, y, left }
     this.lastScore = 0;
+    // Jagd auf den eigenen Rekord (nur in der einzelnen Übung, nicht im Training oder Übungsmodus)
+    this.best = !session && !app.practice?.() ? app.profile?.highscores?.[scoreKey(app, game, level)] || 0 : 0;
+    this.beaten = false;
     this.lastLives = this.lives;
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
@@ -183,6 +186,11 @@ export class PlayScene {
   update(dt, ball) {
     if (this.exit.update(dt, ball)) return;
     if (this.banner && (this.banner.age += dt) > 1.4) this.banner = null;
+    if (this.best > 0 && !this.beaten && this.score > this.best) {
+      this.beaten = true;
+      this.banner = { str: 'Neuer Rekord!', age: 0, color: '#7dffb0' };
+      this.app.sound.power?.();
+    }
     // Punktzahl federt kurz auf, wenn Punkte dazukommen; ein verlorenes Herz zuckt.
     if (this.score > this.lastScore) this.bump = 1;
     this.lastScore = this.score;
@@ -342,6 +350,13 @@ export class PlayScene {
     for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
 
     caption(ctx, 'Punkte', 42, 76, 18);
+    if (this.best > 0) {
+      // Liegt man gerade vor oder hinter dem Tempo des eigenen Rekords?
+      const pace = this.best * Math.min(1, this.elapsed / this.duration);
+      const ahead = this.score >= pace;
+      caption(ctx, this.beaten ? `Rekord ${Math.round(this.best)} geknackt!` : `Rekord ${Math.round(this.best)} · ${ahead ? '▲ du liegst vorn' : '▼ du liegst zurück'}`,
+        w / 2, 76, 18, this.beaten || ahead ? '#7dffb0' : 'rgba(255,255,255,0.65)', 'center');
+    }
     text(ctx, Math.round(this.shownScore), 40, 118, 66 * (1 + 0.14 * (this.bump || 0)), '#fff', 'left', 8, 600);
     const mult = this.multiplier();
     if (mult > 1) {
