@@ -32,6 +32,24 @@ export class Camera {
     return this.stream.getVideoTracks()[0].getSettings();
   }
 
+  /**
+   * Schaltet Belichtungs-, Weißabgleich- und Fokus-Automatik aus (oder wieder ein).
+   * Ohne Automatik bleibt die Ballfarbe im Kamerabild stabil, auch wenn das projizierte Bild
+   * heller oder dunkler wird. Liefert false, wenn die Kamera das nicht unterstützt.
+   */
+  async lockAuto(on) {
+    const track = this.stream?.getVideoTracks()[0];
+    const caps = track?.getCapabilities?.() ?? {};
+    const mode = on ? 'manual' : 'continuous';
+    const settings = {};
+    for (const key of ['exposureMode', 'whiteBalanceMode', 'focusMode']) {
+      if (caps[key]?.includes(mode)) settings[key] = mode;
+    }
+    if (!Object.keys(settings).length) return false;
+    await track.applyConstraints({ advanced: [settings] });
+    return true;
+  }
+
   stop() {
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;

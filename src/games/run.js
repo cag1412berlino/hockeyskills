@@ -217,6 +217,7 @@ class Run {
 
 export default {
   id: 'run',
+  hint: 'Bleib mit dem Ball auf der Bahn!',
   name: 'Rennen',
   duration: 60,
   medals: [150, 300, 480],

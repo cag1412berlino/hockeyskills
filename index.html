@@ -9,6 +9,7 @@
 <body>
   <canvas id="stage"></canvas>
   <video id="cam" playsinline muted hidden></video>
+  <div id="debug" hidden><canvas id="debug-view" width="480" height="270"></canvas><p id="debug-info"></p></div>
 
   <div id="setup">
     <div class="panel">
@@ -22,12 +23,16 @@
         </div>
         <canvas id="preview" width="480" height="270"></canvas>
         <p id="track-status" class="status">Kamera ist aus.</p>
+        <label><input type="checkbox" id="lock-auto"> Kamera-Automatik sperren (Belichtung, Weißabgleich)</label>
+        <p class="hint">Erst einschalten, wenn Beamer und Licht so sind wie beim Spielen. Dann bleibt die Ballfarbe im Bild stabil.</p>
       </section>
 
       <section>
         <h2>2. Ballfarbe</h2>
         <div id="ball-presets" class="row"></div>
         <p class="hint">Erkannte Ballfarbe leuchtet im Kamerabild türkis. Passt es nicht: im Kamerabild direkt auf den Ball klicken.</p>
+        <label>Farbtoleranz <input type="range" id="tolerance" min="6" max="40" step="1"> <span id="tolerance-value"></span></label>
+        <p class="hint">Höher, wenn der Ball nicht immer erkannt wird. Niedriger, wenn anderes türkis aufleuchtet.</p>
       </section>
 
       <section>
@@ -36,6 +41,14 @@
           <label><input type="radio" name="shape" value="square"> Quadrat</label>
           <label><input type="radio" name="shape" value="full"> Ganze Projektionsfläche</label>
         </div>
+        <div class="row">
+          <label>Bild drehen
+            <select id="rotation">
+              <option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">So drehen, dass die Schrift vom Platz des Kindes aus richtig herum steht. 90° und 270° gehen nur beim Quadrat.</p>
       </section>
 
       <section>
@@ -55,7 +68,11 @@
       </section>
 
       <p id="message" class="error"></p>
-      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>Esc</b> zurück / Einrichtung</p>
+      <section class="row">
+        <label><input type="checkbox" id="sound-on"> Ton</label>
+        <button id="btn-reset-scores">Bestwerte löschen</button>
+      </section>
+      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>R</b> Bild drehen · <b>Leertaste</b> Pause · <b>M</b> Ton · <b>D</b> Kamerabild einblenden · <b>Esc</b> zurück / Einrichtung</p>
     </div>
   </div>
 

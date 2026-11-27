@@ -238,6 +238,7 @@ class Line {
 
 export default {
   id: 'line',
+  hint: 'Führe den Ball an der Linie entlang!',
   name: 'Linie',
   duration: 60,
   medals: [150, 320, 520],

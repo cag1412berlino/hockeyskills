@@ -17,6 +17,7 @@ const stage = $('#stage');
 const video = $('#cam');
 const setupEl = $('#setup');
 const preview = $('#preview');
+const debugEl = $('#debug');
 
 const sound = new Sound();
 const engine = new Engine(stage, config);
@@ -31,6 +32,7 @@ let detection = null;   // letzte Ballposition im Kamerabild
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
+const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0 };
 
 // ---------- Navigation zwischen den Bildschirmen ----------
 
@@ -65,6 +67,7 @@ engine.ballProvider = () => {
 };
 
 engine.onFrame = () => {
+  countFps();
   if (!source || calibrating) return;
   if (sim) {
     sim.render();
@@ -73,7 +76,9 @@ engine.onFrame = () => {
     lastVideoTime = video.currentTime;
   }
   detection = tracker.process(source, config.ball);
-  if (!setupEl.hidden) drawPreview();
+  fps.tracked++;
+  if (!setupEl.hidden) drawPreview(preview);
+  if (!debugEl.hidden) drawPreview($('#debug-view'));
 };
 
 // ---------- Einrichtung ----------
@@ -95,6 +100,10 @@ function refreshSetup() {
   for (const radio of document.querySelectorAll('input[name=shape]')) {
     radio.checked = radio.value === config.fieldShape;
   }
+  $('#tolerance').value = config.ball.hTol;
+  $('#tolerance-value').textContent = `±${config.ball.hTol}°`;
+  $('#rotation').value = String(config.rotation);
+  $('#sound-on').checked = !config.muted;
   const c = config.calib;
   $('#calib-status').textContent = !c
     ? 'Noch nicht kalibriert.'
@@ -103,13 +112,29 @@ function refreshSetup() {
       : `Kalibriert ✔ (Abweichung ${(c.error * 100).toFixed(1)} % der Fläche${c.error > 0.03 ? ' – eher ungenau, bitte wiederholen' : ''})`;
 }
 
-function drawPreview() {
+/** Zählt einmal pro Sekunde, wie viele Bilder gezeichnet und wie viele Kamerabilder ausgewertet wurden. */
+function countFps() {
+  fps.frames++;
+  const now = performance.now();
+  if (now - fps.since < 1000) return;
+  fps.render = fps.frames;
+  fps.camera = fps.tracked;
+  fps.frames = fps.tracked = 0;
+  fps.since = now;
+  if (!debugEl.hidden) {
+    $('#debug-info').textContent =
+      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'}`;
+  }
+}
+
+/** Zeichnet das Kamerabild mit türkis markierter Ballfarbe in die Einrichtung oder die Einblendung. */
+function drawPreview(target) {
   const frame = tracker.frame;
   if (!frame) return;
   const { width: w, height: h } = frame;
-  if (preview.width !== w || preview.height !== h) {
-    preview.width = w;
-    preview.height = h;
+  if (target.width !== w || target.height !== h) {
+    target.width = w;
+    target.height = h;
   }
   const out = new ImageData(new Uint8ClampedArray(frame.data), w, h);
   const mask = tracker.mask;
@@ -119,7 +144,7 @@ function drawPreview() {
     out.data[i * 4 + 1] = 255;
     out.data[i * 4 + 2] = 255;
   }
-  const ctx = preview.getContext('2d');
+  const ctx = target.getContext('2d');
   ctx.putImageData(out, 0, 0);
   if (detection) {
     ctx.strokeStyle = '#fff';
@@ -128,7 +153,7 @@ function drawPreview() {
     ctx.arc(detection.x * w, detection.y * h, 14, 0, Math.PI * 2);
     ctx.stroke();
   }
-  $('#track-status').textContent = detection ? 'Ball erkannt ✔' : 'Kein Ball im Bild erkannt.';
+  if (target === preview) $('#track-status').textContent = detection ? 'Ball erkannt ✔' : 'Kein Ball im Bild erkannt.';
 }
 
 async function startCamera(deviceId) {
@@ -189,6 +214,32 @@ function buildSetup() {
     };
   }
 
+  $('#tolerance').oninput = (e) => {
+    config.ball.hTol = Number(e.target.value);
+    saveConfig();
+    refreshSetup();
+  };
+  $('#rotation').onchange = (e) => setRotation(Number(e.target.value));
+  $('#sound-on').onchange = (e) => setMuted(!e.target.checked);
+  $('#lock-auto').onchange = async (e) => {
+    setMessage();
+    try {
+      const ok = await camera.lockAuto(e.target.checked);
+      if (!ok) {
+        e.target.checked = false;
+        setMessage('Diese Kamera lässt sich nicht fest einstellen. Das ist kein Problem, die Ballfarbe kann dann nur etwas stärker schwanken.');
+      }
+    } catch (err) {
+      e.target.checked = false;
+      setMessage(`Kamera-Automatik konnte nicht umgestellt werden (${err.message}).`);
+    }
+  };
+  $('#btn-reset-scores').onclick = () => {
+    if (!confirm('Alle Bestwerte löschen?')) return;
+    config.highscores = {};
+    saveConfig();
+  };
+
   $('#btn-camera').onclick = () => startCamera($('#camera-select').value || config.cameraId);
   $('#camera-select').onchange = (e) => startCamera(e.target.value);
   $('#btn-fullscreen').onclick = toggleFullscreen;
@@ -203,9 +254,35 @@ function buildSetup() {
   };
 }
 
+function setRotation(deg) {
+  config.rotation = ((deg % 360) + 360) % 360;
+  saveConfig();
+  engine.resize();
+  refreshSetup();
+}
+
+function setMuted(muted) {
+  config.muted = sound.muted = muted;
+  saveConfig();
+  refreshSetup();
+}
+
+/** Verhindert, dass der Bildschirm (und damit der Beamer) während des Spielens abschaltet. */
+async function keepAwake() {
+  try {
+    await navigator.wakeLock?.request('screen');
+  } catch {
+    // nicht unterstützt oder vom System abgelehnt – dann eben ohne
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && setupEl.hidden) keepAwake();
+});
+
 function startPlaying() {
   setMessage();
   sound.resume();
+  keepAwake();
   showSetup(false);
   app.menu();
   const aspect = stage.width / stage.height;
@@ -290,7 +367,12 @@ async function calibrate(kind) {
 window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLSelectElement) return;
   const key = e.key.toLowerCase();
+  if (e.target instanceof HTMLInputElement && e.target.type !== 'checkbox' && e.target.type !== 'radio') return;
   if (key === 'f') toggleFullscreen();
+  else if (key === 'r') setRotation(config.rotation + 90);
+  else if (key === 'm') { setMuted(!config.muted); engine.showToast(config.muted ? 'Ton aus' : 'Ton an', 1.5); }
+  else if (key === 'd') debugEl.hidden = !debugEl.hidden;
+  else if (key === ' ' && setupEl.hidden) { e.preventDefault(); engine.scene?.togglePause?.(); }
   else if (key === 'c' && !calibrating && source) calibrate('auto');
   else if (key === 'escape') {
     if (cancelCalibration) cancelCalibration();
@@ -320,6 +402,7 @@ $('#brand').textContent = BRAND.name;
 // Schrift vorab laden, damit schon das erste Bild stimmt.
 document.fonts?.load('600 20px "Fredoka"').catch(() => {});
 
+sound.muted = config.muted;
 buildSetup();
 app.menu();
 showSetup(true);
@@ -331,4 +414,9 @@ if (SIM) {
   navigator.permissions.query({ name: 'camera' })
     .then((p) => { if (p.state === 'granted') startCamera(config.cameraId); })
     .catch(() => {});
+}
+
+// Offline-Betrieb: Einmal online geladen, startet die App danach auch ohne Internet.
+if ('serviceWorker' in navigator && !SIM) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }

@@ -5,6 +5,7 @@
 import { theme, glow, noGlow } from './ui.js';
 
 export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
+const MAX_HEIGHT = 1440;       // höchste Bildhöhe in Pixeln, mit der gerechnet wird
 
 export class Engine {
   constructor(canvas, config) {
@@ -37,18 +38,24 @@ export class Engine {
   }
 
   resize() {
-    const dpr = window.devicePixelRatio || 1;
+    // Auflösung begrenzen: Leuchteffekte kosten sonst auf 4K-Beamern zu viel Rechenzeit.
+    const dpr = Math.min(window.devicePixelRatio || 1, MAX_HEIGHT / window.innerHeight);
     const cw = (this.canvas.width = Math.round(window.innerWidth * dpr));
     const ch = (this.canvas.height = Math.round(window.innerHeight * dpr));
     const f = this.field;
+    const full = this.config.fieldShape === 'full';
     const side = Math.min(cw, ch);
-    const pw = this.config.fieldShape === 'full' ? cw : side;
-    const ph = this.config.fieldShape === 'full' ? ch : side;
-    f.x = (cw - pw) / 2;
-    f.y = (ch - ph) / 2;
-    f.scale = ph / 1000;
-    f.w = pw / f.scale;
+    f.pw = full ? cw : side; // Größe des Felds in Bildschirm-Pixeln
+    f.ph = full ? ch : side;
+    f.x = (cw - f.pw) / 2;
+    f.y = (ch - f.ph) / 2;
+    f.scale = f.ph / 1000;
+    f.w = f.pw / f.scale;
     f.h = 1000;
+    // Drehung, damit Schrift und Spiel zum Kind zeigen. Ein nicht quadratisches Feld
+    // lässt sich nur auf den Kopf stellen, nicht um 90 Grad drehen.
+    const rot = this.config.rotation || 0;
+    f.rot = ((full ? Math.floor(rot / 180) * 180 : rot) * Math.PI) / 180;
     theme.px = f.scale;
     this.scene?.layout?.();
   }
@@ -58,8 +65,16 @@ export class Engine {
     const { width: cw, height: ch } = this.canvas;
     const f = this.field;
     const x0 = f.x / cw, y0 = f.y / ch;
-    const x1 = (f.x + f.w * f.scale) / cw, y1 = (f.y + f.h * f.scale) / ch;
+    const x1 = (f.x + f.pw) / cw, y1 = (f.y + f.ph) / ch;
     return [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+  }
+
+  /** Rechnet Bildschirm-Pixel in Feld-Einheiten um (berücksichtigt die Drehung). */
+  toField(px, py) {
+    const f = this.field;
+    const dx = px - (f.x + f.pw / 2), dy = py - (f.y + f.ph / 2);
+    const c = Math.cos(-f.rot), s = Math.sin(-f.rot);
+    return { x: (dx * c - dy * s) / f.scale + f.w / 2, y: (dx * s + dy * c) / f.scale + f.h / 2 };
   }
 
   setScene(scene) {
@@ -82,8 +97,8 @@ export class Engine {
     const py = ((e.clientY - r.top) / r.height) * this.canvas.height;
     if (this.clickOverride) return this.clickOverride(px, py);
     if (this.override || this.paused) return;
-    const f = this.field;
-    this.scene?.onClick?.((px - f.x) / f.scale, (py - f.y) / f.scale);
+    const p = this.toField(px, py);
+    this.scene?.onClick?.(p.x, p.y);
   }
 
   updateBall(dt) {
@@ -92,8 +107,7 @@ export class Engine {
     const p = this.ballProvider();
     let x, y, ok = false;
     if (p) {
-      x = (p.x * this.canvas.width - f.x) / f.scale;
-      y = (p.y * this.canvas.height - f.y) / f.scale;
+      ({ x, y } = this.toField(p.x * this.canvas.width, p.y * this.canvas.height));
       // Erkennungen weit außerhalb des Spielfelds sind kein Ball.
       ok = x > -100 && y > -100 && x < f.w + 100 && y < f.h + 100;
     }
@@ -197,8 +211,10 @@ export class Engine {
       if (!this.paused) this.scene.update(dt, ball);
       this.shakeAmt *= Math.max(0, 1 - 7 * dt);
       ctx.save();
-      ctx.translate(f.x, f.y);
+      ctx.translate(f.x + f.pw / 2, f.y + f.ph / 2);
+      ctx.rotate(f.rot);
       ctx.scale(f.scale, f.scale);
+      ctx.translate(-f.w / 2, -f.h / 2);
       ctx.beginPath();
       ctx.rect(0, 0, f.w, f.h);
       ctx.clip();

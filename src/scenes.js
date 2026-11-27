@@ -6,6 +6,7 @@ const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
 const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
 const STAGES = 4;            // so oft wird ein Spiel innerhalb einer Runde schwieriger
 const STREAK_STEPS = [3, 6, 10]; // ab so vielen schnellen Treffern in Folge gibt es x2, x3, x4
+const AWAY_PAUSE = 2.5;      // nach so vielen Sekunden ohne Ball pausiert das Spiel
 const scoreKey = (app, game, level) => `${game.id}:${level}:${app.config.speed}`;
 
 /** Wie viele der drei Sterne eine Punktzahl wert ist. */
@@ -99,7 +100,7 @@ export class LevelScene extends ButtonScene {
         x: (w / 3) * (level - 0.5), y: 480, r,
         color: colors[level - 1],
         icon: icons.stars(level), label: LEVEL_NAMES[level - 1],
-        sub: best ? `Rekord ${best}` : '',
+        sub: best ? `${'★'.repeat(medals(this.game, best))} Rekord ${best}`.trim() : '',
         onActivate: this.act(() => this.app.play(this.game, level)),
       });
     });
@@ -144,6 +145,10 @@ export class PlayScene {
     this.streakLeft = 0;     // Sekunden, bis die Serie verfällt
     this.streakWindow = 1;
     this.banner = null;      // große Einblendung in der Bildmitte
+    this.away = 0;           // Sekunden, seit der Ball zuletzt gesehen wurde
+    this.paused = false;     // automatisch, wenn der Ball länger fehlt
+    this.userPaused = false; // per Leertaste
+    this.resumeIn = 0;
     const scene = this;
     // Das ist alles, was ein Spiel von der App bekommt.
     this.env = {
@@ -209,6 +214,18 @@ export class PlayScene {
       }
       return;
     }
+    // Fehlt der Ball länger (weggerollt, verdeckt), hält das Spiel an, bis er wieder da ist.
+    this.away = ball.visible ? 0 : this.away + dt;
+    if (!this.paused && this.away > AWAY_PAUSE) {
+      this.paused = true;
+      this.resumeIn = 1;
+    }
+    if (this.paused) {
+      this.resumeIn = ball.visible ? this.resumeIn - dt : 1;
+      if (this.resumeIn <= 0) this.paused = false;
+    }
+    if (this.paused || this.userPaused) return;
+
     this.timeLeft -= dt;
     this.elapsed += dt;
     if (this.streakLeft > 0 && (this.streakLeft -= dt) <= 0) this.streak = 0;
@@ -223,6 +240,9 @@ export class PlayScene {
     // Das Tempo lässt die Spielwelt schneller oder langsamer laufen, die Rundenzeit bleibt gleich.
     this.instance.update(dt * this.speed, ball);
     if (this.timeLeft <= 0) this.finish();
+  }
+  togglePause() {
+    this.userPaused = !this.userPaused;
   }
   finish() {
     if (this.done) return;
@@ -294,6 +314,12 @@ export class PlayScene {
       const n = Math.ceil(this.countdown - 0.5);
       const beat = 1 + 0.25 * Math.max(0, 1 - ((3.5 - this.countdown) % 1) * 3);
       title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 500, (n > 0 ? 360 : 240) * beat, c[1]);
+      if (this.game.hint) text(ctx, this.game.hint, w / 2, 800, 40, '#fff', 'center', 6);
+    } else if (this.paused || this.userPaused) {
+      ctx.fillStyle = 'rgba(0,0,10,0.6)';
+      ctx.fillRect(0, 0, w, 1000);
+      title(ctx, 'Pause', w / 2, 440, 160, c[1]);
+      text(ctx, this.userPaused ? 'Weiter mit der Leertaste' : 'Leg den Ball ins Feld', w / 2, 580, 44, '#fff', 'center', 6);
     }
   }
 }

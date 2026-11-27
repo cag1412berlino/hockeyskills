@@ -2,6 +2,7 @@
 export class Sound {
   constructor() {
     this.ctx = null;
+    this.muted = false;
   }
 
   /** Muss einmal nach einem Klick oder Tastendruck aufgerufen werden. */
@@ -16,7 +17,7 @@ export class Sound {
 
   tone(freq, dur, { type = 'sine', vol = 0.2, delay = 0, slideTo = null } = {}) {
     const ac = this.ctx;
-    if (!ac || ac.state !== 'running') return;
+    if (!ac || ac.state !== 'running' || this.muted) return;
     const t = ac.currentTime + delay;
     const osc = ac.createOscillator();
     const gain = ac.createGain();

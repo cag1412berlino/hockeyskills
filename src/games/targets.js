@@ -60,7 +60,7 @@ class Targets {
     if (spot) this.add(kind, spot.x, spot.y, size, p.life);
   }
 
-  hit(t, ball) {
+  hit(t) {
     const { env, fx } = this;
     if (t.kind === 'bomb') {
       env.addScore(-20);
@@ -128,7 +128,7 @@ class Targets {
       t.x = Math.min(field.w - t.r, Math.max(t.r, t.x));
       t.y = Math.min(field.h - t.r, Math.max(t.r + 140, t.y));
       if (t.age > 0.3 && ball.visible && Math.hypot(ball.x - t.x, ball.y - t.y) < t.r + BALL_RADIUS) {
-        this.hit(t, ball);
+        this.hit(t);
         return false;
       }
       return t.age < t.life;
@@ -189,6 +189,7 @@ class Targets {
 
 export default {
   id: 'targets',
+  hint: 'Triff die Kugeln – je schneller, desto besser!',
   name: 'Ziele',
   duration: 60,
   medals: [150, 320, 520],

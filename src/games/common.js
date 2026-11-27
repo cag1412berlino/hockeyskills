@@ -1,5 +1,5 @@
 // Gemeinsame Bausteine für mehrere Spiele: Effekte und die Stoppzone.
-import { glow, noGlow, text } from '../ui.js';
+import { glow, noGlow, text, star, tone } from '../ui.js';
 
 /** Sammelt alle kurzlebigen Effekte eines Spiels: Funken, Druckwellen, Punktetexte, Blitz. */
 export class Fx {
@@ -124,4 +124,56 @@ export class StopZones {
     }
     ctx.globalAlpha = 1;
   }
+}
+
+/** Zufällige Stelle im Feld, möglichst mindestens `away` Einheiten vom Ball entfernt. */
+export function randomSpot(field, ball, away = 320) {
+  let s = null;
+  for (let tries = 0; tries < 20; tries++) {
+    s = { x: 90 + Math.random() * (field.w - 180), y: 220 + Math.random() * (field.h - 310) };
+    if (!ball.visible || Math.hypot(s.x - ball.x, s.y - ball.y) > away) break;
+  }
+  return s;
+}
+
+/** Pulsierender Stern zum Einsammeln. */
+export function drawStar(ctx, s, color, time, r = 44) {
+  glow(ctx, color, 26);
+  star(ctx, s.x, s.y, r + 5 * Math.sin(time * 6), tone(color, 68), time * 1.5);
+  noGlow(ctx);
+}
+
+/**
+ * Extra zum Einsammeln: runde Plakette mit Symbol ('shield' = Schild, 'ice' = Schneeflocke).
+ * Kurz bevor es verschwindet (nach 4,5 von 6 Sekunden), blinkt es.
+ */
+export const PICKUP_SECONDS = 6;
+export function drawPickup(ctx, p, kind, color, time) {
+  ctx.globalAlpha = p.age > PICKUP_SECONDS - 1.5 ? 0.5 + 0.5 * Math.sin(time * 14) : 1;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 46, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(10,10,30,0.85)';
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color;
+  glow(ctx, color, 22);
+  ctx.stroke();
+  ctx.strokeStyle = '#fff';
+  ctx.beginPath();
+  if (kind === 'shield') {
+    ctx.moveTo(p.x - 20, p.y - 20); ctx.lineTo(p.x + 20, p.y - 20);
+    ctx.lineTo(p.x + 20, p.y + 2); ctx.lineTo(p.x, p.y + 24); ctx.lineTo(p.x - 20, p.y + 2);
+    ctx.closePath();
+  } else {
+    for (let i = 0; i < 3; i++) {
+      const a = (i * Math.PI) / 3;
+      ctx.moveTo(p.x - Math.cos(a) * 24, p.y - Math.sin(a) * 24);
+      ctx.lineTo(p.x + Math.cos(a) * 24, p.y + Math.sin(a) * 24);
+    }
+  }
+  ctx.stroke();
+  noGlow(ctx);
+  ctx.globalAlpha = 1;
 }

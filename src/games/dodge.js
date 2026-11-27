@@ -3,8 +3,8 @@
 // Extras: Der Schild fängt einen Treffer ab, die Schneeflocke bremst alle Stachelbälle.
 // In späten Stufen fliegen manche Stachelbälle im Zickzack.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow, hazard, star, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { text, glow, noGlow, hazard, tone } from '../ui.js';
+import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
   1: { speed: 140, every: 2.2, r: 58, max: 3 },
@@ -28,16 +28,6 @@ class Dodge {
     this.shield = false;
     this.slow = 0;              // Sekunden, die die Bremse noch wirkt
     this.fx = new Fx();
-  }
-
-  spot(ball, away = 320) {
-    const { field } = this.env;
-    let s = null;
-    for (let tries = 0; tries < 20; tries++) {
-      s = { x: 90 + Math.random() * (field.w - 180), y: 220 + Math.random() * (field.h - 310) };
-      if (!ball.visible || Math.hypot(s.x - ball.x, s.y - ball.y) > away) break;
-    }
-    return s;
   }
 
   spawn(ball) {
@@ -74,7 +64,7 @@ class Dodge {
     fx.update(dt);
     const pace = this.slow > 0 ? 0.35 : 1;
 
-    if (!this.star) this.star = this.spot(ball);
+    if (!this.star) this.star = randomSpot(field, ball);
     this.spawnIn -= dt * pace;
     if (this.spawnIn <= 0 && this.hazards.length < p.max + Math.floor(env.stage / 2)) {
       this.spawn(ball);
@@ -82,10 +72,10 @@ class Dodge {
     }
     this.powerIn -= dt;
     if (this.powerIn <= 0 && !this.power) {
-      this.power = { ...this.spot(ball, 250), kind: this.shield || Math.random() < 0.5 ? 'slow' : 'shield', age: 0 };
+      this.power = { ...randomSpot(field, ball, 250), kind: this.shield || Math.random() < 0.5 ? 'ice' : 'shield', age: 0 };
       this.powerIn = 12 + Math.random() * 6;
     }
-    if (this.power && (this.power.age += dt) > 6) this.power = null;
+    if (this.power && (this.power.age += dt) > PICKUP_SECONDS) this.power = null;
 
     this.hazards = this.hazards.filter((h) => {
       if (h.wait > 0) { h.wait -= dt; return true; }
@@ -114,7 +104,7 @@ class Dodge {
       env.sound.pop(env.mult);
       fx.text(this.star.x, this.star.y, `+${points}`, env.palette[1], 50 + env.mult * 8);
       fx.burst(this.star.x, this.star.y, env.palette[1], 16);
-      this.star = this.spot(ball);
+      this.star = randomSpot(field, ball);
     }
 
     const pw = this.power;
@@ -159,42 +149,8 @@ class Dodge {
       ctx.fillRect(0, 0, env.field.w, env.field.h);
       ctx.globalAlpha = 1;
     }
-    if (this.star) {
-      glow(ctx, c1, 26);
-      star(ctx, this.star.x, this.star.y, 44 + 5 * Math.sin(this.time * 6), tone(c1, 68), this.time * 1.5);
-      noGlow(ctx);
-    }
-    const pw = this.power;
-    if (pw) {
-      const color = pw.kind === 'shield' ? c0 : c2;
-      ctx.globalAlpha = pw.age > 4.5 ? 0.5 + 0.5 * Math.sin(this.time * 14) : 1; // blinkt, bevor es verschwindet
-      ctx.beginPath();
-      ctx.arc(pw.x, pw.y, 46, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(10,10,30,0.85)';
-      ctx.fill();
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = color;
-      glow(ctx, color, 22);
-      ctx.stroke();
-      ctx.strokeStyle = '#fff';
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      if (pw.kind === 'shield') {
-        ctx.moveTo(pw.x - 20, pw.y - 20); ctx.lineTo(pw.x + 20, pw.y - 20);
-        ctx.lineTo(pw.x + 20, pw.y + 2); ctx.lineTo(pw.x, pw.y + 24); ctx.lineTo(pw.x - 20, pw.y + 2);
-        ctx.closePath();
-      } else {
-        for (let i = 0; i < 3; i++) {
-          const a = (i * Math.PI) / 3;
-          ctx.moveTo(pw.x - Math.cos(a) * 24, pw.y - Math.sin(a) * 24);
-          ctx.lineTo(pw.x + Math.cos(a) * 24, pw.y + Math.sin(a) * 24);
-        }
-      }
-      ctx.stroke();
-      noGlow(ctx);
-      ctx.globalAlpha = 1;
-    }
+    if (this.star) drawStar(ctx, this.star, c1, this.time);
+    if (this.power) drawPickup(ctx, this.power, this.power.kind, this.power.kind === 'shield' ? c0 : c2, this.time);
     for (const h of this.hazards) {
       if (h.wait > 0) {
         // Blinkende Warnung am Rand
@@ -218,6 +174,7 @@ class Dodge {
 
 export default {
   id: 'dodge',
+  hint: 'Sammle Sterne und weiche den Stachelbällen aus!',
   name: 'Ausweichen',
   duration: 60,
   lives: 3,

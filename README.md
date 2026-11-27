@@ -49,10 +49,11 @@ Danach in Chrome `http://localhost:8080` öffnen. Die Kamera funktioniert nur ü
 
 1. **Kamera starten** und die richtige Kamera wählen.
 2. **Ballfarbe** wählen. Im Kamerabild leuchtet alles türkis, was die App für den Ball hält. Passt das nicht, im Kamerabild auf den Ball klicken; die App lernt dann dessen Farbe.
-3. **Vollbild** einschalten und **kalibrieren**:
+3. **Bild drehen**, bis die Schrift vom Platz des Kindes aus richtig herum steht (auch mit Taste `R`).
+4. **Vollbild** einschalten und **kalibrieren**:
    - *Automatisch*: Die App projiziert nacheinander fünf weiße Punkte und sucht sie im Kamerabild. Währenddessen nicht durchs Bild laufen.
    - *Manuell*: Die App zeigt ein Standbild der Kamera, darin die vier Ecken des Spielfelds im Uhrzeigersinn anklicken (oben links beginnen). Das geht auch ohne Beamer, etwa mit vier Klebeband-Markierungen auf dem Boden.
-4. **Spielen**. Gesteuert wird mit dem Ball: Ball etwa eine Sekunde auf einen Button legen.
+5. **Spielen**. Gesteuert wird mit dem Ball: Ball etwa eine Sekunde auf einen Button legen.
 
 Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Taste `C`).
 
@@ -60,7 +61,25 @@ Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Tas
 | --- | --- |
 | `F` | Vollbild an/aus |
 | `C` | automatisch neu kalibrieren |
+| `R` | Bild um 90° drehen |
+| Leertaste | Pause |
+| `M` | Ton an/aus |
+| `D` | Kamerabild mit erkannter Ballfarbe einblenden |
 | `Esc` | zurück zum Menü, vom Menü zur Einrichtung |
+
+Fehlt der Ball länger als 2,5 Sekunden (weggerollt, verdeckt), pausiert das Spiel von selbst und läuft weiter, sobald er wieder im Feld liegt.
+
+## Wenn der Ball nicht zuverlässig erkannt wird
+
+1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden.
+2. Wird der Ball nur manchmal türkis: in der Einrichtung die **Farbtoleranz** erhöhen oder im Kamerabild auf den Ball klicken, während er im projizierten Feld liegt.
+3. Leuchtet anderes türkis auf (Kleidung, Möbel, Schläger): Toleranz senken oder die störenden Dinge aus dem Bild nehmen.
+4. Schwankt die Erkennung, wenn das projizierte Bild heller oder dunkler wird: **Kamera-Automatik sperren** einschalten. Das geht nicht mit jeder Webcam.
+5. Raum weiter abdunkeln. Farbiges Beamerlicht verfälscht die Ballfarbe weniger, wenn kein Tageslicht dazukommt.
+
+## Offline
+
+Nach dem ersten Laden mit Internet startet die App auch ohne Verbindung, zum Beispiel im Keller. Mit Verbindung lädt sie immer die aktuelle Fassung.
 
 ## Ohne Hardware ausprobieren
 
@@ -107,8 +126,12 @@ Die Schrift „Fredoka“ liegt unter `assets/fonts/` (SIL Open Font License).
 npm test
 ```
 
+Die Tests prüfen die Rechenkerne (Kalibrierung, Ballerkennung) und spielen jedes Spiel auf jeder Stufe und in jedem Tempo einmal mit einem simulierten Ball durch.
+
 ## Bekannte Grenzen des Prototyps
 
-- Mit echter Hardware ist die Erkennung noch nicht erprobt. Farbiges Beamerlicht auf dem Ball kann dessen Farbe verfälschen; die Schwellen in `src/tracker.js` müssen dann angepasst werden.
+- Mit echter Hardware ist die Erkennung noch nicht erprobt. Farbiges Beamerlicht auf dem Ball kann dessen Farbe verfälschen; siehe „Wenn der Ball nicht zuverlässig erkannt wird“.
+- Die Anzeige läuft dem Ball um die Verzögerung von Kamera und Beamer hinterher (geschätzt etwa eine Zehntelsekunde). Bei schnellen Bewegungen sitzt der Ring deshalb etwas hinter dem Ball.
+- Punkte, Sterne-Schwellen und Geschwindigkeiten sind geschätzt und noch nicht mit Kindern erprobt.
 - Verzerrungen von Weitwinkel-Objektiven werden nicht korrigiert. Die Einrichtung zeigt nach der automatischen Kalibrierung die gemessene Abweichung an.
 - Steht der Beamer schräg, ist das Bild auf dem Boden ein Trapez. Die Ballposition stimmt trotzdem; für ein gerades Bild die Trapezkorrektur des Beamers nutzen.

@@ -189,6 +189,7 @@ class Slalom {
 
 export default {
   id: 'slalom',
+  hint: 'Führe den Ball der Reihe nach durch die Tore!',
   name: 'Slalom',
   duration: 60,
   medals: [150, 320, 520],

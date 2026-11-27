@@ -205,6 +205,7 @@ class Cloud {
 
 export default {
   id: 'cloud',
+  hint: 'Triff die Kugel, aber weiche der Wolke aus!',
   name: 'Wolke',
   duration: 60,
   medals: [120, 260, 420],

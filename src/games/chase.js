@@ -4,8 +4,8 @@
 // Mit schnellen Richtungswechseln lässt man sie ins Leere laufen.
 // Sterne bringen Punkte, die Schneeflocke friert alle Fänger kurz ein. Drei Leben.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, hazard, star, tone, text } from '../ui.js';
-import { Fx } from './common.js';
+import { hazard, tone, text } from '../ui.js';
+import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
   1: { count: 2, speed: 95 },
@@ -48,16 +48,6 @@ class Chase {
     this.safe = 1.8;
   }
 
-  spot(ball, away) {
-    const { field } = this.env;
-    let s = null;
-    for (let tries = 0; tries < 20; tries++) {
-      s = { x: 90 + Math.random() * (field.w - 180), y: 220 + Math.random() * (field.h - 310) };
-      if (!ball.visible || Math.hypot(s.x - ball.x, s.y - ball.y) > away) break;
-    }
-    return s;
-  }
-
   /** Wohin der Fänger gerade will. */
   goal(c, ball) {
     const { field } = this.env;
@@ -82,13 +72,13 @@ class Chase {
     this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
     fx.update(dt);
 
-    if (!this.star) this.star = this.spot(ball, 350);
+    if (!this.star) this.star = randomSpot(field, ball, 350);
     this.iceIn -= dt;
     if (this.iceIn <= 0 && !this.ice) {
-      this.ice = { ...this.spot(ball, 250), age: 0 };
+      this.ice = { ...randomSpot(field, ball, 250), age: 0 };
       this.iceIn = 13 + Math.random() * 6;
     }
-    if (this.ice && (this.ice.age += dt) > 6) this.ice = null;
+    if (this.ice && (this.ice.age += dt) > PICKUP_SECONDS) this.ice = null;
 
     if (this.safe <= 0 && this.frozen <= 0) {
       for (const c of this.chasers) {
@@ -120,7 +110,7 @@ class Chase {
       env.sound.pop(env.mult);
       fx.text(this.star.x, this.star.y, `+${points}`, env.palette[1], 50 + env.mult * 8);
       fx.burst(this.star.x, this.star.y, env.palette[1], 16);
-      this.star = this.spot(ball, 350);
+      this.star = randomSpot(field, ball, 350);
     }
     if (this.ice && Math.hypot(this.ice.x - ball.x, this.ice.y - ball.y) < 46 + BALL_RADIUS) {
       env.sound.power();
@@ -149,34 +139,8 @@ class Chase {
   draw(ctx) {
     const { env } = this;
     const [, c1, c2] = env.palette;
-    if (this.star) {
-      glow(ctx, c1, 26);
-      star(ctx, this.star.x, this.star.y, 44 + 5 * Math.sin(this.time * 6), tone(c1, 68), this.time * 1.5);
-      noGlow(ctx);
-    }
-    const ice = this.ice;
-    if (ice) {
-      ctx.globalAlpha = ice.age > 4.5 ? 0.5 + 0.5 * Math.sin(this.time * 14) : 1; // blinkt, bevor sie verschwindet
-      ctx.beginPath();
-      ctx.arc(ice.x, ice.y, 46, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(10,10,30,0.85)';
-      ctx.fill();
-      ctx.lineWidth = 5;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = c2;
-      glow(ctx, c2, 22);
-      ctx.stroke();
-      ctx.strokeStyle = '#fff';
-      ctx.beginPath();
-      for (let i = 0; i < 3; i++) {
-        const a = (i * Math.PI) / 3;
-        ctx.moveTo(ice.x - Math.cos(a) * 24, ice.y - Math.sin(a) * 24);
-        ctx.lineTo(ice.x + Math.cos(a) * 24, ice.y + Math.sin(a) * 24);
-      }
-      ctx.stroke();
-      noGlow(ctx);
-      ctx.globalAlpha = 1;
-    }
+    if (this.star) drawStar(ctx, this.star, c1, this.time);
+    if (this.ice) drawPickup(ctx, this.ice, 'ice', c2, this.time);
     for (const c of this.chasers) {
       // In der Schonzeit blinken die Fänger, eingefroren sind sie blass und stehen still.
       ctx.globalAlpha = this.safe > 0 ? 0.35 + 0.3 * Math.sin(this.time * 12) : this.frozen > 0 ? 0.45 : 1;
@@ -197,6 +161,7 @@ class Chase {
 
 export default {
   id: 'chase',
+  hint: 'Lass dich nicht fangen!',
   name: 'Fangen',
   duration: 60,
   lives: 3,
