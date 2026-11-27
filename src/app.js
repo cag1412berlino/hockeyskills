@@ -148,6 +148,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       const list = app.sessionGames(kind);
       const plan = list.map((game) => ({ game }));
       plan.push({ game: makeFinale(pick3(list)) });
+      app.freshRound?.();
       app.session = { kind, level, plan, i: 0, results: [], seconds: app.sessionDef(kind).seconds, names: [] };
       app.show(new IntermissionScene(app, app.session));
     },
@@ -160,6 +161,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       const players = last ? (swap ? [last[1], last[0]] : [...last]) : [app.profile, opponent];
       // je eine Übung aus drei verschiedenen Schwerpunkten
       picks ??= pick3(categories).map((c) => c.games[Math.floor(Math.random() * c.games.length)]);
+      app.freshRound?.();
       app.session = {
         kind: 'duel', level, i: 0, results: [], seconds: 40, players, picks,
         names: players.map((p) => (p ? p.name : 'Gast')),

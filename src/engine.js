@@ -217,7 +217,7 @@ export class Engine {
       s.x = nx; s.y = ny;
     }
     // Vorhalt gleicht die Verzögerung von Kamera und Beamer aus (0 = aus).
-    const lead = (this.config.latency || 0) / 1000;
+    const lead = this.leadOff?.() ? 0 : (this.config.latency || 0) / 1000; // Maus: keine Verzögerung
     const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead, 80) : s;
     b.x = at.x; b.y = at.y;
     if (!b.visible) b.vx = b.vy = 0;

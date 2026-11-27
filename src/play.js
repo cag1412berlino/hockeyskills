@@ -32,7 +32,8 @@ export class PlayScene {
     this.shownScore = 0;
     // Endlos (nur als einzelne Übung, nicht im Training oder Duell): keine Zeitgrenze, nur Herzen.
     // Es wird immer schneller, bis alle Herzen weg sind.
-    this.endless = !!game.endless && !session;
+    this.endless = !!game.endless && !session && opts.career == null; // Karriere: feste Runde
+    if (!session) app.freshRound?.(); // Übungsmodus gilt für die ganze Runde
     this.duration = this.endless ? game.duration ?? 60 : session?.seconds ?? game.duration ?? 60;
     this.timeLeft = this.endless ? Infinity : this.duration;
     this.elapsed = 0;
@@ -289,8 +290,7 @@ export class PlayScene {
       d.bot.step(dt, goals[this.game.id](d.instance, d.bot.ball));
       if (d.left <= 0) {
         this.demo = null;
-        this.player().seen[this.game.id] = true;
-        this.app.save();
+        if (!this.app.practice?.()) { this.player().seen[this.game.id] = true; this.app.save(); }
       }
       return;
     }
@@ -401,7 +401,7 @@ export class PlayScene {
     app.music.stop();
     // Dauertraining: Sterne nach der geübten Zeit, so zählt fleißiges Üben genauso wie eine Runde
     const speedRecord = !app.practice?.() && this.topSpeed > 3 && this.topSpeed > (this.player()?.stats?.topSpeed || 0);
-    const stars = this.steady ? (this.elapsed < 20 ? 0 : medals(game, this.score, level, this.elapsed)) : medals(game, this.score, level, this.endless ? game.duration ?? 60 : this.duration);
+    const stars = this.steady ? (this.elapsed < 20 ? 0 : medals(game, this.score, level, this.elapsed)) : medals(game, this.score, level, this.endless ? Math.max(game.duration ?? 60, this.elapsed) : this.duration);
     // Karriere zuerst verbuchen, damit ein Karriere-Abzeichen gleich mit dieser Runde kommt
     const career = this.opts.career != null && !this.session ? app.careerRecord?.(this.opts.career, stars) ?? null : null;
     const rewards = app.record(

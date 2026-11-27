@@ -38,6 +38,7 @@ let sim = null;
 let source = null;      // Bildquelle für die Ballerkennung (Video oder simulierte Kamera)
 let mode = 'camera';    // 'camera' oder 'mouse'
 let detection = null;   // letzte Ballposition im Kamerabild
+let detectionAt = 0;    // wann sie erkannt wurde (alte Treffer zählen nicht, z. B. wenn die Kamera hängt)
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
@@ -57,7 +58,11 @@ window.hockey = app; // zum Ausprobieren in der Browser-Konsole
 
 // Übungsmodus: Mit der Maus als Ball, mit dem gemalten Test-Ball oder mit der simulierten Kamera
 // wird nichts gewertet. Punkte, Rekorde, Abzeichen und Ranglisten gibt es nur mit echtem Ball.
-app.practice = () => mode === 'mouse' || fakeBall || !!sim;
+const practiceNow = () => mode === 'mouse' || fakeBall || !!sim;
+// Wer während einer Runde in den Übungsmodus wechselt (z. B. Test-Ball mit B), bekommt die ganze Runde nicht gewertet.
+let tainted = false;
+app.practice = () => tainted || practiceNow();
+app.freshRound = () => { tainted = practiceNow(); };
 engine.note = () => (setupEl.hidden && app.practice() ? 'Übungsmodus – Punkte zählen nicht' : null);
 
 // ---------- Ballposition ----------
@@ -71,7 +76,7 @@ stage.addEventListener('pointerleave', () => { mouse.inside = false; });
 
 engine.ballProvider = () => {
   if (mode === 'mouse') return mouse.inside ? mouse : null;
-  if (!detection || !config.calib) return null;
+  if (!detection || !config.calib || performance.now() - detectionAt > 400) return null;
   return applyHomography(config.calib.H, detection.x, detection.y);
 };
 
@@ -90,6 +95,7 @@ const fakeCss = () => `hsl(${config.ball.h} 100% 42%)`;
 /** Die Farbe, nach der gerade gesucht wird. */
 const searchColor = () => (fakeBall && fakeColor) || config.ball;
 
+engine.leadOff = () => mode === 'mouse';
 engine.fakeBall = () => (fakeBall && mode === 'camera' && mouse.inside && !calibrating
   ? { x: mouse.x, y: mouse.y, color: fakeCss() } : null);
 
@@ -100,6 +106,7 @@ engine.fakeBall = () => (fakeBall && mode === 'camera' && mouse.inside && !calib
  */
 async function setFakeBall(on) {
   fakeBall = on;
+  if (on) tainted = true;
   if (sim) sim.showBall = !on;
   document.body.classList.toggle('fake-ball', on);
   fakeColor = null;
@@ -198,6 +205,7 @@ function trackFrame() {
   const started = performance.now();
   tracker.useRegion = setupEl.hidden && !recognition; // im Spiel nur im Feld suchen, in der Einrichtung überall
   detection = tracker.process(source, searchColor());
+  detectionAt = performance.now();
   fps.tracked++;
   recent.push(detection ? 1 : 0);
   if (recent.length > 90) recent.shift();
@@ -434,7 +442,12 @@ async function measureLatency() {
     for (let i = 0; i < img.data.length; i += 4 * 7) { sum += img.data[i] * 0.3 + img.data[i + 1] * 0.59 + img.data[i + 2] * 0.11; n++; }
     return sum / n;
   };
-  const nextFrame = () => new Promise((res) => frameWaiters.push(res));
+  // Bleibt die Kamera stehen, bricht die Messung nach einer Sekunde ab statt ewig zu warten
+  const nextFrame = () => new Promise((res, rej) => {
+    const timer = setTimeout(() => { frameWaiters = frameWaiters.filter((f) => f !== done); rej(new Error('Kamera liefert keine Bilder')); }, 1000);
+    const done = (t) => { clearTimeout(timer); res(t); };
+    frameWaiters.push(done);
+  });
   const fill = (color) => (ctx, cw, ch) => { ctx.fillStyle = color; ctx.fillRect(0, 0, cw, ch); };
   const results = [];
   try {
@@ -455,6 +468,8 @@ async function measureLatency() {
       const hit = samples.find((q) => q.b >= ref + (white - ref) * 0.5);
       if (hit) results.push(hit.t - t0);
     }
+  } catch {
+    results.length = 0; // Kamera hängt: unten kommt die Meldung, dass es nicht geklappt hat
   } finally {
     engine.override = null;
     calibrating = false;
@@ -496,6 +511,7 @@ async function startCamera(deviceId) {
     }));
   } catch (err) {
     source = null;
+    detection = null;
     setMessage(err.name === 'NotAllowedError'
       ? 'Der Browser darf die Kamera nicht benutzen. Bitte den Zugriff oben in der Adressleiste erlauben.'
       : `Kamera konnte nicht gestartet werden (${err.message}).`);
@@ -681,6 +697,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function startPlaying() {
+  // Ein noch laufender Erkennungstest wird abgebrochen, sonst sucht das Spiel im ganzen Kamerabild
+  if (recognition) { recognition = null; $('#test-box').hidden = true; $('#btn-test').disabled = false; }
   updateRegion();
   setMessage();
   sound.resume();
