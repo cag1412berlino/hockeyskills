@@ -375,6 +375,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/engine.js` | Zeichenschleife, Spielfeld-Koordinaten, Ballposition, Hintergrund |
 | `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |
 | `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
+| `src/leaderboard.js` | Bestenliste (Woche, Spiele, Punkte, Rekorde, Altersklassen) |
 | `src/games/spectacle.js` | Hindernisse aus Backstein, Holz, Fels, Eis und Feuer; Flammenwand, Feuerwerk, Turbo, Goldregen |
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
 | `src/trackingtest.js` | Erkennungstest: Messwerte sammeln und bewerten |
