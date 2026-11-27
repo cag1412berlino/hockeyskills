@@ -23,9 +23,9 @@ function puffs(ctx, x, y, r) {
 
 export function drawCloud(ctx, x, y, r, angry = false) {
   puffs(ctx, x, y, r);
-  ctx.lineWidth = r * 0.14;
+  ctx.lineWidth = r * 0.08;
   ctx.strokeStyle = '#fff';
-  glow(ctx, '#fff', angry ? 40 : 18);
+  glow(ctx, '#fff', angry ? 40 : 14);
   ctx.stroke();
   noGlow(ctx);
   ctx.fillStyle = angry ? '#9a9aa8' : '#34343f';
@@ -149,12 +149,12 @@ class Cloud {
       ctx.arc(t.x, t.y, r * 0.92, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fill();
-      ctx.lineWidth = r * 0.16;
+      ctx.lineWidth = r * 0.08;
       ctx.strokeStyle = t.color;
-      glow(ctx, t.color, 30);
+      glow(ctx, t.color, 24);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(t.x, t.y, r * (0.42 + 0.06 * Math.sin(this.time * 6)), 0, Math.PI * 2);
+      ctx.arc(t.x, t.y, r * (0.36 + 0.05 * Math.sin(this.time * 6)), 0, Math.PI * 2);
       ctx.fillStyle = t.color;
       ctx.fill();
       noGlow(ctx);
@@ -163,11 +163,11 @@ class Cloud {
     for (const q of this.particles) {
       ctx.globalAlpha = 1 - q.age / 0.6;
       ctx.fillStyle = q.color;
-      ctx.fillRect(q.x - 11, q.y - 11, 22, 22);
+      ctx.fillRect(q.x - 6, q.y - 6, 12, 12);
     }
     for (const f of this.floaters) {
       ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 80, f.color ?? '#fff');
+      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
     }
     ctx.globalAlpha = 1;
     if (this.flash > 0) {
@@ -183,7 +183,7 @@ export default {
   duration: 60,
   icon(ctx, r) {
     puffs(ctx, 0, 0, r * 0.42);
-    ctx.lineWidth = r * 0.14;
+    ctx.lineWidth = r * 0.085;
     ctx.strokeStyle = '#fff';
     ctx.stroke();
     ctx.fillStyle = '#000';

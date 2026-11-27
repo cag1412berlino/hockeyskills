@@ -140,20 +140,20 @@ class Line {
 
     // Noch offener Teil: dunkle Spur mit Punkten zum Einsammeln
     this.trace(ctx, idx, last);
-    ctx.lineWidth = 44;
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 30;
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)';
     ctx.stroke();
     ctx.fillStyle = c2;
     glow(ctx, c2, 14);
-    for (let i = idx + 5 - (idx % 5); i < last; i += 5) ctx.fillRect(path[i].x - 9, path[i].y - 9, 18, 18);
+    for (let i = idx + 5 - (idx % 5); i < last; i += 5) ctx.fillRect(path[i].x - 6, path[i].y - 6, 12, 12);
     noGlow(ctx);
 
     // Geschaffter Teil leuchtet
     if (idx > 0) {
       this.trace(ctx, 0, idx);
-      ctx.lineWidth = 16;
+      ctx.lineWidth = 8;
       ctx.strokeStyle = c0;
-      glow(ctx, c0, 26);
+      glow(ctx, c0, 22);
       ctx.stroke();
       noGlow(ctx);
     }
@@ -163,16 +163,16 @@ class Line {
     const pulse = 30 + 14 * Math.sin(this.time * 7);
     ctx.beginPath();
     ctx.arc(path[idx].x, path[idx].y, pulse, 0, Math.PI * 2);
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = '#fff';
-    glow(ctx, c0, 20);
+    glow(ctx, c0, 18);
     ctx.stroke();
     noGlow(ctx);
 
     for (const o of this.obstacles) hazard(ctx, o.x, o.y, o.r, this.time * 2);
     for (const f of this.floaters) {
       ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 50 - f.age * 100, 80, f.color ?? '#fff');
+      text(ctx, f.str, f.x, f.y - 50 - f.age * 100, 60, f.color ?? '#fff');
     }
     ctx.globalAlpha = 1;
     if (this.flash > 0) {
@@ -188,7 +188,7 @@ export default {
   duration: 60,
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = r * 0.11;
+    ctx.lineWidth = r * 0.065;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(-r * 0.55, r * 0.15);

@@ -52,9 +52,9 @@ export class MenuScene extends ButtonScene {
   }
   draw(ctx) {
     const c = this.app.palette();
-    title(ctx, 'Hockey Skills', this.field.w / 2, 120, 118, c[1], c[3]);
+    title(ctx, 'Hockey Skills', this.field.w / 2, 120, 104, c[1], c[3]);
     ctx.globalAlpha = this.pulse();
-    text(ctx, 'Ball auf ein Spiel legen', this.field.w / 2, 945, 40);
+    text(ctx, 'Ball auf ein Spiel legen', this.field.w / 2, 945, 32);
     ctx.globalAlpha = 1;
     super.draw(ctx);
   }
@@ -98,7 +98,7 @@ export class LevelScene extends ButtonScene {
     const c = this.app.palette();
     title(ctx, this.game.name, this.field.w / 2, 140, 110, c[1], c[3]);
     ctx.globalAlpha = this.pulse();
-    text(ctx, 'Stufe wählen', this.field.w / 2, 250, 40);
+    text(ctx, 'Stufe wählen', this.field.w / 2, 250, 32);
     ctx.globalAlpha = 1;
     super.draw(ctx);
   }
@@ -135,7 +135,7 @@ export class PlayScene {
   }
   layout() {
     this.exit = new DwellButton({
-      x: this.app.engine.field.w - 75, y: 95, r: 50, dwell: 1.5, icon: icons.close,
+      x: this.app.engine.field.w - 70, y: 95, r: 42, dwell: 1.5, icon: icons.close,
       color: 'rgba(255,255,255,0.6)',
       onActivate: () => { this.app.sound.select(); this.app.menu(); },
     });
@@ -175,19 +175,19 @@ export class PlayScene {
     this.instance.draw(ctx);
 
     // Zeitbalken aus einzelnen Segmenten
-    const segments = 30;
+    const segments = 48;
     const sw = (w - 40) / segments;
     const lit = Math.ceil(segments * Math.max(0, this.timeLeft / this.duration));
     for (let i = 0; i < segments; i++) {
       ctx.fillStyle = i < lit ? (lit <= 5 ? '#fff' : c[1]) : 'rgba(255,255,255,0.12)';
-      ctx.fillRect(20 + i * sw, 22, sw - 6, 20);
+      ctx.fillRect(20 + i * sw, 26, sw - 4, 10);
     }
-    text(ctx, pad(this.score), 30, 100, 80, '#fff', 'left');
+    text(ctx, pad(this.score), 30, 92, 64, '#fff', 'left');
     if (this.lives != null) {
       for (let i = 0; i < (this.game.lives ?? 0); i++) {
         const on = i < this.lives;
         if (on) glow(ctx, c[3], 14);
-        heart(ctx, w / 2 - 60 + i * 60, 100, 46, on ? c[3] : 'rgba(255,255,255,0.15)');
+        heart(ctx, w / 2 - 50 + i * 50, 92, 36, on ? c[3] : 'rgba(255,255,255,0.15)');
         noGlow(ctx);
       }
     }

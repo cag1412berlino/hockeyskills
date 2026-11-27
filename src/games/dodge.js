@@ -125,7 +125,7 @@ class Dodge {
     }
     for (const f of this.floaters) {
       ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 76, f.color ?? '#fff');
+      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
     }
     ctx.globalAlpha = 1;
     if (this.flash > 0) {
@@ -142,7 +142,7 @@ export default {
   lives: 3,
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = r * 0.07;
+    ctx.lineWidth = r * 0.05;
     ctx.lineJoin = 'miter';
     ctx.beginPath();
     for (let i = 0; i < 16; i++) {

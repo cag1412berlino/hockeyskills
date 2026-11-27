@@ -2,7 +2,7 @@
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
-Stand: Prototyp mit Kalibrierung, Ballerkennung und fünf Spielen im Arcade-Look.
+Stand: Prototyp mit Kalibrierung, Ballerkennung und sechs Spielen im Arcade-Look.
 
 ## Spiele
 
@@ -10,6 +10,7 @@ Stand: Prototyp mit Kalibrierung, Ballerkennung und fünf Spielen im Arcade-Look
 | --- | --- |
 | **Ziele** | Leuchtende Ziele treffen. Je schneller nach dem Auftauchen, desto mehr Punkte (10 bis 20). |
 | **Wolke** | Ein Ziel treffen, aber um die Gewitterwolke herumdribbeln. Die Wolke pendelt (Mittel) oder stellt sich in den Weg (Schwer). |
+| **Rennen** | Die Bahn läuft ununterbrochen durchs Feld und schwenkt weit nach links und rechts. Auf der Bahn bleiben, Sterne sammeln; wer lange ohne Fehler bleibt, bekommt einen Multiplikator bis x5. |
 | **Linie** | Den Ball an einer geschwungenen Linie entlangführen. Ab Mittel pendeln Stachelbälle über die Linie. |
 | **Slalom** | Der Reihe nach durch die Tore. Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. |
 | **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. |

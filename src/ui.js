@@ -61,13 +61,13 @@ export function hazard(ctx, x, y, r, rot = 0) {
   ctx.closePath();
   ctx.fillStyle = '#3a3a44';
   ctx.fill();
-  ctx.lineWidth = r * 0.12;
+  ctx.lineWidth = r * 0.07;
   ctx.lineJoin = 'miter';
   ctx.strokeStyle = '#fff';
-  glow(ctx, '#fff', 18);
+  glow(ctx, '#fff', 14);
   ctx.stroke();
   noGlow(ctx);
-  ctx.lineWidth = r * 0.14;
+  ctx.lineWidth = r * 0.09;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(x - r * 0.22, y - r * 0.22); ctx.lineTo(x + r * 0.22, y + r * 0.22);
@@ -90,7 +90,7 @@ export function heart(ctx, x, y, size, color) {
 
 const stroke = (ctx, r) => {
   ctx.strokeStyle = '#fff';
-  ctx.lineWidth = r * 0.14;
+  ctx.lineWidth = r * 0.085;
   ctx.lineCap = 'square';
   ctx.lineJoin = 'miter';
 };
@@ -185,21 +185,21 @@ export class DwellButton {
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fill();
-    ctx.lineWidth = r * 0.07;
+    ctx.lineWidth = r * 0.045;
     ctx.strokeStyle = this.color;
-    glow(ctx, this.color, 26);
+    glow(ctx, this.color, 22);
     ctx.stroke();
     noGlow(ctx);
     ctx.beginPath();
-    ctx.arc(x, y, r * 0.8, 0, Math.PI * 2);
-    ctx.lineWidth = r * 0.025;
+    ctx.arc(x, y, r * 0.86, 0, Math.PI * 2);
+    ctx.lineWidth = r * 0.015;
     ctx.globalAlpha = 0.5;
     ctx.stroke();
     ctx.globalAlpha = 1;
     if (this.progress > 0) {
       ctx.beginPath();
-      ctx.arc(x, y, r * 0.9, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
-      ctx.lineWidth = r * 0.14;
+      ctx.arc(x, y, r * 0.93, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
+      ctx.lineWidth = r * 0.09;
       ctx.lineCap = 'butt';
       ctx.strokeStyle = '#fff';
       glow(ctx, '#fff', 20);
@@ -212,8 +212,8 @@ export class DwellButton {
       this.icon(ctx, r);
       ctx.restore();
     }
-    if (this.label) text(ctx, this.label, x, y + r + 48, 46, this.color);
-    if (this.sub) text(ctx, this.sub, x, y + r + 100, 32, '#fff', 'center', 0);
+    if (this.label) text(ctx, this.label, x, y + r + 44, 38, this.color);
+    if (this.sub) text(ctx, this.sub, x, y + r + 90, 28, '#fff', 'center', 0);
   }
 }
 

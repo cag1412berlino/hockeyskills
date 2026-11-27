@@ -115,19 +115,19 @@ class Targets {
         ctx.arc(t.x, t.y, r * 0.92, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fill();
-        ctx.lineWidth = r * 0.16;
+        ctx.lineWidth = r * 0.08;
         ctx.strokeStyle = t.color;
-        glow(ctx, t.color, 30);
+        glow(ctx, t.color, 24);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(t.x, t.y, r * (0.42 + 0.05 * Math.sin(this.time * 6 + t.x)), 0, Math.PI * 2);
+        ctx.arc(t.x, t.y, r * (0.36 + 0.05 * Math.sin(this.time * 6 + t.x)), 0, Math.PI * 2);
         ctx.fillStyle = t.color;
         ctx.fill();
         noGlow(ctx);
         // Weißer Bogen zeigt, wie lange das Ziel noch bleibt.
         ctx.beginPath();
         ctx.arc(t.x, t.y, r * 0.68, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2);
-        ctx.lineWidth = r * 0.08;
+        ctx.lineWidth = r * 0.045;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
       }
@@ -136,11 +136,11 @@ class Targets {
     for (const p of this.particles) {
       ctx.globalAlpha = 1 - p.age / 0.6;
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - 11, p.y - 11, 22, 22);
+      ctx.fillRect(p.x - 6, p.y - 6, 12, 12);
     }
     for (const f of this.floaters) {
       ctx.globalAlpha = 1 - f.age / 0.9;
-      text(ctx, f.str, f.x, f.y - f.age * 120, 80, f.color ?? '#fff');
+      text(ctx, f.str, f.x, f.y - f.age * 120, 60, f.color ?? '#fff');
     }
     ctx.globalAlpha = 1;
     if (this.flash > 0) {
@@ -156,7 +156,7 @@ export default {
   duration: 60,
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = r * 0.09;
+    ctx.lineWidth = r * 0.055;
     for (const k of [0.55, 0.32]) {
       ctx.beginPath();
       ctx.arc(0, 0, r * k, 0, Math.PI * 2);

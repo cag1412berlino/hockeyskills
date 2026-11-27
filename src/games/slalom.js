@@ -8,7 +8,7 @@ const LEVELS = {
   2: { width: 185, gates: 5, posts: true, move: 0 },
   3: { width: 150, gates: 5, posts: true, move: 70 },
 };
-const POST = 26;
+const POST = 22;
 
 /** Schneiden sich die Strecken p1-p2 und p3-p4? */
 function crosses(p1, p2, p3, p4) {
@@ -107,8 +107,8 @@ class Slalom {
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.lineWidth = active ? 12 : 6;
-      ctx.setLineDash(active ? [22, 16] : [8, 18]);
+      ctx.lineWidth = active ? 7 : 3;
+      ctx.setLineDash(active ? [16, 12] : [6, 14]);
       ctx.lineDashOffset = -this.time * 60;
       ctx.strokeStyle = color;
       if (active) glow(ctx, color, 24);
@@ -125,12 +125,12 @@ class Slalom {
         ctx.fill();
       }
       noGlow(ctx);
-      if (!g.passed) text(ctx, i + 1, (a.x + b.x) / 2, a.y - 62, active ? 80 : 56, color, 'center', active ? 16 : 0);
+      if (!g.passed) text(ctx, i + 1, (a.x + b.x) / 2, a.y - 56, active ? 64 : 44, color, 'center', active ? 16 : 0);
       ctx.globalAlpha = 1;
     });
     for (const f of this.floaters) {
       ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 76, f.color ?? '#fff');
+      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
     }
     ctx.globalAlpha = 1;
   }
@@ -150,7 +150,7 @@ export default {
       ctx.fill();
     }
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = r * 0.07;
+    ctx.lineWidth = r * 0.05;
     ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(-r * 0.05, -r * 0.5); ctx.lineTo(-r * 0.05, -r * 0.3);

@@ -35,8 +35,8 @@ export class StopZones {
       ctx.globalAlpha = Math.min(1, z.left / this.seconds + 0.2);
       ctx.beginPath();
       ctx.arc(z.x, z.y, this.radius, 0, Math.PI * 2);
-      ctx.setLineDash([26, 20]);
-      ctx.lineWidth = 8;
+      ctx.setLineDash([16, 14]);
+      ctx.lineWidth = 4;
       ctx.strokeStyle = z.color;
       glow(ctx, z.color, 16);
       ctx.stroke();
@@ -48,7 +48,7 @@ export class StopZones {
 }
 
 /** Kleine Explosion aus Pixel-Quadraten. */
-export function burst(list, x, y, color, n = 18) {
+export function burst(list, x, y, color, n = 28) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
     const v = 150 + Math.random() * 500;
