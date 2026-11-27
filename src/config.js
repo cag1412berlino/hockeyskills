@@ -9,7 +9,7 @@ const defaults = () => ({
   ball: { preset: 'orange', ...BALL_PRESETS.orange },
   fieldShape: 'square', // 'square' = Quadrat, 'full' = ganze Projektionsfläche
   speed: 1,             // Tempo: 0 = langsam, 1 = normal, 2 = schnell
-  rotation: 0,          // Bild drehen: 0, 90, 180 oder 270 Grad
+  rotation: 0,          // Bild drehen: 0, 90, 180 oder 270 Grad (startet immer bei 0)
   muted: false,
   calib: null,          // { H, aspect, error }
   profiles: [],         // Spielerprofile mit Bestwerten, Rang und Abzeichen
@@ -30,6 +30,10 @@ function load() {
 }
 
 export const config = load();
+
+// Die Drehung beginnt bei jedem Start bei 0 Grad. Sie gilt nur für die laufende Sitzung,
+// damit ein versehentlicher Druck auf die Taste R nicht dauerhaft hängen bleibt.
+config.rotation = 0;
 
 // Mindestens ein Profil muss es geben. Bestwerte aus älteren Fassungen wandern ins erste Profil.
 if (!config.profiles.length) {
