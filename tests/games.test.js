@@ -316,9 +316,21 @@ test('Tricks: elf Tricks, Themen fürs Dauertraining, Dauertraining endet erst a
   assert.ok(MOVES.length >= 11);
   for (const t of TOPICS) assert.ok(variants(1, t.id).length >= 4, `${t.name}: genug Tricks`);
   assert.ok(variants(1).length < variants(2).length && variants(2).length < variants(3).length, 'mehr Tricks auf höherer Stufe');
-  assert.ok(variants(1, 'vorhand').every((v) => v.side > 0) && variants(1, 'rueckhand').every((v) => v.side < 0));
+  assert.ok(variants(1, 'vorhand').every((v) => v.side < 0) && variants(1, 'rueckhand').every((v) => v.side > 0));
   // Jeder Weg geht am Verteidiger vorbei, ohne ihn zu berühren
-  for (const m of MOVES) for (const [x, y] of m.pts) assert.ok(Math.hypot(x, y) > 90, `${m.name} kommt dem Verteidiger zu nah: ${x},${y}`);
+  for (const m of MOVES) {
+    for (let i = 0; i < (m.gen ? 50 : 1); i++) {
+      const pts = m.gen ? m.gen().pts : m.pts;
+      for (const [x, y] of pts) assert.ok(Math.hypot(x, y) > 90, `${m.name} kommt dem Verteidiger zu nah: ${x},${y}`);
+    }
+  }
+  // Zieher: mal kurz, mal lang
+  const pullMove = MOVES.find((m) => m.name === 'Rückhandzieher');
+  const widths = Array.from({ length: 200 }, () => pullMove.gen().pts[2][0]);
+  assert.ok(Math.min(...widths) < 160 && Math.max(...widths) > 300, `Weiten ${Math.min(...widths)} bis ${Math.max(...widths)}`);
+  // Vorhandzieher geht links vorbei, Rückhandzieher rechts
+  assert.ok(variants(1).find((v) => v.move.name === 'Vorhandzieher').side < 0);
+  assert.ok(variants(1).find((v) => v.move.name === 'Rückhandzieher').side > 0);
 
   const game = topicGame('zieher');
   let result = null;

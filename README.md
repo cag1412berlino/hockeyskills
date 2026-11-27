@@ -117,14 +117,14 @@ Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geh
 
 ## Tricktrainer: Themen und Dauertraining
 
-Wer „Tricks“ wählt, entscheidet zuerst: **Runde auf Zeit** (75 Sekunden, Tricks je nach Stufe, mit Sternen) oder ein **Thema zum Dauertraining**: Zieher, Vorhand, Rückhand, Dribbeln, Drehungen, Täuschen oder alle Tricks gemischt. Im Dauertraining gibt es keine Zeitgrenze; die Tricks des Themas kommen in gemischter Reihenfolge, bis man den Ball aufs X legt. Dann wird abgerechnet („Geübt 4:12“), die Sterne richten sich nach der geübten Zeit. Jedes Thema hat einen eigenen Rekord.
+Wer „Tricks“ wählt, entscheidet zuerst: **Runde auf Zeit** (75 Sekunden, Tricks je nach Stufe, mit Sternen) oder ein **Thema zum Dauertraining**: Zieher, Vorhand (alles, was links vorbeigeht), Rückhand (alles nach rechts), Dribbeln, Drehungen, Täuschen oder alle Tricks gemischt. Im Dauertraining gibt es keine Zeitgrenze; die Tricks des Themas kommen in gemischter Reihenfolge, bis man den Ball aufs X legt. Dann wird abgerechnet („Geübt 4:12“), die Sterne richten sich nach der geübten Zeit. Jedes Thema hat einen eigenen Rekord.
 
 Die elf Tricks (die meisten in beide Richtungen):
 
 | Trick | Bewegung |
 | --- | --- |
-| Vorhandzieher | gerade an, kurz vor dem Verteidiger quer auf die Vorhand (rechts) ziehen, vorbei |
-| Rückhandzieher | dasselbe zur Rückhand (links) |
+| Vorhandzieher | gerade an, kurz vor dem Verteidiger mit der Vorhand quer nach links ziehen, vorbei – mal kurz, mal lang |
+| Rückhandzieher | dasselbe mit der Rückhand nach rechts – mal kurz, mal lang |
 | Umlaufen | im Bogen außen herum |
 | Rückzieher | an, ein Stück zurückziehen, seitlich weg |
 | Zickzack | zwei schnelle Haken |

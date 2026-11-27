@@ -19,14 +19,27 @@ const arc = (r, from, to, n = 14) =>
   });
 
 // pts: Weg um den Verteidiger, diff: ab welcher Stufe der Trick in der Runde auf Zeit vorkommt,
-// topics: zu welchen Themen er gehört. only: 1 = nur nach rechts (Vorhandseite), -1 = nur nach links.
+// topics: zu welchen Themen er gehört. only: 1 = nur nach rechts, -1 = nur nach links.
 // Ohne only kommt der Trick in beide Richtungen (gespiegelt).
+// gen (optional) baut den Weg jedes Mal neu, z. B. mal kurz, mal lang gezogen.
+//
+// Wie im Hockey üblich (Rechtshänder): Beim Vorhandzieher wird der Ball mit der Vorhand nach links
+// gezogen, beim Rückhandzieher mit der Rückhand nach rechts.
 const PULL = [[0, 320], [0, 125], [190, 125], [190, -230]];
+
+/** Zieher mit zufälliger Weite (wie weit quer gezogen wird) und Höhe (wie nah am Verteidiger). */
+function pull() {
+  const wide = 130 + Math.random() * 210;           // 130 (kurz) bis 340 (lang)
+  const at = 105 + Math.random() * 70;              // so weit vor dem Verteidiger wird gezogen
+  const label = wide > 265 ? 'Langer' : wide < 175 ? 'Kurzer' : '';
+  return { pts: [[0, 330], [0, at], [wide, at - 10], [wide, -230]], label };
+}
+
 export const MOVES = [
-  // gerade an, kurz vor dem Verteidiger quer auf die Vorhand ziehen, vorbei
-  { name: 'Vorhandzieher', pts: PULL, diff: 1, only: 1, topics: ['zieher', 'vorhand'] },
-  // dasselbe zur Rückhand
-  { name: 'Rückhandzieher', pts: PULL, diff: 1, only: -1, topics: ['zieher', 'rueckhand'] },
+  // gerade an, kurz vor dem Verteidiger mit der Vorhand quer nach links ziehen, vorbei – mal kurz, mal lang
+  { name: 'Vorhandzieher', pts: PULL, gen: pull, diff: 1, only: -1, topics: ['zieher', 'vorhand'] },
+  // dasselbe mit der Rückhand nach rechts
+  { name: 'Rückhandzieher', pts: PULL, gen: pull, diff: 1, only: 1, topics: ['zieher', 'rueckhand'] },
   // im Bogen außen herum
   { name: 'Umlaufen', pts: [[0, 320], ...arc(185, 90, -90)], diff: 1, topics: ['dribbeln'] },
   // an, ein Stück zurück, seitlich weg
@@ -49,13 +62,13 @@ export const MOVES = [
 
 /** Themen für das Dauertraining. */
 export const TOPICS = [
-  { id: 'zieher', name: 'Zieher', sub: 'Vorhand, Rückhand, V, Rück' },
-  { id: 'vorhand', name: 'Vorhand', sub: 'vorbei auf der rechten Seite' },
-  { id: 'rueckhand', name: 'Rückhand', sub: 'vorbei auf der linken Seite' },
-  { id: 'dribbeln', name: 'Dribbeln', sub: 'Indisch, Zickzack, Bogen' },
-  { id: 'drehung', name: 'Drehungen', sub: 'Drehung, Rückwärtsdrehung' },
-  { id: 'taeuschen', name: 'Täuschen', sub: 'Antäuschen und weg' },
-  { id: 'alle', name: 'Alle Tricks', sub: 'alles gemischt' },
+  { id: 'zieher', name: 'Zieher', sub: 'Vorhand, Rückhand, V, Rück', icon: 'V-Zieher' },
+  { id: 'vorhand', name: 'Vorhand', sub: 'mit der Vorhand nach links vorbei', icon: 'Vorhandzieher' },
+  { id: 'rueckhand', name: 'Rückhand', sub: 'mit der Rückhand nach rechts vorbei', icon: 'Rückhandzieher' },
+  { id: 'dribbeln', name: 'Dribbeln', sub: 'Indisch, Zickzack, Bogen', icon: 'Indisches Dribbling' },
+  { id: 'drehung', name: 'Drehungen', sub: 'Drehung, Rückwärtsdrehung', icon: 'Drehung' },
+  { id: 'taeuschen', name: 'Täuschen', sub: 'Antäuschen und weg', icon: 'Körpertäuschung' },
+  { id: 'alle', name: 'Alle Tricks', sub: 'alles gemischt', icon: 'Doppelzieher' },
 ];
 
 /** Richtung, in der ein Weg am Verteidiger vorbeigeht: 1 = rechts, -1 = links. */
@@ -68,9 +81,9 @@ export function variants(level, topic = null) {
     for (const mirror of [1, -1]) {
       const side = exitSide(move) * mirror;
       if (move.only && side !== move.only) continue;
-      if (topic === 'vorhand' && side < 0) continue;
-      if (topic === 'rueckhand' && side > 0) continue;
-      // Vorhand und Rückhand: alle Tricks, die auf dieser Seite vorbeigehen
+      // Vorhand: alles, was links vorbeigeht (mit der Vorhand gezogen), Rückhand: alles nach rechts
+      if (topic === 'vorhand' && side > 0) continue;
+      if (topic === 'rueckhand' && side < 0) continue;
       if (topic && !['alle', 'vorhand', 'rueckhand'].includes(topic) && !move.topics.includes(topic)) continue;
       if (!topic && move.diff > level) continue;
       out.push({ move, mirror, side });
@@ -118,11 +131,13 @@ class Tricks {
     this.current = this.draw_();
     const { move, mirror, side } = this.current;
     const { x, y } = this.defender;
-    const dir = move.only ? '' : side > 0 ? ' →' : ' ←';
-    this.name = `${move.name}${dir}`;
-    this.path = resample(move.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
+    const dir = side > 0 ? ' →' : ' ←';
+    const made = move.gen ? move.gen() : { pts: move.pts, label: '' };
+    const full = made.label ? `${made.label} ${move.name}` : move.name;
+    this.name = `${full}${dir}`;
+    this.path = resample(made.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
     this.ghostTime = (this.path.length * 10) / GHOST_SPEED;
-    this.env.say(move.only ? move.name : `${move.name} nach ${side > 0 ? 'rechts' : 'links'}`);
+    this.env.say(move.only ? full : `${full} nach ${side > 0 ? 'rechts' : 'links'}`);
     this.state = 'show'; // 'show' = vormachen, 'ready' = Ball zum Start, 'do' = nachmachen
     this.t = 0;
     this.idx = 0;

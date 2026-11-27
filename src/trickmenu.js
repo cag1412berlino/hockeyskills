@@ -1,11 +1,13 @@
 // Auswahl beim Tricktrainer: Runde auf Zeit oder Dauertraining zu einem Thema.
 import { DwellButton, icons, title, text, tone } from './ui.js';
 import { ButtonScene, grid } from './scenebase.js';
-import { MOVES, TOPICS, variants } from './games/tricks.js';
+import { TOPICS, variants } from './games/tricks.js';
 
 /** Symbol eines Themas: der Weg eines typischen Tricks um einen Punkt (den Verteidiger). */
 function topicIcon(topicId) {
-  const v = topicId === 'runde' ? { move: MOVES.find((m) => m.name === 'V-Zieher'), mirror: 1 } : variants(3, topicId)[0];
+  // Jedes Thema zeigt seinen typischen Trick in der richtigen Richtung
+  const name = topicId === 'runde' ? 'Rückzieher' : TOPICS.find((t) => t.id === topicId)?.icon;
+  const v = variants(3, topicId === 'runde' ? 'alle' : topicId).find((x) => x.move.name === name) ?? variants(3, topicId)[0];
   return (ctx, r) => {
     const k = r / 520;
     ctx.fillStyle = '#fff';
