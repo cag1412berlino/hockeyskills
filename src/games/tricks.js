@@ -384,7 +384,7 @@ export default module.default = {
   name: 'Tricks',
   duration: 75,
   scale: 0.85,
-  medals: [[140, 700, 1150], [50, 460, 980], [20, 110, 320]],
+  medals: [[150, 720, 1160], [50, 490, 1000], [20, 110, 360]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

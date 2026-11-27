@@ -312,7 +312,9 @@ function renderChecklist() {
   const steps = [
     ['Kamera läuft', !!source],
     ['Ball erkannt', !!source && quality() >= 80],
-    [config.calib?.missing?.length ? `Kalibriert, aber es fehlt: ${config.calib.missing.join(', ')}` : 'Kalibriert', !!config.calib && !config.calib.missing?.length],
+    [config.calib && config.calib.shape !== config.fieldShape ? 'Feldformat geändert – bitte neu kalibrieren'
+      : config.calib?.missing?.length ? `Kalibriert, aber es fehlt: ${config.calib.missing.join(', ')}` : 'Kalibriert',
+    !!config.calib && config.calib.shape === config.fieldShape && !config.calib.missing?.length],
   ];
   const list = $('#checklist');
   if (list.children.length !== steps.length) {
@@ -731,7 +733,7 @@ async function calibrate(kind) {
     const result = kind === 'auto'
       ? await autoCalibrate(calibrationIO, engine.fieldCorners())
       : await manualCalibrate(calibrationIO, engine.fieldCorners());
-    config.calib = { ...result, aspect: stage.width / stage.height };
+    config.calib = { ...result, aspect: stage.width / stage.height, shape: config.fieldShape };
     saveConfig();
     updateRegion();
     mode = 'camera';

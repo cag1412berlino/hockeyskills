@@ -49,7 +49,8 @@ export class ButtonScene {
  */
 export function grid(items, w, make, cols = null) {
   const n = items.length;
-  cols ??= w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
+  // Breites Feld (ganze Projektionsfläche): bis fünf in einer Reihe, mehr in zwei Reihen
+  cols ??= w > 1400 ? (n <= 5 ? n : Math.ceil(n / 2)) : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
   const rows = Math.ceil(n / cols);
   const cell = w / cols;
   const step = rows > 2 ? 222 : 320;

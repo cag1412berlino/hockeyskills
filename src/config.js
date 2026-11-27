@@ -7,7 +7,7 @@ const KEY = 'hockeyskills.v1';
 const defaults = () => ({
   cameraId: null,
   ball: { preset: 'orange', ...BALL_PRESETS.orange },
-  fieldShape: 'square', // 'square' = Quadrat, 'full' = ganze Projektionsfläche
+  fieldShape: 'full',   // 'full' = ganze Projektionsfläche (Standard), 'square' = Quadrat in der Mitte
   speed: 1,             // Tempo: 0 = langsam, 1 = normal, 2 = schnell
   fieldMeters: 2,       // tatsächliche Kantenlänge des projizierten Felds in Metern
   latency: 0,           // Vorhalt in Millisekunden gegen die Verzögerung von Kamera und Beamer
@@ -37,6 +37,12 @@ export const config = load();
 // Die Drehung beginnt bei jedem Start bei 0 Grad. Sie gilt nur für die laufende Sitzung,
 // damit ein versehentlicher Druck auf die Taste R nicht dauerhaft hängen bleibt.
 config.rotation = 0;
+
+// Einmalig: Das Spiel nutzt jetzt standardmäßig die ganze Breite der Projektion.
+if (!config.wideDefault) {
+  config.fieldShape = 'full';
+  config.wideDefault = true;
+}
 
 // Gespeicherte Profile auf den aktuellen Stand bringen.
 config.profiles = (Array.isArray(config.profiles) ? config.profiles : []).map(completeProfile);

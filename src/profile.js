@@ -134,7 +134,7 @@ export const BADGES = [
   { id: 'stars25', sym: '25★', name: 'Sternensammler', desc: 'Sammle insgesamt 25 Sterne.', test: (p) => p.stats.stars >= 25 },
   { id: 'stars100', sym: '100★', name: 'Sternenhimmel', desc: 'Sammle insgesamt 100 Sterne.', test: (p) => p.stats.stars >= 100 },
   { id: 'mult4', sym: 'x4', name: 'Serienheld', desc: 'Schaffe zehn schnelle Treffer hintereinander, bis oben „x4“ steht.', test: (p) => p.stats.maxMult >= 4 },
-  { id: 'all', sym: '18', name: 'Alleskönner', desc: 'Spiele jede der 18 Übungen mindestens einmal.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.played[g.id])) },
+  { id: 'all', sym: 'Alle', name: 'Alleskönner', desc: 'Spiele jede Übung mindestens einmal.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.played[g.id])) },
   ...[['treffen', 'Treffen'], ['fuehren', 'Führen'], ['wechsel', 'Wechsel'], ['stoppen', 'Stoppen'], ['tricks', 'Tricks']].map(([id, label]) => ({
     id: `cat_${id}`, sym: label[0], name: `${label}-Meister`, desc: `Hole in jeder Übung des Schwerpunkts „${label}“ mindestens zwei Sterne.`,
     test: (p, cats) => cats.find((c) => c.id === id)?.games.every((g) => (p.stats.best[g.id] || 0) >= 2) ?? false,
@@ -151,8 +151,8 @@ export const BADGES = [
   { id: 'rank', sym: '▲', name: 'Aufsteiger', desc: 'Sammle 18.000 Punkte und erreiche den Rang „Techniker“.', test: (p) => rankOf(p.xp).index >= 3 },
   // Zweite Albumhälfte: für alle, die länger dabei sind
   { id: 'stars250', sym: '250★', name: 'Galaxie', desc: 'Sammle insgesamt 250 Sterne.', test: (p) => p.stats.stars >= 250 },
-  { id: 'all3', sym: '★★★', name: 'Perfektionist', desc: 'Hole in jeder der 18 Übungen alle drei Sterne.', test: (p, cats) => cats.every((c) => c.games.every((g) => (p.stats.best[g.id] || 0) >= 3)) },
-  { id: 'hardall', sym: '18!', name: 'Furchtlos', desc: 'Spiele jede Übung einmal auf der Stufe „Schwer“ zu Ende.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.hardPlayed[g.id])) },
+  { id: 'all3', sym: '★★★', name: 'Perfektionist', desc: 'Hole in jeder Übung alle drei Sterne.', test: (p, cats) => cats.every((c) => c.games.every((g) => (p.stats.best[g.id] || 0) >= 3)) },
+  { id: 'hardall', sym: 'Alle!', name: 'Furchtlos', desc: 'Spiele jede Übung einmal auf der Stufe „Schwer“ zu Ende.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.hardPlayed[g.id])) },
   { id: 'score1500', sym: '1,5k', name: 'Punktejäger', desc: 'Hole in einer einzigen Übung 1.500 Punkte.', test: (p) => p.stats.maxScore >= 1500 },
   { id: 'score2500', sym: '2,5k', name: 'Rekordjäger', desc: 'Hole in einer einzigen Übung 2.500 Punkte.', test: (p) => p.stats.maxScore >= 2500 },
   { id: 'variety', sym: '5×', name: 'Vielseitig', desc: 'Spiele an einem Tag fünf verschiedene Übungen.', test: (p) => mostGamesOnOneDay(p) >= 5 },

@@ -44,6 +44,21 @@ export const goals = {
     }
     return t;
   },
+  rain(g, ball) {
+    // die Stelle in der Zone, die am weitesten von allem entfernt ist, was gleich ankommt
+    const W = g.env.field.w;
+    let best = ball.x, bestScore = -Infinity;
+    for (let x = 60; x <= W - 60; x += 30) {
+      let clear = 1e9;
+      for (const it of g.items) {
+        if (it.kind !== 'block' || it.y > 960 || it.y < 300) continue;
+        clear = Math.min(clear, Math.max(0, Math.abs(x - it.x) - it.w / 2));
+      }
+      const score = Math.min(clear, 160) - Math.abs(x - ball.x) * 0.15;
+      if (score > bestScore) { bestScore = score; best = x; }
+    }
+    return { x: best, y: 860 };
+  },
   dodge: (g, ball) => flee(ball, g.hazards.filter((h) => h.wait <= 0), 210, g.env.field, g.power ?? g.star),
   chase: (g, ball) => flee(ball, g.safe > 0 || g.frozen > 0 ? [] : g.chasers, 230, g.env.field, g.ice ?? g.star),
   line(g, ball) {

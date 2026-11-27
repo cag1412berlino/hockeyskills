@@ -124,7 +124,7 @@ export class MenuScene extends ButtonScene {
       color: item.white ? '#fff' : item.color ?? colors[i % colors.length],
       icon: item.icon, label: item.name, sub: item.sub,
       onActivate: this.act(item.go),
-    }), w > 1400 ? null : 5);
+    }), 5);
     // Neuigkeiten für diesen Spieler (z. B. „Lotta hat deinen Rekord geknackt“): einmal zeigen und vorlesen
     const p = app.profile;
     if (p.news?.length) {

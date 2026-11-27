@@ -93,7 +93,7 @@ test('Abzeichen: jedes hat eine Erklärung, zählbare zeigen den Fortschritt', (
   const of = (id) => badgeProgress(BADGES.find((b) => b.id === id), p, categories);
   assert.deepEqual(of('r10'), [7, 10]);
   assert.deepEqual(of('stars25'), [14, 25]);
-  assert.deepEqual(of('all'), [1, 18]);
+  assert.deepEqual(of('all'), [1, games.length]);
   assert.deepEqual(of('cat_treffen'), [1, 4]);
   assert.equal(of('mult4'), null);
   for (let i = 0; i < 300; i++) recordRound(p, round(), categories, '2026-01-10');

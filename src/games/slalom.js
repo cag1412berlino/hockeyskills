@@ -258,7 +258,7 @@ export default {
   name: 'Slalom',
   duration: 60,
   scale: 0.65,
-  medals: [[1090, 2710, 4760], [170, 500, 980], [80, 340, 790]],
+  medals: [[1090, 2740, 4800], [160, 500, 990], [70, 330, 760]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

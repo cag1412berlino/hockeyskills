@@ -107,6 +107,10 @@ Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen:
 
 Die App misst bei jeder Übung, wie schnell der Ball war (umgerechnet mit der eingestellten Feldgröße), und zeigt den schnellsten Ball im Ergebnis und im Profil. Gezählt wird nur, was mehrere Kamerabilder am Stück so schnell war. Abzeichen gibt es für 10 und 18 km/h. Die Werte stimmen nur, wenn die Feldgröße in der Einrichtung richtig eingestellt ist.
 
+## Volle Breite
+
+Das Spielfeld nutzt standardmäßig die ganze Projektionsfläche („Ganze Projektionsfläche“ in der Einrichtung), nicht mehr nur ein Quadrat in der Mitte. Nach dem Umstellen einmal neu kalibrieren; die Kamera muss dann die ganze Breite sehen. Solange die Kalibrierung noch zum alten Format gehört, steht das in der Checkliste.
+
 ## Rennen und Slalom: Überraschungen
 
 **Rennen** läuft als einzelne Übung **endlos**: drei Herzen, alle 20 Sekunden wird es schneller, bis alle Herzen weg sind. Ein Herz kostet es, gegen ein Hindernis zu fahren oder zu lange neben der Bahn zu bleiben. Oben steht, wie lange man schon durchhält, im Ergebnis „Durchgehalten 1:23“. Im Training und im Duell bleibt Rennen eine Runde mit fester Zeit.
@@ -122,6 +126,10 @@ Jedes Rennen ist anders: Die Strecke führt durch wechselnde Zonen in zufällige
 **Slalom** wechselt mit jeder Runde das Material der Tore (Lichttore, Feuerfackeln, Eiskristalle, Backstein, Holz). Die Lichtschranke wechselt mit jedem Tor in Folge die Farbe, manchmal ist ein Tor golden (dreifache Punkte, Goldregen). Wer eine Runde ohne Pfostenberührung schafft, bekommt „Perfekte Runde!“ mit Feuerwerk; eine Feuerrunde endet mit einer Flammenwand über das ganze Bild. Berührte Pfosten zerbröseln.
 
 Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus. Ist der Ball orange oder rot, brennt das Feuer blau, damit die Kamera es nicht für den Ball hält.
+
+## Steinschlag
+
+Neue Übung im Schwerpunkt **Wechsel**: Der Ball bleibt unten in der markierten Zone, von oben fallen Felsbrocken, Mauern, Eisblöcke, Holzkisten und Feuer – mal klein (ein kurzer Schritt reicht), mal riesig (quer über das halbe Feld ziehen). Ab „Mittel“ kommen Mauern über die ganze Breite mit einer Lücke, abwechselnd links und rechts vom Ball – so wechselt man ständig zwischen Vor- und Rückhand. Ein Schatten auf der Zone zeigt, wo gleich etwas einschlägt. Ausweichen gibt Punkte (knapp vorbei mehr), Treffer kosten ein Herz, wer die Zone nach oben verlässt, bekommt die rote Warnung mit steigendem Abzug. Als einzelne Übung läuft Steinschlag endlos mit drei Herzen und wird immer schneller.
 
 ## Tricktrainer: Themen und Dauertraining
 

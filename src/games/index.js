@@ -3,6 +3,7 @@
 import targets from './targets.js';
 import cloud from './cloud.js';
 import dodge from './dodge.js';
+import rain from './rain.js';
 import chase from './chase.js';
 import line from './line.js';
 import slalom from './slalom.js';
@@ -23,7 +24,7 @@ export const categories = [
   // hue = Farbton des Schwerpunkts (wird an die Ballfarbe angepasst)
   { id: 'treffen', name: 'Treffen', hue: 325, games: [targets, cloud, dodge, chase] },
   { id: 'fuehren', name: 'Führen', hue: 140, games: [line, slalom, run, wire, eight, spotlight, trace] },
-  { id: 'wechsel', name: 'Wechsel', hue: 272, games: [pendulum, taps, rhythm] },
+  { id: 'wechsel', name: 'Wechsel', hue: 272, games: [pendulum, taps, rhythm, rain] },
   { id: 'stoppen', name: 'Stoppen', hue: 178, games: [stop, spot, roll] },
   { id: 'tricks', name: 'Tricks', hue: 66, games: [tricks] },
 ];

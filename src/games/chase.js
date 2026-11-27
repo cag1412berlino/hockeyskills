@@ -166,7 +166,7 @@ export default {
   duration: 60,
   lives: 3,
   scale: 1,
-  medals: [[250, 590, 1200], [250, 570, 1080], [260, 710, 1240]],
+  medals: [[260, 610, 1130], [240, 590, 1120], [270, 670, 1230]],
   icon(ctx, r) {
     // Ball vorneweg, zwei Fänger hinterher
     ctx.fillStyle = '#fff';
