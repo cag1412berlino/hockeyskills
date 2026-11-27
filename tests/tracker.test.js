@@ -57,6 +57,7 @@ test('findBrightSpot findet den Kalibrierpunkt', () => {
 
 test('Vorhalt: schiebt die Position in Bewegungsrichtung, aber begrenzt', async () => {
   const { predict, setFieldMeters } = await import('../src/engine.js');
+
   assert.deepEqual(predict({ x: 100, y: 100 }, { x: 500, y: 0 }, 0.1), { x: 150, y: 100 });
   assert.deepEqual(predict({ x: 100, y: 100 }, { x: 0, y: 0 }, 0.2), { x: 100, y: 100 });
   const far = predict({ x: 0, y: 0 }, { x: 9000, y: 0 }, 0.2);
@@ -71,6 +72,7 @@ test('Vorhalt: schiebt die Position in Bewegungsrichtung, aber begrenzt', async 
 
 test('Erkennungstest: gute Erkennung wird gut bewertet, Aussetzer und Störungen fallen auf', async () => {
   const { RecognitionTest, STILL_SECONDS, MOVE_SECONDS } = await import('../src/trackingtest.js');
+
   const run = (still, move) => {
     const t = new RecognitionTest();
     const dt = 1 / 30;
@@ -109,7 +111,6 @@ test('Erkennungstest: gute Erkennung wird gut bewertet, Aussetzer und Störungen
 });
 
 test('Ballerkennung meldet weitere Flecken in Ballfarbe (z. B. zweites Post-it)', async () => {
-  const { detectBall, BALL_PRESETS } = await import('../src/tracker.js');
   const w = 120, h = 80, img = new Uint8ClampedArray(w * h * 4).fill(30);
   const square = (x0, y0, n) => {
     for (let y = y0; y < y0 + n; y++) for (let x = x0; x < x0 + n; x++) img.set([255, 45, 155, 255], (y * w + x) * 4);
@@ -123,7 +124,6 @@ test('Ballerkennung meldet weitere Flecken in Ballfarbe (z. B. zweites Post-it)'
 });
 
 test('Ballerkennung: ein großer Ring in Ballfarbe ist kein Ball, die kleinere Scheibe schon', async () => {
-  const { detectBall, BALL_PRESETS } = await import('../src/tracker.js');
   const w = 200, h = 120, img = new Uint8ClampedArray(w * h * 4).fill(20);
   const paint = (x, y) => img.set([255, 45, 155, 255], (y * w + x) * 4);
   for (let y = 0; y < h; y++) {
@@ -140,6 +140,7 @@ test('Ballerkennung: ein großer Ring in Ballfarbe ist kein Ball, die kleinere S
 
 test('Kalibrierung: gespeicherte Kalibrierung mit großem Fehler gilt als unbrauchbar', async () => {
   const { calibOk } = await import('../src/calibration.js');
+
   assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: 0.01 }), true);
   assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: null }), true); // von Hand kalibriert
   assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: 29.4 }), false);
@@ -147,7 +148,8 @@ test('Kalibrierung: gespeicherte Kalibrierung mit großem Fehler gilt als unbrau
 });
 
 test('Ballerkennung sucht nur im Spielfeld: Farbe außerhalb zählt nicht', async () => {
-  const { detectBall, regionMask, BALL_PRESETS } = await import('../src/tracker.js');
+  const { regionMask } = await import('../src/tracker.js');
+
   const w = 200, h = 120, img = new Uint8ClampedArray(w * h * 4).fill(20);
   const blob = (cx, cy, r) => {
     for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) img.set([255, 45, 155, 255], (y * w + x) * 4);
@@ -164,7 +166,8 @@ test('Ballerkennung sucht nur im Spielfeld: Farbe außerhalb zählt nicht', asyn
 });
 
 test('Blasser Ball (überbelichtet, Filz) auf ähnlich gefärbtem Boden: Farbe per Klick lernen und finden', async () => {
-  const { BallTracker, detectBall } = await import('../src/tracker.js');
+  const { BallTracker } = await import('../src/tracker.js');
+
   // Werte aus einer echten Aufnahme: beiger Boden, gelber Filzball, hell beleuchtet
   const w = 160, h = 90, data = new Uint8ClampedArray(w * h * 4);
   for (let i = 0; i < w * h; i++) data.set([179, 177, 135, 255], i * 4);
@@ -185,6 +188,7 @@ test('Blasser Ball (überbelichtet, Filz) auf ähnlich gefärbtem Boden: Farbe p
 
 test('Ball-Verfolgung: bleibt am Ball, auch wenn das Schlägerblatt in Ballfarbe kurz größer ist', async () => {
   const { BallFollower } = await import('../src/tracker.js');
+
   const f = new BallFollower(480);
   const ball = (x, y) => ({ x, y, area: 20, fill: 0.78 });
   const stick = (x, y) => ({ x, y, area: 45, fill: 0.5 });
@@ -206,6 +210,7 @@ test('Ball-Verfolgung: bleibt am Ball, auch wenn das Schlägerblatt in Ballfarbe
 
 test('Ball-Verfolgung: ein riesiger Fleck (Ball und Fuß verschmolzen) wird nicht übernommen', async () => {
   const { BallFollower } = await import('../src/tracker.js');
+
   const f = new BallFollower(1280);
   for (let i = 0; i < 5; i++) f.step([{ x: 600 + i, y: 400, area: 1500, fill: 0.78 }]);
   assert.equal(f.step([{ x: 640, y: 430, area: 5400, fill: 0.6 }]), null, 'kurz zu groß: lieber kurz nichts');

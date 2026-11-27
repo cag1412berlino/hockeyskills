@@ -12,9 +12,6 @@ export function setBallHue(h) {
   ballHue = h;
 }
 
-/** Aktuelle Ballfarbe (Farbton). */
-export const ballHueNow = () => ballHue;
-
 /** Abstand eines Farbtons zur Ballfarbe in Grad (0 bis 180). */
 export const hueGap = (h) => Math.abs(((h - ballHue + 540) % 360) - 180);
 

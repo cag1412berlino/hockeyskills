@@ -70,6 +70,7 @@ test('Alle Abzeichen sind erreichbar und eindeutig', async () => {
   }
   for (let i = 0; i < 80; i++) recordRound(p, round(), categories, '2026-03-30');
   const { careerRecord } = await import('../src/career.js');
+
   for (let i = 0; i < 30; i++) careerRecord(p, categories, i, 3);
   recordRound(p, round({ topSpeed: 19.4 }), categories, '2026-03-30');
   for (const kind of ['short', 'medium', 'full', 'custom']) recordEvent(p, kind, categories);
@@ -113,6 +114,7 @@ test('Alte oder unvollständige Spielstände werden ergänzt, ohne etwas zu verl
 
 test('Wochenrangliste: zählt Montag bis Sonntag und beginnt jeden Montag neu', async () => {
   const { weekStart, weekStats } = await import('../src/profile.js');
+
   assert.equal(weekStart('2026-11-27'), '2026-11-23'); // Freitag -> Montag derselben Woche
   assert.equal(weekStart('2026-11-23'), '2026-11-23'); // Montag bleibt Montag
   assert.equal(weekStart('2026-11-29'), '2026-11-23'); // Sonntag gehört noch dazu
@@ -127,7 +129,8 @@ test('Wochenrangliste: zählt Montag bis Sonntag und beginnt jeden Montag neu', 
 });
 
 test('Alter und Altersklasse', async () => {
-  const { ageOf, ageClass, completeProfile } = await import('../src/profile.js');
+  const { ageOf, ageClass } = await import('../src/profile.js');
+
   const p = newProfile('Test');
   assert.equal(ageOf(p), null);
   assert.equal(ageClass(null), null);
@@ -151,6 +154,7 @@ test('Rang: mit einer Million Punkten wird man Clubpräsident', () => {
 
 test('Tagesaufgaben: drei am Tag, für alle gleich, morgen andere; Kiste bringt Punkte und Sammelstück', async () => {
   const { missionsFor, todaysMissions, ITEMS, CHEST_XP } = await import('../src/quests.js');
+
   const a = missionsFor('2026-11-27', categories), b = missionsFor('2026-11-27', categories);
   assert.equal(a.length, 3);
   assert.deepEqual(a, b, 'gleicher Tag, gleiche Aufgaben');
@@ -186,6 +190,7 @@ test('Tagesaufgaben: drei am Tag, für alle gleich, morgen andere; Kiste bringt 
 
 test('Nächste Ziele: Stern, Aufgabe, Wochenplatz, Abzeichen, Rang', async () => {
   const { nextGoals, weekLeader } = await import('../src/goals.js');
+
   const a = newProfile('A'), b = newProfile('B');
   for (let i = 0; i < 3; i++) recordRound(b, round({ score: 100, stars: 0 }), categories, '2026-11-26');
   for (let i = 0; i < 6; i++) recordRound(a, round({ score: 100, stars: 0 }), categories, '2026-11-20'); // Vorwoche
@@ -203,6 +208,7 @@ test('Nächste Ziele: Stern, Aufgabe, Wochenplatz, Abzeichen, Rang', async () =>
 
 test('Trainer: Zurufe und Erinnerungen im Menü', async () => {
   const { shout, SHOUTS, memories, cheerful } = await import('../src/coach.js');
+
   for (const kind of Object.keys(SHOUTS)) assert.ok(SHOUTS[kind].includes(shout(kind)), kind);
   assert.equal(shout('gibtsnicht'), null);
   assert.ok(cheerful('record') && !cheerful('misses'));
@@ -237,6 +243,7 @@ test('Duell: Altersbonus für den Jüngeren, Gesamtpunkte', async () => {
 
 test('Trainer: Tagesbilanz', async () => {
   const { memories } = await import('../src/coach.js');
+
   const p = newProfile('Lotta');
   recordRound(p, round({ stars: 2 }), categories, '2026-11-27');
   recordRound(p, round({ stars: 1 }), categories, '2026-11-27');
@@ -253,6 +260,7 @@ test('Tempo: schnellster Ball wird gemerkt', () => {
 
 test('Karriere: 30 Stationen, Ziel freischalten, Prüfungen brauchen drei Sterne', async () => {
   const { stations, careerState, careerRecord } = await import('../src/career.js');
+
   const list = stations(categories);
   assert.equal(list.length, 30);
   assert.deepEqual([list[9].need, list[19].need, list[29].need], [3, 3, 3]);

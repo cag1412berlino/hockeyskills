@@ -1,5 +1,5 @@
 // Gemeinsame Grundlage aller Bildschirme: Button-Szene, Raster, Sterne-Wertung.
-import { DwellButton, updateButtons, clickButtons } from './ui.js';
+import { DwellButton, updateButtons, clickButtons, text } from './ui.js';
 
 export const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
 export const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
@@ -65,3 +65,6 @@ export function grid(items, w, make, cols = null) {
 }
 
 export { DwellButton };
+
+/** Symbol aus dem ersten Buchstaben eines Namens (für Spieler-Knöpfe). */
+export const initial = (name) => (ctx, r) => text(ctx, (name[0] ?? '?').toUpperCase(), 0, r * 0.06, r * 1.1, '#fff', 'center', 0);

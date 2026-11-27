@@ -370,6 +370,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | --- | --- |
 | `index.html`, `styles.css` | Einrichtungsseite und Zeichenfläche |
 | `src/main.js` | Startpunkt: Einrichtungsseite, Kamera, Kalibrierung, Tastatur |
+| `src/setup/players.js` | Reiter „Spieler“: Spielerliste, Verlauf, Spielstände sichern und laden, Ankreuzliste fürs eigene Training |
 | `src/app.js` | Wechsel zwischen den Bildschirmen, Abrechnung der Runden, Training, Duell |
 | `src/engine.js` | Zeichenschleife, Spielfeld-Koordinaten, Ballposition, Hintergrund |
 | `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |

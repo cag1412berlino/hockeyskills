@@ -82,7 +82,8 @@ test('jedes Spiel hat Name, Hinweis, Symbol und Sterne-Schwellen', () => {
 });
 
 test('Training: Kurz nimmt eine Übung je Kategorie, Komplett alle', async () => {
-  const { categories, sessionPlan } = await import('../src/games/index.js');
+  const { sessionPlan } = await import('../src/games/index.js');
+
   const short = sessionPlan('short');
   assert.equal(short.length, categories.length);
   categories.forEach((c, i) => assert.ok(c.games.includes(short[i]), 'eine Übung aus jeder Kategorie, reihum'));
@@ -233,7 +234,9 @@ test('Kamera-Störungen: Auch mit Zittern, Verzögerung und Aussetzern bleibt je
 
 test('Farben: Spielfarben meiden den Bereich um die Ballfarbe', async () => {
   const { setBallHue, safeHue, worldPalette, THEME_IDS } = await import('../src/themes.js');
+
   const { BALL_PRESETS } = await import('../src/tracker.js');
+
   const apart = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
   for (const ball of Object.values(BALL_PRESETS)) {
     setBallHue(ball.h);
@@ -251,6 +254,7 @@ test('Farben: Spielfarben meiden den Bereich um die Ballfarbe', async () => {
 
 test('Themenwelten: Hintergrund und Bodenspuren lassen sich in jeder Welt zeichnen', async () => {
   const { THEMES, Floor } = await import('../src/themes.js');
+
   const field = { w: 1000, h: 1000 };
   const dots = Array.from({ length: 10 }, (_, i) => ({ x: i / 10, y: i / 10, r: 1, a: 0.2, v: 5, tw: 1 }));
   for (const [id, world] of Object.entries(THEMES)) {
@@ -271,6 +275,7 @@ test('Themenwelten: Hintergrund und Bodenspuren lassen sich in jeder Welt zeichn
 
 test('Erklär-Animation: jeder Schritt lässt sich zu jedem Zeitpunkt zeichnen', async () => {
   const { drawHowTo, HOWTO_STEPS } = await import('../src/howto.js');
+
   const noop = () => {};
   const gradient = { addColorStop: noop };
   const ctx = new Proxy({}, {
@@ -313,6 +318,7 @@ test('Rennen endlos: nur Herzen beenden es, es wird immer schneller; im Training
 
 test('Tricks: elf Tricks, Themen fürs Dauertraining, Dauertraining endet erst auf Wunsch', async () => {
   const { MOVES, TOPICS, variants, topicGame } = await import('../src/games/tricks.js');
+
   assert.ok(MOVES.length >= 11);
   for (const t of TOPICS) assert.ok(variants(1, t.id).length >= 4, `${t.name}: genug Tricks`);
   assert.ok(variants(1).length < variants(2).length && variants(2).length < variants(3).length, 'mehr Tricks auf höherer Stufe');
@@ -355,6 +361,7 @@ test('Tricks: elf Tricks, Themen fürs Dauertraining, Dauertraining endet erst a
 
 test('Tricks: Linkshänder gespiegelt, jeder Trick variiert, Ketten halten Abstand zu beiden Verteidigern', async () => {
   const { MOVES, variants, shape, topicGame } = await import('../src/games/tricks.js');
+
   const side = (lefty, name) => variants(1, null, lefty).find((v) => v.move.name === name).side;
   assert.equal(side(false, 'Vorhandzieher'), -1);
   assert.equal(side(true, 'Vorhandzieher'), 1, 'Linkshänder ziehen mit der Vorhand nach rechts');
