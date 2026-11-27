@@ -106,6 +106,8 @@ Danach in Chrome `http://localhost:8080` öffnen. Die Kamera funktioniert nur ü
 
 ## Einrichtung in der App
 
+Ganz oben in der Einrichtung läuft die Animation **„So funktioniert es“**: Sie zeigt in sechs Schritten, wie Beamer, Kamera, Laptop und Ball zusammenspielen (Klick = nächster Schritt).
+
 1. **Kamera starten** und die richtige Kamera wählen.
 2. **Ballfarbe** wählen. Im Kamerabild leuchtet alles türkis, was die App für den Ball hält. Passt das nicht, im Kamerabild auf den Ball klicken; die App lernt dann dessen Farbe.
 3. **Bild drehen**, bis die Schrift vom Platz des Kindes aus richtig herum steht (auch mit Taste `R`). Die Drehung beginnt bei jedem Start wieder bei 0°.
@@ -212,6 +214,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |
 | `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
+| `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
 | `src/profile.js` | Spielerprofile, Rang, Abzeichen, Verlauf, Übung des Tages |

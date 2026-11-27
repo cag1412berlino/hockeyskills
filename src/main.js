@@ -13,6 +13,7 @@ import { games, categories } from './games/index.js';
 import { newProfile, completeProfile, rankOf, summarize } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
+import { startHowTo } from './howto.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -603,6 +604,7 @@ voice.enabled = config.voice;
 music.enabled = config.music;
 buildSetup();
 app.menu();
+startHowTo($('#howto'));
 showSetup(true);
 engine.start();
 if (SIM) {

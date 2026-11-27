@@ -266,3 +266,17 @@ test('Themenwelten: Hintergrund und Bodenspuren lassen sich in jeder Welt zeichn
     assert.equal(floor.marks.length, 0, 'Spuren verblassen wieder');
   }
 });
+
+test('Erklär-Animation: jeder Schritt lässt sich zu jedem Zeitpunkt zeichnen', async () => {
+  const { drawHowTo, HOWTO_STEPS } = await import('../src/howto.js');
+  const noop = () => {};
+  const gradient = { addColorStop: noop };
+  const ctx = new Proxy({}, {
+    get: (o, k) => (k in o ? o[k] : /Gradient/.test(String(k)) ? () => gradient : noop),
+    set: (o, k, v) => { o[k] = v; return true; },
+  });
+  assert.equal(HOWTO_STEPS, 6);
+  for (let step = 0; step < HOWTO_STEPS; step++) {
+    for (let t = 0; t < 8; t += 0.25) drawHowTo(ctx, step, t);
+  }
+});
