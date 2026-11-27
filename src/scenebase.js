@@ -43,16 +43,17 @@ export class ButtonScene {
 }
 
 /**
- * Ordnet Buttons in einem Raster an: bis vier in zwei Spalten, bis sechs in drei, sonst in vier.
+ * Ordnet Buttons in einem Raster an: bis vier in zwei Spalten, bis sechs in drei, sonst in vier
+ * (oder in cols Spalten, wenn angegeben).
  * make(item, x, y, r, index) baut den einzelnen Button. Die letzte Reihe wird mittig gesetzt.
  */
-export function grid(items, w, make) {
+export function grid(items, w, make, cols = null) {
   const n = items.length;
-  const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
+  cols ??= w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
   const rows = Math.ceil(n / cols);
   const cell = w / cols;
   const step = rows > 2 ? 222 : 320;
-  const r = rows > 2 ? 66 : rows > 1 ? Math.min(112, cell * 0.32) : Math.min(150, cell * 0.3);
+  const r = rows > 2 ? 66 : rows > 1 ? Math.min(112, cell * (cols >= 5 ? 0.36 : 0.32)) : Math.min(150, cell * 0.3);
   return items.map((item, i) => {
     const row = Math.floor(i / cols);
     const inRow = Math.min(cols, n - row * cols);

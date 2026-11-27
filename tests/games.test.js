@@ -384,3 +384,14 @@ test('Tricks: Linkshänder gespiegelt, jeder Trick variiert, Ketten halten Absta
     }
   }
 });
+
+test('Tempo-Messung: gleichmäßig schnell zählt, ein einzelnes Zucken nicht', () => {
+  const app = fakeApp({ demos: false, fieldMeters: 2 });
+  const scene = new PlayScene(app, games[0], 1, null, { events: false });
+  scene.layout();
+  // 2500 Einheiten/s bei 2 m Feld = 5 m/s = 18 km/h, aber nur ein Bild lang
+  for (const v of [100, 100, 2500, 100, 100]) scene.measure({ visible: true, vx: v, vy: 0 });
+  assert.ok(scene.topSpeed < 1);
+  for (let i = 0; i < 6; i++) scene.measure({ visible: true, vx: 1000, vy: 0 }); // 2 m/s = 7,2 km/h
+  assert.ok(Math.abs(scene.topSpeed - 7.2) < 0.01, String(scene.topSpeed));
+});

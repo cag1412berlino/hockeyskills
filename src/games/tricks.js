@@ -139,7 +139,7 @@ class Tricks {
     // Trick-Ketten: im Thema „Trick-Ketten“ immer, auf „Schwer“ jeder dritte Trick
     this.chains = env.topic === 'kette' ? 1 : env.level === 3 && !env.topic ? 1 / 3 : 0;
     // Auf „Mittel“ und „Schwer“ macht der Verteidiger einen Schritt auf den Ball zu
-    this.lunge = { 1: 0, 2: 22, 3: 42 }[env.level];
+    this.lunge = { 1: 0, 2: 18, 3: 28 }[env.level];
     this.deck = [];
     this.current = null;
     this.load();
@@ -383,8 +383,8 @@ export default module.default = {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 1.05,
-  medals: [[170, 860, 1420], [60, 540, 1280], [20, 50, 170]],
+  scale: 0.85,
+  medals: [[140, 700, 1150], [50, 460, 980], [20, 110, 320]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

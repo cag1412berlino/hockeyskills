@@ -60,7 +60,7 @@ test('Trainings- und Schwerpunkt-Abzeichen', () => {
   assert.ok(!p.badges.cat_fuehren);
 });
 
-test('Alle Abzeichen sind erreichbar und eindeutig', () => {
+test('Alle Abzeichen sind erreichbar und eindeutig', async () => {
   assert.equal(new Set(BADGES.map((b) => b.id)).size, BADGES.length);
   const p = newProfile('Test');
   for (let day = 1; day <= 30; day++) {
@@ -69,6 +69,9 @@ test('Alle Abzeichen sind erreichbar und eindeutig', () => {
     }
   }
   for (let i = 0; i < 80; i++) recordRound(p, round(), categories, '2026-03-30');
+  const { careerRecord } = await import('../src/career.js');
+  for (let i = 0; i < 30; i++) careerRecord(p, categories, i, 3);
+  recordRound(p, round({ topSpeed: 19.4 }), categories, '2026-03-30');
   for (const kind of ['short', 'medium', 'full', 'custom']) recordEvent(p, kind, categories);
   for (let i = 0; i < 6; i++) { recordEvent(p, 'short', categories); recordEvent(p, 'duel', categories); }
   assert.ok(p.badges.collector, 'der Sammler kommt, sobald 30 andere da sind');
@@ -238,4 +241,38 @@ test('Trainer: Tagesbilanz', async () => {
   recordRound(p, round({ stars: 2 }), categories, '2026-11-27');
   recordRound(p, round({ stars: 1 }), categories, '2026-11-27');
   assert.ok(memories(p, games, categories, '2026-11-27', 12).includes('Heute schon 2 Übungen und 3 Sterne – stark!'));
+});
+
+test('Tempo: schnellster Ball wird gemerkt', () => {
+  const p = newProfile('Test');
+  recordRound(p, round({ topSpeed: 12.34 }), categories, '2026-01-10');
+  recordRound(p, round({ topSpeed: 8 }), categories, '2026-01-10');
+  assert.equal(p.stats.topSpeed, 12.3);
+  assert.ok(p.badges.speed10 && !p.badges.speed18);
+});
+
+test('Karriere: 30 Stationen, Ziel freischalten, Prüfungen brauchen drei Sterne', async () => {
+  const { stations, careerState, careerRecord } = await import('../src/career.js');
+  const list = stations(categories);
+  assert.equal(list.length, 30);
+  assert.deepEqual([list[9].need, list[19].need, list[29].need], [3, 3, 3]);
+  assert.deepEqual([list[0].level, list[10].level, list[20].level], [1, 2, 3]);
+  for (const r of [0, 1, 2]) {
+    const cats = new Set(list.slice(r * 10, r * 10 + 10).map((s) => categories.find((c) => c.games.includes(s.game)).id));
+    assert.equal(cats.size, 5, 'jede Region deckt alle Schwerpunkte ab');
+  }
+  const p = newProfile('Test');
+  assert.equal(careerState(p, categories).current, 0);
+  assert.equal(careerRecord(p, categories, 0, 0).ok, false);
+  assert.equal(careerState(p, categories).current, 0, 'ohne Stern nicht weiter');
+  const r = careerRecord(p, categories, 0, 1);
+  assert.ok(r.ok && r.first && r.next.i === 1);
+  assert.equal(careerState(p, categories).current, 1);
+  assert.equal(careerRecord(p, categories, 0, 2).first, false, 'nochmal geschafft ist nicht neu');
+  for (let i = 1; i < 9; i++) careerRecord(p, categories, i, 1);
+  careerRecord(p, categories, 9, 2);
+  assert.equal(careerState(p, categories).current, 9, 'Prüfung braucht drei Sterne');
+  careerRecord(p, categories, 9, 3);
+  assert.equal(careerState(p, categories).current, 10);
+  assert.equal(p.career.done, 10);
 });

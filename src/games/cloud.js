@@ -208,8 +208,8 @@ export default {
   hint: 'Triff die Kugel, aber weiche der Wolke aus!',
   name: 'Wolke',
   duration: 60,
-  scale: 1.25,
-  medals: [[300, 1020, 1620], [110, 620, 1350], [40, 370, 1070]],
+  scale: 1.2,
+  medals: [[310, 1070, 1500], [100, 610, 1220], [30, 350, 1000]],
   icon(ctx, r) {
     const s = r * 0.42;
     ctx.beginPath();

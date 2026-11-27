@@ -35,6 +35,7 @@ export function newProfile(name) {
     name,
     birthYear: null,   // Geburtsjahr (aus dem eingetragenen Alter), für faire Ranglisten nach Altersklasse
     lefty: false,      // Linkshänder: Vorhand und Rückhand im Tricktrainer gespiegelt
+    career: { stars: {} }, // Karriere: beste Sterne je Station
     xp: 0,
     highscores: {},
     badges: {},        // Abzeichen-id -> Datum
@@ -45,7 +46,7 @@ export function newProfile(name) {
     missions: null,    // Tagesaufgaben: { day, list, chest } (siehe quests.js)
     items: {},         // Sammelstücke aus der Schatzkiste: id -> Datum
     gear: { trail: null, hat: null }, // was davon gerade angelegt ist
-    stats: { rounds: 0, stars: 0, maxMult: 0, played: {}, best: {}, hard3: false, flawless: 0, sessions: {}, dailyCount: 0, duelWins: 0, maxScore: 0, hardPlayed: {} },
+    stats: { rounds: 0, stars: 0, maxMult: 0, played: {}, best: {}, hard3: false, flawless: 0, sessions: {}, dailyCount: 0, duelWins: 0, maxScore: 0, hardPlayed: {}, topSpeed: 0 },
   };
 }
 
@@ -66,6 +67,7 @@ export function completeProfile(saved) {
   if (!Number.isFinite(p.birthYear)) p.birthYear = null;
   if (!Array.isArray(p.news)) p.news = [];
   p.lefty = !!p.lefty;
+  if (!p.career || typeof p.career.stars !== 'object') p.career = { stars: {} };
   // Ältere Spielstände kannten den Rundenrekord noch nicht: aus dem Verlauf nachtragen.
   if (!p.stats.maxScore) p.stats.maxScore = Math.max(0, ...p.history.map((h) => h.s || 0));
   return p;
@@ -164,10 +166,17 @@ export const BADGES = [
   { id: 'xp100k', sym: '100k', name: 'Hunderttausend', desc: 'Sammle insgesamt 100.000 Punkte und erreiche den Rang „Profi“.', test: (p) => p.xp >= 100000 },
   { id: 'legend', sym: '♛', name: 'Legende', desc: 'Sammle 160.000 Punkte und erreiche den Rang „Legende“.', test: (p) => p.xp >= 160000 },
   { id: 'president', sym: '1M', name: 'Clubpräsident', desc: 'Sammle eine Million Punkte und werde Clubpräsident, der höchste Rang.', test: (p) => p.xp >= 1000000 },
+  { id: 'speed10', sym: '10km', name: 'Flitzer', desc: 'Bring den Ball auf 10 km/h – die App misst bei jeder Übung den schnellsten Ball.', test: (p) => (p.stats.topSpeed || 0) >= 10 },
+  { id: 'speed18', sym: '18km', name: 'Rakete', desc: 'Bring den Ball auf 18 km/h.', test: (p) => (p.stats.topSpeed || 0) >= 18 },
+  { id: 'career10', sym: 'K10', name: 'Inselkönig', desc: 'Schaffe in der Karriere die ersten 10 Stationen.', test: (p) => careerDone(p) >= 10 },
+  { id: 'career30', sym: 'K30', name: 'Gipfelstürmer', desc: 'Schaffe alle 30 Stationen der Karriere.', test: (p) => careerDone(p) >= 30 },
   { id: 'chest1', sym: '▣', name: 'Schatzsucher', desc: 'Erledige an einem Tag alle drei Tagesaufgaben und öffne die Schatzkiste.', test: (p) => (p.stats.chests || 0) >= 1 },
   { id: 'chest10', sym: '▣10', name: 'Schatzmeister', desc: 'Öffne zehn Schatzkisten.', test: (p) => (p.stats.chests || 0) >= 10 },
   { id: 'collector', sym: '30', name: 'Sammler', desc: 'Hole 30 andere Abzeichen.', test: (p) => Object.keys(p.badges).filter((id) => id !== 'collector').length >= 30 },
 ];
+
+/** Wie viele Karriere-Stationen am Stück geschafft sind (das Ziel steht in career.js; hier reicht der Zähler). */
+const careerDone = (p) => p.career?.done ?? 0;
 
 const trainings = (p) => Object.values(p.stats.sessions).reduce((a, b) => a + b, 0);
 
@@ -205,6 +214,10 @@ const PROGRESS = {
   xp100k: (p) => [p.xp, 100000],
   legend: (p) => [p.xp, 160000],
   president: (p) => [p.xp, 1000000],
+  speed10: (p) => [Math.floor(p.stats.topSpeed || 0), 10],
+  speed18: (p) => [Math.floor(p.stats.topSpeed || 0), 18],
+  career10: (p) => [Math.min(10, careerDone(p)), 10],
+  career30: (p) => [careerDone(p), 30],
   chest10: (p) => [p.stats.chests || 0, 10],
   collector: (p) => [Object.keys(p.badges).filter((id) => id !== 'collector').length, 30],
 };
@@ -247,6 +260,7 @@ export function recordRound(p, r, categories, day = dateString()) {
   }
   const s = p.stats;
   s.maxMult = Math.max(s.maxMult, r.maxMult || 1);
+  s.topSpeed = Math.max(s.topSpeed || 0, Math.round((r.topSpeed || 0) * 10) / 10);
   if (r.counts !== false) {
     s.rounds++;
     s.stars += r.stars;

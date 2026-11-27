@@ -5,6 +5,7 @@ import { ButtonScene, grid, medals, scoreKey, thresholds, LEVEL_NAMES, SPEEDS } 
 import { todaysMissions } from './quests.js';
 import { nextGoals, weekLeader } from './goals.js';
 import { memories } from './coach.js';
+import { careerState } from './career.js';
 import { rankOf, BADGES, badgeProgress, weekStats, weekStart, dayBefore, ageOf, ageClass } from './profile.js';
 
 export { PlayScene } from './play.js';
@@ -22,6 +23,31 @@ function stopwatch(ctx, r) {
   ctx.moveTo(-r * 0.1, -r * 0.46); ctx.lineTo(r * 0.1, -r * 0.46);
   ctx.moveTo(0, -r * 0.46); ctx.lineTo(0, -r * 0.3);
   ctx.stroke();
+}
+
+/** Kurvenweg mit Fahne als Symbol für die Karriere. */
+function road(ctx, r) {
+  ctx.strokeStyle = '#fff';
+  ctx.fillStyle = '#fff';
+  ctx.lineWidth = r * 0.06;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.4, r * 0.4);
+  ctx.bezierCurveTo(r * 0.3, r * 0.4, -r * 0.4, -r * 0.05, r * 0.2, -r * 0.1);
+  ctx.stroke();
+  for (const [x, y] of [[-r * 0.4, r * 0.4], [-r * 0.05, r * 0.18], [r * 0.2, -r * 0.1]]) { ctx.beginPath(); ctx.arc(x, y, r * 0.07, 0, Math.PI * 2); ctx.fill(); }
+  ctx.beginPath();
+  ctx.moveTo(r * 0.2, -r * 0.1); ctx.lineTo(r * 0.2, -r * 0.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(r * 0.2, -r * 0.5); ctx.lineTo(r * 0.46, -r * 0.41); ctx.lineTo(r * 0.2, -r * 0.32);
+  ctx.fill();
+}
+
+/** Untertitel im Menü: welche Station als Nächstes dran ist. */
+function careerSub(app) {
+  const { current, finished } = careerState(app.profile, app.categories);
+  return finished ? 'alles geschafft' : `Station ${current + 1} von 30`;
 }
 
 /** Zwei Kugeln gegenüber als Symbol für das Duell. */
@@ -87,16 +113,18 @@ export class MenuScene extends ButtonScene {
         sub: cat.games.length > 1 ? `${cat.games.length} Übungen` : '',
         go: () => app.category(cat),
       })),
+      { name: 'Karriere', icon: road, sub: careerSub(app), go: () => app.career(), white: true },
       { name: 'Training', icon: stopwatch, sub: 'alles am Stück', go: () => app.sessionSetup(), white: true },
       { name: 'Heute', icon: sunny(daily.icon), sub: app.profile.daily === app.today() ? daily.name : `${daily.name} · Punkte x2`, go: () => app.levels(daily), white: true },
       { name: 'Duell', icon: versus, sub: 'zu zweit', go: () => app.duelSetup(), white: true },
     ];
+    // Oben die fünf Schwerpunkte, darunter Karriere, Training, Heute und Duell
     this.buttons = grid(items, w, (item, x, y, r, i) => new DwellButton({
       x, y: y + 10, r,
       color: item.white ? '#fff' : item.color ?? colors[i % colors.length],
       icon: item.icon, label: item.name, sub: item.sub,
       onActivate: this.act(item.go),
-    }));
+    }), w > 1400 ? null : 5);
     // Neuigkeiten für diesen Spieler (z. B. „Lotta hat deinen Rekord geknackt“): einmal zeigen und vorlesen
     const p = app.profile;
     if (p.news?.length) {
@@ -283,6 +311,13 @@ export class ResultScene extends ButtonScene {
     super(app);
     Object.assign(this, r);
     this.lines = rewardLines(r.rewards, app.profile).slice(0, 4);
+    if (r.career) {
+      // Karriere: geschafft oder wie viele Sterne fehlen
+      const c = r.career;
+      this.lines.unshift(c.ok ? (c.first ? `Station ${c.station.i + 1} geschafft!${c.next ? ` Weiter zu Station ${c.next.i + 1}` : ' Alle Stationen geschafft!'}` : `Station ${c.station.i + 1} wieder geschafft`)
+        : `Für Station ${c.station.i + 1} brauchst du ${c.need === 1 ? 'einen Stern' : `${c.need} Sterne`} – nochmal!`);
+      this.lines = this.lines.slice(0, 4);
+    }
     // Was als Nächstes in Reichweite liegt, sagt der Trainer in seiner Sprechblase
     const goals = nextGoals(app.profile, app.config.profiles, { score: r.score, stars: r.stars, thresholds: thresholds(r.game, r.level) }, app.categories, app.today());
     this.goals = (app.practice() ? goals.filter((g) => g.includes('Stern')) : goals).slice(0, 3);
@@ -301,11 +336,11 @@ export class ResultScene extends ButtonScene {
     this.buttons = [
       new DwellButton({
         x: w - 280, y: 835, r: 72, color: colors[0], icon: icons.replay, label: 'Nochmal',
-        onActivate: this.act(() => this.app.play(this.game, this.level, { quick: true })),
+        onActivate: this.act(() => this.app.play(this.game, this.level, { quick: true, career: this.career?.station.i })),
       }),
       new DwellButton({
-        x: w - 105, y: 835, r: 72, color: colors[2], icon: icons.home, label: 'Menü',
-        onActivate: this.act(() => this.app.menu()),
+        x: w - 105, y: 835, r: 72, color: colors[2], icon: this.career ? road : icons.home, label: this.career ? 'Karte' : 'Menü',
+        onActivate: this.act(() => (this.career ? this.app.career() : this.app.menu())),
       }),
     ];
   }
@@ -334,7 +369,9 @@ export class ResultScene extends ButtonScene {
     // Die Punktzahl zählt hoch
     text(ctx, Math.round(this.score * Math.min(1, this.time / 1.2)), cx, 395, 150, '#fff', 'center', 10, 600);
     const held = this.held != null ? `${this.heldLabel ?? 'Durchgehalten'} ${Math.floor(this.held / 60)}:${String(Math.floor(this.held % 60)).padStart(2, '0')}` : null;
-    if (this.best || held) caption(ctx, [held, this.best ? `Rekord ${this.best}` : null].filter(Boolean).join('  ·  '), cx, 500, 22, tone(c[1], 80), 'center');
+    const kmh = this.topSpeed > 3 ? `${this.speedRecord ? 'Tempo-Rekord' : 'Schnellster Ball'} ${this.topSpeed.toFixed(1).replace('.', ',')} km/h` : null;
+    const facts = [held, this.best ? `Rekord ${this.best}` : null, kmh].filter(Boolean);
+    if (facts.length) caption(ctx, facts.join('  ·  '), cx, 500, 20, this.speedRecord ? '#7dffb0' : tone(c[1], 80), 'center');
 
     // Was es fürs Profil gab, erscheint Zeile für Zeile
     this.lines.forEach((line, i) => {
@@ -409,7 +446,8 @@ export class ProfileScene extends ButtonScene {
     title(ctx, p.name, w / 2, 74, 62, c[1]);
     drawRank(ctx, p, w / 2 - 300, 138, 600, c);
     const earned = BADGES.filter((b) => p.badges[b.id]).length;
-    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 192, 20, 'rgba(255,255,255,0.7)', 'center', 0, 400);
+    const fastest = p.stats.topSpeed ? ` · schnellster Ball ${p.stats.topSpeed.toFixed(1).replace('.', ',')} km/h` : '';
+    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}${fastest}`, w / 2, 192, 20, 'rgba(255,255,255,0.7)', 'center', 0, 400);
     // Stärken: je Schwerpunkt der Anteil der geholten Sterne (beste Runde je Übung)
     const cats = this.app.categories;
     const bw = Math.min(150, (w - 200) / cats.length - 20);

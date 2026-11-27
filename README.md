@@ -49,7 +49,7 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 
 - In der Einrichtung lassen sich mehrere **Spieler** anlegen. Jeder hat eigene Bestwerte, einen Rang und ein Album.
 - Alle Punkte aus allen Übungen zählen für den **Rang**: Anfänger, Dribbler, Trickser, Techniker, Spielmacher, Kapitän, Profi, Legende und ganz oben, mit einer Million Punkten, Clubpräsident. Höhere Ränge schalten Funken und Sternchen im Ballschweif frei.
-- Es gibt 43 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
+- Es gibt 47 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
 - Der Kreis oben rechts im Menü führt zum Profil mit Rang und Album; dort lässt sich auch der Spieler wechseln. Liegt der Ball auf einem Abzeichen, steht unten, wie man es bekommt, bei zählbaren mit Fortschritt („7 von 10“); mit Sprachansagen wird es auch vorgelesen.
 - Die Einrichtung zeigt unter „Verlauf“ je Übung Runden, Bestwert, den Schnitt der letzten fünf Runden und die Tendenz.
 
@@ -98,6 +98,14 @@ Für alle Spiele gilt:
 - **Tagesbilanz:** Im Menü sagt der Trainer, was heute schon geschafft ist.
 - **Der Trainer redet mit:** Im Menü begrüßt er je nach Tageszeit und erinnert sich („Gestern: 2 Sterne bei Slalom – schaffst du heute mehr?“, „Bei Achter fehlt dir nur noch ein Stern!“, „Wie wäre es mal wieder mit Stoppen?“). Während der Runde schaut er unten links kurz herein und ruft zu: bei Serien, zur Halbzeit (vor oder hinter dem Rekord), im Endspurt, beim Rekord und aufmunternd nach Fehlern. Mit Sprachansagen spricht er es auch.
 - **Mehr Wumms:** Jeder Treffer einer Serie klingt einen Halbton höher. Bei Serie x4 und bei einem neuen Rekord regnet Konfetti; der Rekord bekommt dazu eine kurze Zeitlupe und einen hellen Blitz. Die letzten fünf Sekunden ticken hörbar herunter.
+
+## Karriere
+
+Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen: Anfänger-Insel (Stufe Leicht, 1 Stern nötig), Techniker-Tal (Mittel, 2 Sterne) und Meister-Gipfel (Schwer, 2 Sterne). Jede Station ist eine Übung; wer genug Sterne holt, schaltet die nächste frei. Jede zehnte Station ist eine Prüfung im Tricktrainer, für die es drei Sterne braucht. Jede Region enthält Übungen aus allen fünf Schwerpunkten. Der Trainer steht an der Station, die gerade dran ist; nach der Runde führt „Karte“ zurück. Geschaffte Stationen lassen sich jederzeit wiederholen. Zwei Abzeichen gibt es für 10 und für alle 30 Stationen.
+
+## Tempo
+
+Die App misst bei jeder Übung, wie schnell der Ball war (umgerechnet mit der eingestellten Feldgröße), und zeigt den schnellsten Ball im Ergebnis und im Profil. Gezählt wird nur, was mehrere Kamerabilder am Stück so schnell war. Abzeichen gibt es für 10 und 18 km/h. Die Werte stimmen nur, wenn die Feldgröße in der Einrichtung richtig eingestellt ist.
 
 ## Rennen und Slalom: Überraschungen
 
@@ -337,6 +345,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
+| `src/career.js`, `src/trickmenu.js` | Karriere-Karte; Auswahl im Tricktrainer |
 | `src/coach.js` | Zurufe des Trainers und seine Erinnerungen im Menü |
 | `src/quests.js`, `src/goals.js`, `src/collection.js` | Tagesaufgaben, Schatzkiste und Sammelstücke; nächste Ziele und Krone der Woche; Bildschirm „Sammlung“ |
 | `src/profile.js` | Spielerprofile, Rang, Abzeichen, Verlauf, Übung des Tages |

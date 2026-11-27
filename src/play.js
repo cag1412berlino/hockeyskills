@@ -73,6 +73,8 @@ export class PlayScene {
     this.show = new Show();  // Goldregen
     this.gold = 0;
     this.lastSecond = 99;
+    this.topSpeed = 0;       // schnellster Ball dieser Runde in km/h
+    this.speeds = [];
     this.lastLives = this.lives;
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
@@ -317,6 +319,7 @@ export class PlayScene {
 
     this.timeLeft -= dt;
     this.elapsed += dt;
+    this.measure(ball);
     if (this.streakLeft > 0 && (this.streakLeft -= dt) <= 0) this.streak = 0;
     this.double = Math.max(0, this.double - dt);
     this.gold = Math.max(0, (this.gold || 0) - dt);
@@ -370,6 +373,22 @@ export class PlayScene {
     if (this.timeLeft <= 0) this.finish();
   }
 
+  /**
+   * Tempo messen: Ballgeschwindigkeit in km/h, umgerechnet mit der eingestellten Feldgröße.
+   * Gezählt wird nur, was mehrere Bilder am Stück so schnell war – ein Zucken der Kamera zählt nicht.
+   */
+  measure(ball) {
+    if (!ball.visible) { this.speeds.length = 0; return; }
+    const meters = this.app.config.fieldMeters || 2;
+    const kmh = Math.hypot(ball.vx || 0, ball.vy || 0) * (meters / 1000) * 3.6;
+    this.speeds.push(kmh);
+    if (this.speeds.length > 4) this.speeds.shift();
+    if (this.speeds.length === 4) {
+      const steady = Math.min(...this.speeds);
+      if (steady < 60) this.topSpeed = Math.max(this.topSpeed, steady);
+    }
+  }
+
   togglePause() {
     this.userPaused = !this.userPaused;
   }
@@ -381,9 +400,12 @@ export class PlayScene {
     this.score = Math.round(this.score);
     app.music.stop();
     // Dauertraining: Sterne nach der geübten Zeit, so zählt fleißiges Üben genauso wie eine Runde
+    const speedRecord = !app.practice?.() && this.topSpeed > 3 && this.topSpeed > (this.player()?.stats?.topSpeed || 0);
     const stars = this.steady ? (this.elapsed < 20 ? 0 : medals(game, this.score, level, this.elapsed)) : medals(game, this.score, level, this.endless ? game.duration ?? 60 : this.duration);
+    // Karriere zuerst verbuchen, damit ein Karriere-Abzeichen gleich mit dieser Runde kommt
+    const career = this.opts.career != null && !this.session ? app.careerRecord?.(this.opts.career, stars) ?? null : null;
     const rewards = app.record(
-      { game, level, score: this.score, stars, maxMult: this.maxMult, lives: this.endless ? 0 : game.lives ?? 0, livesLeft: this.lives ?? 0 },
+      { game, level, score: this.score, stars, maxMult: this.maxMult, lives: this.endless ? 0 : game.lives ?? 0, livesLeft: this.lives ?? 0, topSpeed: this.topSpeed },
       this.player(),
     );
     if (this.session) {
@@ -406,7 +428,7 @@ export class PlayScene {
       app.profile.highscores[key] = this.score;
       app.save();
     }
-    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards, held: this.endless ? this.elapsed : null, heldLabel: this.steady ? 'Geübt' : 'Durchgehalten' });
+    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards, career, held: this.endless ? this.elapsed : null, heldLabel: this.steady ? 'Geübt' : 'Durchgehalten', topSpeed: this.topSpeed, speedRecord });
   }
 
   onClick(x, y) { clickButtons([this.exit], x, y); }

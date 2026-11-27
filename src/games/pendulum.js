@@ -166,7 +166,7 @@ export default {
   name: 'Pendel',
   duration: 60,
   scale: 0.85,
-  medals: [[210, 850, 1690], [130, 540, 1360], [60, 350, 840]],
+  medals: [[200, 840, 1720], [130, 540, 1370], [60, 350, 830]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

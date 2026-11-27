@@ -7,6 +7,7 @@ import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { rankOf, recordRound, recordEvent, dailyGame, dateString } from './profile.js';
 import { CollectionScene } from './collection.js';
 import { TrickMenuScene } from './trickmenu.js';
+import { CareerScene, careerRecord } from './career.js';
 import { topicGame } from './games/tricks.js';
 import { setMascotHat } from './ui.js';
 import { randomTheme, worldPalette, bright } from './themes.js';
@@ -109,7 +110,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       if (!profile || app.practice()) return { xp: 0, badges: [], practice: app.practice() };
       const rewards = recordRound(profile, {
         gameId: r.game.id, level: r.level, score: r.score, stars: r.stars, maxMult: r.maxMult,
-        lives: r.lives, livesLeft: r.livesLeft,
+        lives: r.lives, livesLeft: r.livesLeft, topSpeed: r.topSpeed,
         daily: r.game === app.daily(), counts: !r.game.finale,
       }, categories);
       saveConfig();
@@ -121,6 +122,9 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     playerPick: () => app.show(new PlayerPickScene(app)),
     leaderboard: () => app.show(new LeaderboardScene(app)),
     collection: () => app.show(new CollectionScene(app)),
+    career: () => app.show(new CareerScene(app)),
+    /** Karriere: Runde an Station i verbuchen (nicht im Übungsmodus). */
+    careerRecord: (i, stars) => (app.practice() ? null : careerRecord(app.profile, categories, i, stars)),
     /** Legt an, was der aktuelle Spieler aus seiner Sammlung gewählt hat (Ballschweif, Mütze des Trainers). */
     applyGear() {
       const gear = app.profile.gear ?? {};
