@@ -50,6 +50,8 @@ export class PlayScene {
     this.double = 0;         // Sekunden, die "Doppelte Punkte" noch läuft
     this.slow = 0;
     this.lucky = null;       // Glücksstern { x, y, left }
+    this.lastScore = 0;
+    this.lastLives = this.lives;
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
     this.events = [];
@@ -181,6 +183,13 @@ export class PlayScene {
   update(dt, ball) {
     if (this.exit.update(dt, ball)) return;
     if (this.banner && (this.banner.age += dt) > 1.4) this.banner = null;
+    // Punktzahl federt kurz auf, wenn Punkte dazukommen; ein verlorenes Herz zuckt.
+    if (this.score > this.lastScore) this.bump = 1;
+    this.lastScore = this.score;
+    this.bump = Math.max(0, (this.bump || 0) - dt * 5);
+    if (this.lives != null && this.lives < this.lastLives) this.heartHit = 1;
+    this.lastLives = this.lives;
+    this.heartHit = Math.max(0, (this.heartHit || 0) - dt * 2.5);
     this.shownScore += (this.score - this.shownScore) * Math.min(1, dt * 10);
 
     if (this.demo) {
@@ -333,7 +342,7 @@ export class PlayScene {
     for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
 
     caption(ctx, 'Punkte', 42, 76, 18);
-    text(ctx, Math.round(this.shownScore), 40, 118, 66, '#fff', 'left', 8, 600);
+    text(ctx, Math.round(this.shownScore), 40, 118, 66 * (1 + 0.14 * (this.bump || 0)), '#fff', 'left', 8, 600);
     const mult = this.multiplier();
     if (mult > 1) {
       // Serien-Anzeige mit ablaufendem Ring
@@ -357,8 +366,11 @@ export class PlayScene {
     if (this.lives != null) {
       for (let i = 0; i < (this.game.lives ?? 0); i++) {
         const on = i < this.lives;
-        if (on) glow(ctx, c[3], 12);
-        heart(ctx, w / 2 - 44 + i * 44, 110, 32, on ? tone(c[3], 72) : 'rgba(255,255,255,0.14)');
+        // das gerade verlorene Herz zuckt und verblasst
+        const lost = i === this.lives && this.heartHit > 0;
+        const wobble = lost ? Math.sin(this.heartHit * 30) * 6 * this.heartHit : 0;
+        if (on) glow(ctx, '#fff', 10);
+        heart(ctx, w / 2 - 44 + i * 44 + wobble, 110, lost ? 32 + 14 * this.heartHit : 32, on ? '#fff' : lost ? `rgba(255,255,255,${0.14 + 0.8 * this.heartHit})` : 'rgba(255,255,255,0.14)');
         noGlow(ctx);
       }
     }

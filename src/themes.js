@@ -96,16 +96,16 @@ export const THEMES = {
       const size = 44, hgt = size * 0.866;
       const row = Math.round(ball.y / (hgt * 1.5) / 1.155), offset = row % 2 ? size * 0.866 : 0;
       const x = Math.round((ball.x - offset) / (size * 1.732)) * size * 1.732 + offset, y = row * hgt * 1.5 * 1.155;
-      return { x, y, life: 1.5, key: `${x}|${y}`, hue: [275, 322, 188][n % 3] };
+      return { x, y, life: 1.1, key: `${x}|${y}`, hue: [275, 322, 188][n % 3] };
     },
     drawMark(ctx, m, k) {
       ctx.beginPath();
       for (let i = 0; i < 6; i++) ctx.lineTo(m.x + Math.cos((i * TAU) / 6 + TAU / 12) * 44, m.y + Math.sin((i * TAU) / 6 + TAU / 12) * 44);
       ctx.closePath();
-      ctx.fillStyle = col(m.hue, 90, 55, 0.22 * (1 - k));
+      ctx.fillStyle = col(m.hue, 90, 55, 0.14 * (1 - k));
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = col(m.hue, 90, 68, 0.9 * (1 - k));
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = col(m.hue, 90, 68, 0.6 * (1 - k));
       ctx.stroke();
     },
   },
@@ -114,7 +114,7 @@ export const THEMES = {
   sea: {
     name: 'Unterwasser',
     hues: [172, 140, 205, 325], // Türkis, Grün, Blau, Korallenpink
-    step: 115,
+    step: 170,
     paint(ctx, f, t, bloom, dots) {
       base(ctx, f, 'hsl(186 80% 15%)', 'hsl(216 85% 4%)');
       // Lichtstrahlen von oben, schwanken leicht
@@ -171,12 +171,12 @@ export const THEMES = {
       ctx.globalAlpha = 1;
     },
     // Boden: Wellenringe breiten sich vom Ball aus.
-    mark: (ball) => ({ x: ball.x, y: ball.y, life: 1.4, always: true }),
+    mark: (ball) => ({ x: ball.x, y: ball.y, life: 1.0, always: true }),
     drawMark(ctx, m, k) {
       ctx.beginPath();
-      ctx.arc(m.x, m.y, 60 + k * 230, 0, TAU);
-      ctx.lineWidth = 3 * (1 - k) + 0.5;
-      ctx.strokeStyle = col(175, 80, 75, 0.55 * (1 - k));
+      ctx.arc(m.x, m.y, 55 + k * 110, 0, TAU);
+      ctx.lineWidth = 2.5 * (1 - k) + 0.5;
+      ctx.strokeStyle = col(175, 80, 75, 0.4 * (1 - k));
       ctx.stroke();
     },
   },
@@ -185,7 +185,7 @@ export const THEMES = {
   ice: {
     name: 'Eis',
     hues: [190, 160, 258, 212], // Eisblau, Mint, Violett, Blau
-    step: 14,
+    step: 16,
     paint(ctx, f, t, bloom, dots) {
       base(ctx, f, 'hsl(206 55% 15%)', 'hsl(222 70% 5%)');
       // Polarlicht: drei wehende Bänder
@@ -236,11 +236,11 @@ export const THEMES = {
       ctx.globalAlpha = 1;
     },
     // Boden: Der Ball hinterlässt eine Spur im Schnee.
-    mark: (ball) => ({ x: ball.x, y: ball.y, life: 2.2, always: true }),
+    mark: (ball) => ({ x: ball.x + (Math.random() - 0.5) * 26, y: ball.y + (Math.random() - 0.5) * 26, life: 1.5, always: true }),
     drawMark(ctx, m, k) {
-      ctx.fillStyle = `rgba(255,255,255,${0.1 * (1 - k)})`;
+      ctx.fillStyle = `rgba(255,255,255,${0.35 * (1 - k)})`;
       ctx.beginPath();
-      ctx.arc(m.x, m.y, 17, 0, TAU);
+      ctx.arc(m.x, m.y, 3.5 * (1 - k) + 1, 0, TAU);
       ctx.fill();
     },
   },
@@ -249,7 +249,7 @@ export const THEMES = {
   jungle: {
     name: 'Nachtwald',
     hues: [135, 322, 172, 84], // Grün, Blütenpink, Türkis, Limette
-    step: 62,
+    step: 120,
     paint(ctx, f, t, bloom, dots) {
       base(ctx, f, 'hsl(166 60% 10%)', 'hsl(204 80% 3%)');
       haze(ctx, f.w * 0.5, 520, 620, 150, 0.06 + 0.08 * bloom, 40);
@@ -305,11 +305,11 @@ export const THEMES = {
     // Boden: Hinter dem Ball gehen kleine Blüten auf.
     mark: (ball, n) => ({
       x: ball.x + (Math.random() - 0.5) * 90, y: ball.y + (Math.random() - 0.5) * 90,
-      life: 2.6, hue: [322, 285, 172, 84][n % 4], rot: Math.random() * TAU,
+      life: 1.7, hue: [322, 285, 172, 84][n % 4], rot: Math.random() * TAU,
     }),
     drawMark(ctx, m, k) {
-      const open = Math.min(1, k * 7), r = 15;
-      ctx.fillStyle = col(m.hue, 85, 64, 0.85 * (1 - k));
+      const open = Math.min(1, k * 7), r = 12;
+      ctx.fillStyle = col(m.hue, 85, 64, 0.6 * (1 - k));
       for (let i = 0; i < 5; i++) {
         const a = m.rot + (i * TAU) / 5;
         ctx.beginPath();

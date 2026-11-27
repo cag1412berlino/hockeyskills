@@ -1,7 +1,7 @@
 // Spiel "Rhythmus": Kugeln laufen auf Bahnen nach unten. Wenn eine Kugel den Kreis
 // am Ende ihrer Bahn erreicht, muss der Ball dort liegen. Die Bahnen wechseln ständig –
 // so entsteht ein Vorhand-Rückhand-Wechsel im Takt. Auf "Leicht" zwei Bahnen, sonst drei.
-import { glow, noGlow, orb, tone } from '../ui.js';
+import { glow, noGlow, creature, tone } from '../ui.js';
 import { Fx } from './common.js';
 
 const LEVELS = {
@@ -82,7 +82,7 @@ class Rhythm {
       ctx.stroke();
       noGlow(ctx);
     });
-    for (const n of this.notes) orb(ctx, this.lanes[n.lane], n.y, 44, n.lane % 2 ? c2 : c1);
+    for (const n of this.notes) creature(ctx, this.lanes[n.lane], n.y, 40, n.lane % 2 ? c2 : c1, { x: this.lanes[n.lane], y: HIT_Y }, this.time);
     this.fx.draw(ctx, env.field);
   }
 }

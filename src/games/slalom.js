@@ -143,13 +143,13 @@ class Slalom {
       const [a, b] = this.posts(g);
       const active = i === this.next;
       const color = g.passed ? c0 : active ? c1 : c2;
-      ctx.globalAlpha = g.passed ? Math.max(0.2, 1 - g.passed) : active ? 1 : 0.6;
+      ctx.globalAlpha = g.passed ? Math.max(0.25, 1 - g.passed) : active ? 1 : 0.8;
 
       // Lichtschranke zwischen den Pfosten
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.lineWidth = active ? 6 + 2 * Math.sin(this.time * 8) : 3;
+      ctx.lineWidth = active ? 5 + 2 * Math.sin(this.time * 8) : 2.5;
       ctx.lineCap = 'round';
       ctx.strokeStyle = color;
       if (active) glow(ctx, color, 26);

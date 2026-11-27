@@ -85,7 +85,7 @@ export class MenuScene extends ButtonScene {
         go: () => app.category(cat),
       })),
       { name: 'Training', icon: stopwatch, sub: 'alles am Stück', go: () => app.sessionSetup(), white: true },
-      { name: 'Heute', icon: sunny(daily.icon), sub: daily.name, go: () => app.levels(daily), white: true },
+      { name: 'Heute', icon: sunny(daily.icon), sub: app.profile.daily === app.today() ? daily.name : `${daily.name} · Punkte x2`, go: () => app.levels(daily), white: true },
       { name: 'Duell', icon: versus, sub: 'zu zweit', go: () => app.duelSetup(), white: true },
     ];
     this.buttons = grid(items, w, (item, x, y, r, i) => new DwellButton({
@@ -177,7 +177,7 @@ export class LevelScene extends ButtonScene {
     const r = Math.min(140, w * 0.125);
     this.buttons = [1, 2, 3].map((level) => new DwellButton({
       x: (w / 3) * (level - 0.5), y: 480, r,
-      color: colors[level - 1],
+      color: this.opts.color ?? colors[level - 1],
       icon: icons.stars(level), label: LEVEL_NAMES[level - 1],
       sub: this.opts.sub?.(level) ?? '',
       onActivate: this.act(() => this.opts.onPick(level)),

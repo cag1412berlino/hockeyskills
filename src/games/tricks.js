@@ -73,7 +73,7 @@ class Tricks {
     env.miss();
     env.sound.bad();
     env.shake(12);
-    fx.text(ball.x, ball.y - 40, msg, '#fff', 46);
+    fx.text(ball.x, Math.max(400, ball.y - 40), msg, '#fff', 46);
     this.state = 'show';
     this.t = 0;
     this.idx = 0;
@@ -126,7 +126,8 @@ class Tricks {
       const quick = this.t < this.ghostTime * 1.5; // fast so flott wie der Geisterball
       const points = env.combo(10 + Math.round(10 * accuracy) + (quick ? 10 : 0), 20);
       env.sound.win();
-      fx.text(ball.x, ball.y - 50, `${quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
+      // nicht in den Namen des Tricks hineinschreiben, der oben steht
+      fx.text(ball.x, Math.max(400, ball.y - 50), `${quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
       fx.burst(ball.x, ball.y, env.palette[1], 26);
       this.n++;
       this.load();

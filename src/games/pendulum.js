@@ -98,7 +98,9 @@ class Pendulum {
       // Kleine Grundpunkte, weil hier sehr viele Wechsel pro Runde zusammenkommen.
       const points = env.combo(inTime ? 3 : 1, this.beat() * 2.5);
       env.sound.pop(inTime ? 4 : 0);
-      fx.text(pad.x, pad.y - p.r, inTime ? `Im Takt! +${points}` : `+${points}`, env.palette[inTime ? 1 : 0], inTime ? 54 : 44);
+      // Der Hinweis "Im Takt!" erscheint nur, wenn man gerade in den Takt gefunden hat – sonst stapeln sich die Texte.
+      this.inTakt = inTime ? (this.inTakt || 0) + 1 : 0;
+      fx.text(pad.x, pad.y - p.r, this.inTakt === 1 && this.hits > 0 ? `Im Takt! +${points}` : `+${points}`, env.palette[inTime ? 1 : 0], inTime ? 50 : 40);
       fx.ring(pad.x, pad.y, env.palette[1], p.r * 1.8);
       this.hits++;
       this.active = (this.active + 1) % c.n;
