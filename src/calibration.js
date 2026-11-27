@@ -5,6 +5,14 @@ import { findBlobs } from './tracker.js';
 
 export class CalibrationError extends Error {}
 
+/** Größte erlaubte Abweichung des Kontrollpunkts (Anteil der Projektion). */
+export const MAX_ERROR = 0.06;
+
+/** Ist eine gespeicherte Kalibrierung brauchbar? Alte, verunglückte Kalibrierungen werden so aussortiert. */
+export function calibOk(calib) {
+  return !!calib?.H && (calib.error == null || calib.error < MAX_ERROR);
+}
+
 /** Helligkeit pro Pixel aus RGBA-Daten. */
 export function toGray(rgba, out = new Float32Array(rgba.length / 4)) {
   for (let i = 0, p = 0; i < out.length; i++, p += 4) {
@@ -20,7 +28,10 @@ export function findBrightSpot(ref, img, w, h) {
   if (max < 25) return null;
   const mask = new Uint8Array(w * h);
   for (let i = 0; i < img.length; i++) mask[i] = img[i] - ref[i] > max * 0.5 ? 1 : 0;
-  const blobs = findBlobs(mask, w, h, 3).filter((b) => b.area < w * h * 0.1);
+  // Der Punkt ist ein kompakter runder Fleck; Streifen und Flächen (etwa eine Wand, die durch die
+  // Belichtungsautomatik heller wird) zählen nicht.
+  const blobs = findBlobs(mask, w, h, 3).filter((b) => b.area < w * h * 0.1
+    && b.area / (b.bw * b.bh) > 0.45 && Math.max(b.bw, b.bh) / Math.min(b.bw, b.bh) < 3);
   if (!blobs.length) return null;
   return blobs.reduce((a, b) => (b.area > a.area ? b : a));
 }
@@ -70,10 +81,12 @@ export async function autoCalibrate(io) {
 
   // Kontrolle mit einem fünften Punkt in der Mitte.
   const mid = await locate({ x: 0.5, y: 0.5 }, ref);
-  let error = null;
-  if (mid) {
-    const p = applyHomography(H, mid.x, mid.y);
-    error = Math.hypot(p.x - 0.5, p.y - 0.5);
+  const SEE_ALL = 'Die Kamera muss die ganze Projektion sehen, mit etwas Rand an allen vier Seiten. Kamera weiter weg oder höher stellen und noch einmal kalibrieren.';
+  if (!mid) throw new CalibrationError(`Der Kontrollpunkt in der Mitte wurde nicht gefunden. ${SEE_ALL}`);
+  const p = applyHomography(H, mid.x, mid.y);
+  const error = Math.hypot(p.x - 0.5, p.y - 0.5);
+  if (!(error < MAX_ERROR)) {
+    throw new CalibrationError(`Die Kalibrierung passt nicht zusammen (ein Punkt wurde an der falschen Stelle erkannt). ${SEE_ALL}`);
   }
   return { H, error };
 }

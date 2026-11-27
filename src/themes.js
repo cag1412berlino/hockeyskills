@@ -5,7 +5,7 @@
 // geschoben. Die Hintergründe bleiben dunkel; kräftige Farbe steckt in Figuren, Kanten und Effekten.
 
 const TAU = Math.PI * 2;
-const ZONE = 40; // so viele Grad um die Ballfarbe herum bleiben frei
+const ZONE = 55; // so viele Grad um die Ballfarbe herum bleiben frei
 
 let ballHue = 18;
 export function setBallHue(h) {

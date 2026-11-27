@@ -118,6 +118,8 @@ Ganz oben in der Einrichtung läuft die Animation **„So funktioniert es“**: 
 
 Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Taste `C`).
 
+Die Kamera muss die **ganze Projektion** sehen, mit etwas Rand an allen vier Seiten. Passt die Kalibrierung nicht zusammen (etwa weil ein Punkt außerhalb des Kamerabilds lag), meldet die App das und übernimmt sie nicht.
+
 Oben in der Einrichtung zeigt eine kleine Checkliste, was schon erledigt ist: Kamera läuft, Ball erkannt, kalibriert.
 
 ### Feinabstimmung für den Aufbau
@@ -159,7 +161,7 @@ Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen,
 
 ## Fehlersuche: Test-Ball und Filmen
 
-**Test-Ball** (Knopf in der Einrichtung oder Taste `B` im Spiel): Der Beamer malt an der Stelle der Maus einen Ball in der eingestellten Ballfarbe. Die Kamera filmt ihn, und die App arbeitet damit wie mit einem echten Ball. So lässt sich die ganze Kette aus Beamer, Kamera und Kalibrierung prüfen, ohne dass jemand im Feld steht. Sitzt der Ring genau auf dem gemalten Ball, stimmt die Kalibrierung; läuft er bei schnellen Bewegungen hinterher, den Vorhalt erhöhen.
+**Test-Ball** (Knopf in der Einrichtung oder Taste `B` im Spiel): Der Beamer malt an der Stelle der Maus einen Ball in der eingestellten Ballfarbe. Die Kamera filmt ihn, und die App arbeitet damit wie mit einem echten Ball. So lässt sich die ganze Kette aus Beamer, Kamera und Kalibrierung prüfen, ohne dass jemand im Feld steht. Beim Einschalten malt die App den Test-Ball kurz in die Mitte und lernt, wie die Kamera seine Farbe sieht (ein gemalter Ball wirkt im Kamerabild oft blasser als ein echter). Sitzt der Ring genau auf dem gemalten Ball, stimmt die Kalibrierung; läuft er bei schnellen Bewegungen hinterher, den Vorhalt erhöhen.
 
 **Filmen** (Knopf unter „Fehlersuche“ oder Taste `V`, auch mitten im Spiel): nimmt bis zu 30 Sekunden auf. Der Film zeigt links das Kamerabild, in dem der Ball gesucht wird, und rechts die Projektion; darunter läuft eine Statuszeile mit. Dazu entsteht ein Protokoll (`.json`) mit Einstellungen, Kalibrierung und jeder einzelnen Messung. Beide Dateien landen im Download-Ordner und können zur Fehlersuche weitergegeben werden. **Kamerabild als Foto speichern** legt ein einzelnes Kamerabild in voller Auflösung ab.
 

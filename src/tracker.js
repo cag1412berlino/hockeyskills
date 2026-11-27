@@ -50,7 +50,7 @@ let stack = new Int32Array(0);
 
 /**
  * Findet zusammenhängende Flecken in mask (Werte 1). Besuchte Pixel werden auf 2 gesetzt.
- * Liefert [{area, x, y}] mit dem Schwerpunkt in Pixeln.
+ * Liefert [{area, x, y, bw, bh}] mit dem Schwerpunkt in Pixeln und der Größe des umschließenden Rechtecks.
  */
 export function findBlobs(mask, w, h, minArea = 1) {
   if (stack.length < w * h) stack = new Int32Array(w * h);
@@ -58,20 +58,39 @@ export function findBlobs(mask, w, h, minArea = 1) {
   for (let start = 0; start < w * h; start++) {
     if (mask[start] !== 1) continue;
     let top = 0, area = 0, sx = 0, sy = 0;
+    let x0 = w, x1 = 0, y0 = h, y1 = 0;
     stack[top++] = start;
     mask[start] = 2;
     while (top) {
       const i = stack[--top];
       const x = i % w, y = (i - x) / w;
       area++; sx += x; sy += y;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
       if (x > 0 && mask[i - 1] === 1) { mask[i - 1] = 2; stack[top++] = i - 1; }
       if (x < w - 1 && mask[i + 1] === 1) { mask[i + 1] = 2; stack[top++] = i + 1; }
       if (y > 0 && mask[i - w] === 1) { mask[i - w] = 2; stack[top++] = i - w; }
       if (y < h - 1 && mask[i + w] === 1) { mask[i + w] = 2; stack[top++] = i + w; }
     }
-    if (area >= minArea) blobs.push({ area, x: sx / area, y: sy / area });
+    if (area >= minArea) blobs.push({ area, x: sx / area, y: sy / area, bw: x1 - x0 + 1, bh: y1 - y0 + 1 });
   }
   return blobs;
+}
+
+/**
+ * Sieht der Fleck aus wie ein Ball? Ein Ball (oder Post-it) ist eine gefüllte, kompakte Fläche.
+ * Ringe, Linien und Schriftzüge in ähnlicher Farbe füllen ihr umschließendes Rechteck kaum aus.
+ * Liefert den Füllgrad (0..1) oder 0, wenn der Fleck kein Ball sein kann.
+ */
+export function ballLike(b) {
+  if (!b.bw || !b.bh) return 1; // ohne Maße keine Aussage
+  const fill = b.area / (b.bw * b.bh);
+  if (b.area < 16) return Math.max(0.5, fill); // winzige Flecken sind zu grob gerastert für eine Formprüfung
+  const aspect = Math.max(b.bw, b.bh) / Math.min(b.bw, b.bh);
+  if (fill < 0.42 || aspect > 3.5) return 0;
+  return Math.min(1, fill);
 }
 
 /**
@@ -86,7 +105,9 @@ export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array
   const seen = [];
   for (const b of findBlobs(mask, w, h, minArea)) {
     if (b.area > maxArea) continue;
-    let score = b.area;
+    const fill = ballLike(b);
+    if (!fill) continue;
+    let score = b.area * fill * fill;
     if (last && Math.hypot(b.x - last.x, b.y - last.y) < w * 0.15) score *= 2;
     if (score > bestScore) { bestScore = score; best = b; }
     seen.push(b);
@@ -136,7 +157,7 @@ export class BallTracker {
   }
 
   /** Lernt die Ballfarbe aus dem letzten Bild an der normierten Stelle (nx, ny). */
-  sampleColor(nx, ny) {
+  sampleColor(nx, ny, sFloor = 0.3) {
     if (!this.frame) return null;
     const { width: w, height: h, data } = this.frame;
     const cx = Math.round(nx * w), cy = Math.round(ny * h);
@@ -153,7 +174,7 @@ export class BallTracker {
     return {
       h: Math.round(hue),
       hTol: 14,
-      sMin: Math.max(0.3, s * 0.6),
+      sMin: Math.max(sFloor, s * 0.6),
       vMin: Math.max(0.25, v * 0.5),
     };
   }

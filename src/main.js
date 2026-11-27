@@ -6,7 +6,7 @@ import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
 import { Sound, Voice, Music } from './sound.js';
 import { applyHomography } from './homography.js';
-import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
+import { autoCalibrate, manualCalibrate, toGray, calibOk, findBrightSpot } from './calibration.js';
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
 import { games, categories } from './games/index.js';
@@ -41,6 +41,7 @@ let detection = null;   // letzte Ballposition im Kamerabild
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
+let fakeColor = null;   // Farbe des Test-Balls, wie die Kamera sie sieht (wird beim Einschalten gelernt)
 let fakeBall = false;   // Test-Ball: Maus malt einen Ball, den die Kamera filmt
 const recorder = new Recorder();
 let recognition = null; // laufender Erkennungstest oder null
@@ -70,13 +71,48 @@ engine.ballProvider = () => {
 
 const ballCss = () => BALL_PRESETS[config.ball.preset]?.css ?? `hsl(${config.ball.h} 100% 50%)`;
 
-engine.fakeBall = () => (fakeBall && mode === 'camera' && mouse.inside && !calibrating
-  ? { x: mouse.x, y: mouse.y, color: ballCss() } : null);
+/** Der Test-Ball wird etwas dunkler gemalt als die reine Ballfarbe, damit die Kamera ihn nicht überbelichtet. */
+const fakeCss = () => `hsl(${config.ball.h} 100% 42%)`;
+/** Die Farbe, nach der gerade gesucht wird. */
+const searchColor = () => (fakeBall && fakeColor) || config.ball;
 
-function setFakeBall(on) {
+engine.fakeBall = () => (fakeBall && mode === 'camera' && mouse.inside && !calibrating
+  ? { x: mouse.x, y: mouse.y, color: fakeCss() } : null);
+
+/**
+ * Test-Ball ein- oder ausschalten. Beim Einschalten malt die App den Ball kurz in die Mitte und
+ * lernt, wie die Kamera seine Farbe sieht: Ein gemalter Ball sieht im Kamerabild oft viel blasser
+ * aus als ein echter, die eingestellte Ballfarbe würde ihn dann nicht finden.
+ */
+async function setFakeBall(on) {
   fakeBall = on;
   if (sim) sim.showBall = !on;
   document.body.classList.toggle('fake-ball', on);
+  fakeColor = null;
+  if (!on || !source || calibrating) return;
+  calibrating = true;
+  try {
+    const dot = (color) => (ctx, cw, ch) => {
+      if (!color) return;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cw / 2, ch / 2, Math.min(cw, ch) * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    engine.override = dot(null);
+    await wait(700);
+    const ref = await calibrationIO.grabGray();
+    engine.override = dot(fakeCss());
+    await wait(700);
+    const img = await calibrationIO.grabGray();
+    const spot = ref && img && findBrightSpot(ref.data, img.data, img.w, img.h);
+    const learned = spot && tracker.sampleColor((spot.x + 0.5) / img.w, (spot.y + 0.5) / img.h, 0.2);
+    if (learned) fakeColor = { preset: 'fake', ...learned };
+    engine.showToast(learned ? 'Test-Ball an: Maus bewegen' : 'Test-Ball an (Farbe nicht gelernt, es gilt die Ballfarbe)', 2.5);
+  } finally {
+    engine.override = null;
+    calibrating = false;
+  }
 }
 
 async function toggleRecording() {
@@ -89,7 +125,7 @@ async function toggleRecording() {
   if (!source) { setMessage('Für die Aufnahme zuerst die Kamera starten.'); return; }
   recorder.start({
     version: VERSION, time: new Date().toISOString(), browser: navigator.userAgent,
-    ball: config.ball, calib: config.calib, fieldShape: config.fieldShape, fieldMeters: config.fieldMeters,
+    ball: config.ball, searchColor: searchColor(), calib: config.calib, fieldShape: config.fieldShape, fieldMeters: config.fieldMeters,
     latency: config.latency, dim: config.dim, rotation: config.rotation, lockAuto: config.lockAuto,
     field: { w: engine.field.w, h: engine.field.h }, stage: { w: stage.width, h: stage.height },
     camera: { w: source.videoWidth || source.width, h: source.videoHeight || source.height },
@@ -108,7 +144,7 @@ engine.onFrame = () => {
     if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
     lastVideoTime = video.currentTime;
   }
-  detection = tracker.process(source, config.ball);
+  detection = tracker.process(source, searchColor());
   fps.tracked++;
   recent.push(detection ? 1 : 0);
   if (recent.length > 90) recent.shift();
@@ -523,8 +559,8 @@ function buildSetup() {
   $('#btn-fake').onclick = () => {
     if (!source || !config.calib) { setMessage('Für den Test-Ball zuerst die Kamera starten und kalibrieren.'); return; }
     mode = 'camera';
-    setFakeBall(true);
     startPlaying();
+    setFakeBall(true);
   };
   $('#btn-record').onclick = toggleRecording;
   $('#btn-snapshot').onclick = () => { if (!source || !saveSnapshot(source)) setMessage('Für das Foto zuerst die Kamera starten.'); };
@@ -658,8 +694,8 @@ window.addEventListener('keydown', (e) => {
   else if (key === 'd') debugEl.hidden = !debugEl.hidden;
   else if (key === 'v') toggleRecording();
   else if (key === 'b' && setupEl.hidden && mode === 'camera') {
+    if (fakeBall) engine.showToast('Test-Ball aus', 2);
     setFakeBall(!fakeBall);
-    engine.showToast(fakeBall ? 'Test-Ball an: Maus bewegen' : 'Test-Ball aus', 2);
   }
   else if (key === ' ' && setupEl.hidden) { e.preventDefault(); engine.scene?.togglePause?.(); }
   else if (key === 'c' && !calibrating && source) calibrate('auto');
@@ -705,6 +741,7 @@ $('#brand').textContent = BRAND.name;
 // Schrift vorab laden, damit schon das erste Bild stimmt.
 for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
+if (config.calib && !calibOk(config.calib)) { config.calib = null; saveConfig(); } // verunglückte alte Kalibrierung verwerfen
 setBallHue(config.ball.h);
 setFieldMeters(config.fieldMeters);
 engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt

@@ -121,3 +121,27 @@ test('Ballerkennung meldet weitere Flecken in Ballfarbe (z. B. zweites Post-it)'
   square(90, 50, 7);
   assert.equal(detectBall(img, w, h, BALL_PRESETS.pink).rivals, 1);
 });
+
+test('Ballerkennung: ein großer Ring in Ballfarbe ist kein Ball, die kleinere Scheibe schon', async () => {
+  const { detectBall, BALL_PRESETS } = await import('../src/tracker.js');
+  const w = 200, h = 120, img = new Uint8ClampedArray(w * h * 4).fill(20);
+  const paint = (x, y) => img.set([255, 45, 155, 255], (y * w + x) * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ring = Math.hypot(x - 50, y - 60);
+      if (ring > 26 && ring < 30) paint(x, y);            // Ring, wie das Symbol eines Menüknopfs
+      if (Math.hypot(x - 150, y - 60) < 7) paint(x, y);   // Ball
+    }
+  }
+  const found = detectBall(img, w, h, BALL_PRESETS.pink, { x: 50, y: 60 }); // selbst wenn zuletzt am Ring
+  assert.ok(Math.abs(found.x - 150) < 1 && Math.abs(found.y - 60) < 1, JSON.stringify(found));
+  assert.equal(found.rivals, 0, 'der Ring zählt auch nicht als Störung');
+});
+
+test('Kalibrierung: gespeicherte Kalibrierung mit großem Fehler gilt als unbrauchbar', async () => {
+  const { calibOk } = await import('../src/calibration.js');
+  assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: 0.01 }), true);
+  assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: null }), true); // von Hand kalibriert
+  assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: 29.4 }), false);
+  assert.equal(calibOk(null), false);
+});
