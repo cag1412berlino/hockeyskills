@@ -137,7 +137,7 @@ export function randomSpot(field, ball, away = 320) {
 }
 
 /** Pulsierendes Sammelstück der aktuellen Welt (Stern, Muschel, Kristall oder Blüte). */
-export function drawStar(ctx, s, color, time, r = 44) {
+export function drawCollectible(ctx, s, color, time, r = 44) {
   glow(ctx, color, 26);
   collectible(ctx, s.x, s.y, r + 5 * Math.sin(time * 6), tone(color, 68), time * 1.5);
   noGlow(ctx);

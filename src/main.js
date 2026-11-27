@@ -1,5 +1,5 @@
-// Verbindet alles: Einrichtung, Kamera, Ballerkennung, Kalibrierung und Spiele.
-import { config, saveConfig, paletteFor, currentProfile, BRAND } from './config.js';
+// Startpunkt: verbindet Einrichtungsseite, Kamera, Ballerkennung und Kalibrierung mit der App.
+import { config, saveConfig, BRAND } from './config.js';
 import { Engine } from './engine.js';
 import { BallTracker, BALL_PRESETS } from './tracker.js';
 import { Camera } from './camera.js';
@@ -7,11 +7,11 @@ import { SimCamera } from './simcam.js';
 import { Sound, Voice, Music } from './sound.js';
 import { applyHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
-import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileScene, PlayerPickScene, bestLabel } from './scenes.js';
-import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
-import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
-import { newProfile, rankOf, recordRound, recordEvent, dailyGame, dateString, summarize } from './profile.js';
-import { THEMES, randomTheme, worldPalette, bright, setBallHue } from './themes.js';
+import { createApp } from './app.js';
+import { MenuScene } from './scenes.js';
+import { games, categories } from './games/index.js';
+import { newProfile, rankOf, summarize } from './profile.js';
+import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
 
 const $ = (s) => document.querySelector(s);
@@ -40,159 +40,9 @@ let cancelCalibration = null;
 let calibrating = false;
 const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0 };
 
-// ---------- Navigation zwischen den Bildschirmen ----------
+// ---------- Die App: Navigation, Abrechnung, Training (siehe app.js) ----------
 
-/** Drei zufällige, verschiedene Einträge einer Liste. */
-function pick3(list) {
-  const pool = [...list];
-  const out = [];
-  while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  return out;
-}
-
-const app = {
-  engine, config, sound, voice, music, games, categories,
-  logo: null,    // Vereinslogo, sobald geladen
-  session: null, // laufendes Training oder Duell
-  get profile() { return currentProfile(); },
-  save: saveConfig,
-  palette: () => paletteFor(),
-  /** Die bunten Spielfarben der gerade gezeigten Themenwelt. */
-  worldPalette: () => worldPalette(engine.theme),
-  /** Farbe des Schwerpunkts, zu dem eine Übung (oder der Schwerpunkt selbst) gehört; sonst null. */
-  accentOf: (x) => {
-    const cat = categories.find((c) => c === x || c.games.includes(x));
-    return cat ? bright(cat.hue) : null;
-  },
-  today: () => dateString(),
-  daily: () => dailyGame(games),
-
-  /** Wechselt den Bildschirm. Im Menü gilt die gewählte Themenwelt, bei "auto" der Weltraum. */
-  show(scene) {
-    // Bei fester Themenwelt gilt sie überall; bei "auto" bleibt im Menü die Welt der letzten Runde stehen.
-    if (config.theme !== 'auto') engine.theme = config.theme;
-    engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
-    engine.bloomTo(0.35);
-    engine.setScene(scene);
-  },
-  menu: () => {
-    app.session = null;
-    music.stop();
-    app.show(new MenuScene(app));
-  },
-  category: (cat) => (cat.games.length > 1 ? app.show(new CategoryScene(app, cat)) : app.levels(cat.games[0])),
-  levelsFor: (opts) => app.show(new LevelScene(app, opts)),
-  levels: (game) => {
-    const cat = categories.find((c) => c.games.includes(game));
-    app.levelsFor({
-      title: game.name,
-      color: app.accentOf(game),
-      sub: (level) => bestLabel(app, game, level),
-      onPick: (level) => app.play(game, level),
-      onBack: () => (cat.games.length > 1 ? app.category(cat) : app.menu()),
-    });
-  },
-  /**
-   * Startet eine Übung. Erst wird die Themenwelt gewählt (bei "auto" zufällig), dann der
-   * Spielbildschirm gebaut, damit er gleich die Farben und Wesen dieser Welt bekommt.
-   */
-  playScene: (make) => {
-    if (config.theme === 'auto') engine.theme = randomTheme();
-    engine.setScene(make());
-  },
-  play: (game, level) => app.playScene(() => new PlayScene(app, game, level)),
-  result: (r) => {
-    if (r.record) sound.win(); else sound.end();
-    app.show(new ResultScene(app, r));
-  },
-  /**
-   * Verbucht eine gespielte Runde auf ein Profil (null = Gast, dann wird nichts verbucht).
-   * Liefert, was es dafür gab: Punkte, Rangaufstieg, neue Abzeichen.
-   */
-  record: (r, profile) => {
-    if (!profile) return { xp: 0, badges: [] };
-    const rewards = recordRound(profile, {
-      gameId: r.game.id, level: r.level, score: r.score, stars: r.stars, maxMult: r.maxMult,
-      lives: r.lives, livesLeft: r.livesLeft,
-      daily: r.game === app.daily(), counts: !r.game.finale,
-    }, categories);
-    saveConfig();
-    return rewards;
-  },
-
-  // ----- Profil -----
-  profileScene: () => app.show(new ProfileScene(app)),
-  playerPick: () => app.show(new PlayerPickScene(app)),
-  setPlayer: (id) => {
-    config.current = id;
-    saveConfig();
-    refreshSetup();
-    app.menu();
-  },
-
-  // ----- Training: mehrere Übungen hintereinander, zum Schluss ein Finale -----
-  sessionDef: (kind) => (kind === 'custom' ? { name: 'Eigenes', seconds: config.custom.seconds } : SESSIONS[kind]),
-  sessionGames: (kind) => (kind === 'custom'
-    ? config.custom.ids.map((id) => games.find((g) => g.id === id)).filter(Boolean)
-    : sessionPlan(kind)),
-  sessionSetup: () => app.show(new SessionSetupScene(app)),
-  startSession: (kind, level) => {
-    const list = app.sessionGames(kind);
-    const plan = list.map((game) => ({ game }));
-    plan.push({ game: makeFinale(pick3(list)) });
-    app.session = { kind, level, plan, i: 0, results: [], seconds: app.sessionDef(kind).seconds, names: [] };
-    app.show(new IntermissionScene(app, app.session));
-  },
-
-  // ----- Duell: zwei Spieler, drei Übungen, jeder spielt jede -----
-  duelSetup: () => app.show(new DuelSetupScene(app)),
-  startDuel: (level, opponent) => {
-    const players = [app.profile, opponent];
-    // je eine Übung aus drei verschiedenen Schwerpunkten
-    const picks = pick3(categories).map((c) => c.games[Math.floor(Math.random() * c.games.length)]);
-    app.session = {
-      kind: 'duel', level, i: 0, results: [], seconds: 40, players,
-      names: players.map((p) => (p ? p.name : 'Gast')),
-      plan: picks.flatMap((game) => [{ game, who: 0 }, { game, who: 1 }]),
-    };
-    app.show(new IntermissionScene(app, app.session));
-  },
-
-  playExercise: () => {
-    const s = app.session;
-    const { game, who } = s.plan[s.i];
-    const duel = s.kind === 'duel';
-    app.playScene(() => new PlayScene(app, game, s.level, {
-      seconds: s.seconds,
-      label: duel ? `${s.names[who]} · Runde ${Math.floor(s.i / 2) + 1} von 3` : `Übung ${s.i + 1} von ${s.plan.length}`,
-      onFinish: (score, stars, rewards) => {
-        s.results.push({ game, who, score, stars, rewards });
-        s.i++;
-        if (s.i < s.plan.length) {
-          sound.end();
-          app.show(new IntermissionScene(app, s));
-          return;
-        }
-        sound.win();
-        if (duel) {
-          const totals = [0, 1].map((w) => s.results.filter((r) => r.who === w).reduce((sum, r) => sum + r.score, 0));
-          const winner = totals[0] === totals[1] ? null : s.players[totals[0] > totals[1] ? 0 : 1];
-          if (winner) recordEvent(winner, 'duel', categories);
-          saveConfig();
-          app.show(new DuelResultScene(app, s));
-          return;
-        }
-        const total = s.results.reduce((sum, r) => sum + r.score, 0);
-        const key = `session:${s.kind}:${s.level}:${config.speed}`;
-        const best = app.profile.highscores[key] || 0;
-        if (total > best) app.profile.highscores[key] = total;
-        const badges = recordEvent(app.profile, s.kind, categories);
-        saveConfig();
-        app.show(new SessionResultScene(app, s, Math.max(best, total), total > best, badges));
-      },
-    }, duel ? { player: s.players[who] } : {}));
-  },
-};
+const app = createApp({ engine, sound, voice, music, onPlayerChange: () => refreshSetup() });
 window.hockey = app; // zum Ausprobieren in der Browser-Konsole
 
 // ---------- Ballposition ----------
@@ -637,6 +487,20 @@ window.addEventListener('keydown', (e) => {
     else app.menu();
   }
 });
+
+// ---------- Fehler sichtbar machen ----------
+
+// Geht im Spiel etwas schief, soll kein stummes schwarzes Bild stehen bleiben.
+let errorShown = false;
+function reportError(err) {
+  console.error(err);
+  if (errorShown) return;
+  errorShown = true;
+  engine.showToast('Da ist etwas schiefgelaufen – bitte die Seite neu laden', 30);
+  setMessage(`Fehler: ${err?.message ?? err}. Bitte die Seite neu laden.`);
+}
+window.addEventListener('error', (e) => reportError(e.error ?? e.message));
+window.addEventListener('unhandledrejection', (e) => reportError(e.reason));
 
 // ---------- Start ----------
 

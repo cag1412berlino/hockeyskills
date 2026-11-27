@@ -36,7 +36,7 @@ export class Engine {
     this.sparks = [];
     theme.world = this.world;
     // Schwebende Teilchen des Hintergrunds: Position 0..1, Größe, Helligkeit, Tempo, Flackern
-    this.stars = Array.from({ length: 60 }, () => ({
+    this.dots = Array.from({ length: 60 }, () => ({
       x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.2,
       a: 0.12 + Math.random() * 0.3, v: 4 + Math.random() * 14, tw: 1 + Math.random() * 3,
     }));
@@ -160,8 +160,8 @@ export class Engine {
     const loop = (now) => {
       const dt = Math.min(0.05, (now - this.lastTime) / 1000 || 0);
       this.lastTime = now;
+      requestAnimationFrame(loop); // zuerst: Ein Fehler in einem Bild hält die Schleife nicht an
       this.frame(dt, now);
-      requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   }
@@ -169,7 +169,7 @@ export class Engine {
   /** Gemalter Hintergrund der Themenwelt. Bleibt dunkel, damit er den Ball nicht überstrahlt. */
   drawBackground(ctx) {
     const f = this.field;
-    (THEMES[this.world] ?? THEMES.space).paint(ctx, f, this.time, this.bloom, this.stars);
+    (THEMES[this.world] ?? THEMES.space).paint(ctx, f, this.time, this.bloom, this.dots);
     // Spuren des Balls; direkt um den Ball bleibt es frei, damit kein farbiges Licht auf ihn fällt
     this.floor.draw(ctx, this.ball, BALL_RADIUS * 2.4);
     // Ränder weich abdunkeln

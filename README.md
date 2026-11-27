@@ -6,7 +6,7 @@ Stand: Prototyp mit Kalibrierung, Ballerkennung, 18 Übungen in fünf Schwerpunk
 
 ## Übungen
 
-Das Menü zeigt fünf Schwerpunkte und das Training. Insgesamt gibt es 18 Übungen.
+Das Menü zeigt fünf Schwerpunkte, dazu „Training“, „Heute“ und „Duell“. Insgesamt gibt es 18 Übungen.
 
 | Schwerpunkt | Übung | Worum es geht |
 | --- | --- | --- |
@@ -88,7 +88,9 @@ Die App zeigt im Menü und in der Einrichtung ein Logo, wenn die Datei `assets/l
 
 ## Starten
 
-Voraussetzung ist [Node.js](https://nodejs.org) (Version 18 oder neuer).
+**Im Internet:** Die App ist über GitHub Pages veröffentlicht und läuft ohne Installation in Chrome unter `https://cag1412berlino.github.io/hockeyskills/`. Jede Änderung auf dem veröffentlichten Branch ist dort nach ein bis zwei Minuten sichtbar. Ganz unten in der Einrichtung steht die Versionsnummer; steigt sie nach einer Änderung nicht, die Seite neu laden.
+
+**Auf dem eigenen Rechner:** Voraussetzung ist [Node.js](https://nodejs.org) (Version 18 oder neuer).
 
 ```bash
 npm start
@@ -106,7 +108,7 @@ Danach in Chrome `http://localhost:8080` öffnen. Die Kamera funktioniert nur ü
 
 1. **Kamera starten** und die richtige Kamera wählen.
 2. **Ballfarbe** wählen. Im Kamerabild leuchtet alles türkis, was die App für den Ball hält. Passt das nicht, im Kamerabild auf den Ball klicken; die App lernt dann dessen Farbe.
-3. **Bild drehen**, bis die Schrift vom Platz des Kindes aus richtig herum steht (auch mit Taste `R`).
+3. **Bild drehen**, bis die Schrift vom Platz des Kindes aus richtig herum steht (auch mit Taste `R`). Die Drehung beginnt bei jedem Start wieder bei 0°.
 4. **Vollbild** einschalten und **kalibrieren**:
    - *Automatisch*: Die App projiziert nacheinander fünf weiße Punkte und sucht sie im Kamerabild. Währenddessen nicht durchs Bild laufen.
    - *Manuell*: Die App zeigt ein Standbild der Kamera, darin die vier Ecken des Spielfelds im Uhrzeigersinn anklicken (oben links beginnen). Das geht auch ohne Beamer, etwa mit vier Klebeband-Markierungen auf dem Boden.
@@ -182,6 +184,31 @@ Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbi
 
 Die Schrift „Fredoka“ liegt in drei Stärken unter `assets/fonts/` (SIL Open Font License).
 
+## Aufbau des Codes
+
+Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS und JavaScript-Module.
+
+| Datei | Aufgabe |
+| --- | --- |
+| `index.html`, `styles.css` | Einrichtungsseite und Zeichenfläche |
+| `src/main.js` | Startpunkt: Einrichtungsseite, Kamera, Kalibrierung, Tastatur |
+| `src/app.js` | Wechsel zwischen den Bildschirmen, Abrechnung der Runden, Training, Duell |
+| `src/engine.js` | Zeichenschleife, Spielfeld-Koordinaten, Ballposition, Hintergrund |
+| `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |
+| `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
+| `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
+| `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
+| `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
+| `src/profile.js` | Spielerprofile, Rang, Abzeichen, Verlauf, Übung des Tages |
+| `src/bots.js` | Simulierte Spieler fürs Vormachen und Austarieren |
+| `src/tracker.js`, `src/calibration.js`, `src/homography.js`, `src/camera.js`, `src/simcam.js` | Ballerkennung, Kalibrierung und Kamera (echt und simuliert) |
+| `src/sound.js` | Töne, Sprachansagen, Musik |
+| `src/config.js`, `src/version.js` | Gespeicherte Einstellungen und Vereinsangaben; Versionsnummer |
+| `sw.js` | Offline-Betrieb und immer die neueste Fassung |
+| `tools/balance.js`, `tests/` | Austarieren mit simulierten Spielern; automatische Tests |
+
+Bei jeder Veröffentlichung die Zahl in `src/version.js` um eins erhöhen.
+
 ## Austarieren
 
 `tools/balance.js` lässt drei simulierte Spieler (Anfänger, mittel, stark) jede Übung auf jeder Stufe viele Male spielen.
@@ -212,6 +239,7 @@ Die Tests prüfen die Rechenkerne (Kalibrierung, Ballerkennung, Profile und Abze
 
 ## Bekannte Grenzen des Prototyps
 
+- Geht im Spiel etwas schief, erscheint ein Hinweis, die Seite neu zu laden; Punkte und Abzeichen bis dahin bleiben gespeichert.
 - Die bunten Welten werfen mehr farbiges Licht auf den Boden als die frühere blaue Fassung. Ob das die Ballerkennung stört, zeigt erst der Test mit Beamer; notfalls in der Einrichtung eine ruhigere Welt fest einstellen.
 - Mit echter Hardware ist die Erkennung noch nicht erprobt. Farbiges Beamerlicht auf dem Ball kann dessen Farbe verfälschen; siehe „Wenn der Ball nicht zuverlässig erkannt wird“.
 - Die Anzeige läuft dem Ball um die Verzögerung von Kamera und Beamer hinterher (geschätzt etwa eine Zehntelsekunde). Bei schnellen Bewegungen sitzt der Ring deshalb etwas hinter dem Ball.

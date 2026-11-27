@@ -1,6 +1,6 @@
 // Einstellungen, Kalibrierung und Bestwerte – im Browser gespeichert.
 import { BALL_PRESETS } from './tracker.js';
-import { newProfile } from './profile.js';
+import { newProfile, completeProfile } from './profile.js';
 
 const KEY = 'hockeyskills.v1';
 
@@ -34,6 +34,9 @@ export const config = load();
 // Die Drehung beginnt bei jedem Start bei 0 Grad. Sie gilt nur für die laufende Sitzung,
 // damit ein versehentlicher Druck auf die Taste R nicht dauerhaft hängen bleibt.
 config.rotation = 0;
+
+// Gespeicherte Profile auf den aktuellen Stand bringen.
+config.profiles = (Array.isArray(config.profiles) ? config.profiles : []).map(completeProfile);
 
 // Mindestens ein Profil muss es geben. Bestwerte aus älteren Fassungen wandern ins erste Profil.
 if (!config.profiles.length) {

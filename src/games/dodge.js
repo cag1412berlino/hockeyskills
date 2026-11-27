@@ -4,7 +4,7 @@
 // In späten Stufen fliegen manche Stachelbälle im Zickzack.
 import { BALL_RADIUS } from '../engine.js';
 import { text, glow, noGlow, villain, randomVillain, tone } from '../ui.js';
-import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
+import { Fx, randomSpot, drawCollectible, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
   1: { speed: 140, every: 2.2, r: 58, max: 3 },
@@ -150,7 +150,7 @@ class Dodge {
       ctx.fillRect(0, 0, env.field.w, env.field.h);
       ctx.globalAlpha = 1;
     }
-    if (this.star) drawStar(ctx, this.star, c1, this.time);
+    if (this.star) drawCollectible(ctx, this.star, c1, this.time);
     if (this.power) drawPickup(ctx, this.power, this.power.kind, this.power.kind === 'shield' ? c0 : c2, this.time);
     for (const h of this.hazards) {
       if (h.wait > 0) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newProfile, rankOf, recordRound, recordEvent, dailyGame, summarize, badgeProgress, BADGES, RANKS } from '../src/profile.js';
+import { newProfile, completeProfile, rankOf, recordRound, recordEvent, dailyGame, summarize, badgeProgress, BADGES, RANKS } from '../src/profile.js';
 import { categories, games } from '../src/games/index.js';
 
 const round = (over = {}) => ({ gameId: 'targets', level: 1, score: 100, stars: 1, maxMult: 1, ...over });
@@ -93,4 +93,15 @@ test('Abzeichen: jedes hat eine Erklärung, zählbare zeigen den Fortschritt', (
   assert.equal(of('mult4'), null);
   for (let i = 0; i < 300; i++) recordRound(p, round(), categories, '2026-01-10');
   assert.deepEqual(of('r10'), [10, 10], 'Fortschritt läuft nicht über das Ziel hinaus');
+});
+
+test('Alte oder unvollständige Spielstände werden ergänzt, ohne etwas zu verlieren', () => {
+  const old = { id: 'abc', name: 'Mia', xp: 1200, highscores: { 'targets:1:1': 300 }, stats: { rounds: 5 } };
+  const p = completeProfile(old);
+  assert.deepEqual([p.id, p.name, p.xp, p.stats.rounds, p.highscores['targets:1:1']], ['abc', 'Mia', 1200, 5, 300]);
+  // was fehlte, ist jetzt da – eine Runde lässt sich ohne Fehler verbuchen
+  recordRound(p, round(), categories, '2026-01-10');
+  assert.equal(p.stats.rounds, 6);
+  assert.equal(p.days.streak, 1);
+  assert.equal(completeProfile({ xp: 'kaputt', history: null }).xp, 0);
 });

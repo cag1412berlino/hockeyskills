@@ -5,7 +5,7 @@
 // Sterne bringen Punkte, die Schneeflocke friert alle Fänger kurz ein. Drei Leben.
 import { BALL_RADIUS } from '../engine.js';
 import { villain, tone, text } from '../ui.js';
-import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
+import { Fx, randomSpot, drawCollectible, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
   1: { count: 2, speed: 95 },
@@ -139,7 +139,7 @@ class Chase {
   draw(ctx) {
     const { env } = this;
     const [, c1, c2] = env.palette;
-    if (this.star) drawStar(ctx, this.star, c1, this.time);
+    if (this.star) drawCollectible(ctx, this.star, c1, this.time);
     if (this.ice) drawPickup(ctx, this.ice, 'ice', c2, this.time);
     for (const c of this.chasers) {
       // In der Schonzeit blinken die Fänger, eingefroren sind sie blass und stehen still.

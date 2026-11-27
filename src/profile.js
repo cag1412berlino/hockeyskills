@@ -41,6 +41,22 @@ export function newProfile(name) {
   };
 }
 
+/**
+ * Ergänzt ein gespeichertes Profil um alles, was ihm fehlt – etwa nach einer neuen Fassung
+ * der App, die zusätzliche Angaben kennt. Vorhandene Werte bleiben unangetastet.
+ */
+export function completeProfile(saved) {
+  const fresh = newProfile(saved?.name || 'Spieler');
+  const p = { ...fresh, ...saved };
+  p.days = { ...fresh.days, ...saved?.days };
+  p.stats = { ...fresh.stats, ...saved?.stats };
+  for (const key of ['highscores', 'badges', 'seen']) if (!p[key] || typeof p[key] !== 'object') p[key] = {};
+  for (const key of ['played', 'best', 'sessions']) if (!p.stats[key] || typeof p.stats[key] !== 'object') p.stats[key] = {};
+  if (!Array.isArray(p.history)) p.history = [];
+  if (!Number.isFinite(p.xp)) p.xp = 0;
+  return p;
+}
+
 /** Datum als Text JJJJ-MM-TT in Ortszeit. */
 export function dateString(date = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');

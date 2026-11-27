@@ -3,7 +3,7 @@
 // Mit jeder Stufe wird die Vorwarnung kürzer und der erlaubte Spielraum kleiner.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, text, title } from '../ui.js';
-import { Fx, randomSpot, drawStar } from './common.js';
+import { Fx, randomSpot, drawCollectible } from './common.js';
 
 const LEVELS = {
   //   Vorwarnung, Dauer Los-Phase, Dauer Stopp-Phase, erlaubte Bewegung im Stopp
@@ -113,7 +113,7 @@ class Stop {
 
     if (this.star) {
       ctx.globalAlpha = stop ? 0.25 : 1;
-      drawStar(ctx, this.star, c1, stop ? 0 : this.time);
+      drawCollectible(ctx, this.star, c1, stop ? 0 : this.time);
       ctx.globalAlpha = 1;
     }
 
