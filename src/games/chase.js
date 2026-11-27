@@ -4,7 +4,7 @@
 // Mit schnellen Richtungswechseln lässt man sie ins Leere laufen.
 // Sterne bringen Punkte, die Schneeflocke friert alle Fänger kurz ein. Drei Leben.
 import { BALL_RADIUS } from '../engine.js';
-import { hazard, tone, text } from '../ui.js';
+import { villain, tone, text } from '../ui.js';
 import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
@@ -15,10 +15,10 @@ const LEVELS = {
 
 // Die vier Fänger-Typen in der Reihenfolge, in der sie dazukommen.
 const KINDS = [
-  { name: 'direct', r: 50, pace: 1 },      // läuft geradewegs auf den Ball zu
-  { name: 'ahead', r: 44, pace: 1.1 },     // zielt dorthin, wo der Ball gleich sein wird
-  { name: 'flank', r: 44, pace: 1.05 },    // kommt von der Seite
-  { name: 'heavy', r: 66, pace: 0.75 },    // groß und langsam
+  { name: 'direct', face: 'spike', r: 50, pace: 1 },      // läuft geradewegs auf den Ball zu
+  { name: 'ahead', face: 'dart', r: 46, pace: 1.1 },      // zielt dorthin, wo der Ball gleich sein wird
+  { name: 'flank', face: 'crawler', r: 46, pace: 1.05 },  // kommt von der Seite
+  { name: 'heavy', face: 'brute', r: 64, pace: 0.75 },    // groß und langsam
 ];
 
 class Chase {
@@ -144,11 +144,11 @@ class Chase {
     for (const c of this.chasers) {
       // In der Schonzeit blinken die Fänger, eingefroren sind sie blass und stehen still.
       ctx.globalAlpha = this.safe > 0 ? 0.35 + 0.3 * Math.sin(this.time * 12) : this.frozen > 0 ? 0.45 : 1;
-      hazard(ctx, c.x, c.y, c.r, this.frozen > 0 ? 0 : this.time * 2 * c.pace, this.look);
+      villain(ctx, c.face, c.x, c.y, c.r, this.frozen > 0 ? 0 : this.time * c.pace, this.look, Math.atan2(c.vy, c.vx));
       if (this.frozen > 0) {
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.r + 10, 0, Math.PI * 2);
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 3;
         ctx.strokeStyle = tone(c2, 75);
         ctx.stroke();
       }

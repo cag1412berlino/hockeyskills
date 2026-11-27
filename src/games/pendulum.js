@@ -96,7 +96,7 @@ class Pendulum {
     ctx.lineTo(b.x, b.y);
     ctx.setLineDash([10, 18]);
     ctx.lineDashOffset = (this.active ? -1 : 1) * this.time * 90;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.stroke();
@@ -110,7 +110,7 @@ class Pendulum {
         if (left > 0) {
           ctx.beginPath();
           ctx.arc(pad.x, pad.y, p.r * (1.08 + 0.7 * left), 0, Math.PI * 2);
-          ctx.lineWidth = 5;
+          ctx.lineWidth = 3;
           ctx.strokeStyle = '#fff';
           glow(ctx, '#fff', 14);
           ctx.stroke();
@@ -121,7 +121,7 @@ class Pendulum {
         ctx.arc(pad.x, pad.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = tone(c0, 10, 70);
         ctx.fill();
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2.5;
         ctx.strokeStyle = tone(c0, 40);
         ctx.stroke();
       }

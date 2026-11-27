@@ -132,7 +132,7 @@ class Slalom {
       ctx.lineTo(tx, ty);
       ctx.setLineDash([4, 22]);
       ctx.lineDashOffset = -this.time * 60;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
       ctx.stroke();
@@ -174,7 +174,7 @@ class Slalom {
       ctx.beginPath();
       ctx.moveTo(x - half, y);
       ctx.lineTo(x + half, y);
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2.5;
       ctx.setLineDash([8, 10]);
       ctx.strokeStyle = '#fff';
       ctx.stroke();

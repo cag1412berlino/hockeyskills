@@ -96,7 +96,7 @@ class Trace {
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.stroke();
     ctx.setLineDash([4, 16]);
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = tone(c2, 70);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -104,7 +104,7 @@ class Trace {
     if (idx > 0) {
       ctx.beginPath();
       for (let i = 0; i <= idx; i++) ctx.lineTo(path[i].x, path[i].y);
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = c0;
       glow(ctx, c0, 24);
       ctx.stroke();

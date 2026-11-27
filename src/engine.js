@@ -157,9 +157,42 @@ export class Engine {
     g.addColorStop(1, world.outer);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, f.w, f.h);
+    // feines Punktraster als Struktur
+    ctx.fillStyle = 'rgba(255,255,255,0.045)';
+    for (let x = (f.w % 50) / 2; x <= f.w; x += 50) {
+      for (let y = 25; y < f.h; y += 50) ctx.fillRect(x - 1, y - 1, 2, 2);
+    }
     ctx.fillStyle = ctx.strokeStyle = '#fff';
     for (const p of this.stars) world.draw(ctx, p, f, this.time);
     ctx.globalAlpha = 1;
+    // Ränder weich abdunkeln
+    const v = ctx.createRadialGradient(f.w / 2, f.h / 2, f.h * 0.45, f.w / 2, f.h / 2, Math.hypot(f.w, f.h) / 2);
+    v.addColorStop(0, 'rgba(0,0,8,0)');
+    v.addColorStop(1, 'rgba(0,0,8,0.55)');
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, f.w, f.h);
+  }
+
+  /** Feiner Rahmen mit betonten Ecken. */
+  drawFrame(ctx) {
+    const f = this.field;
+    const edge = 'hsl(212 100% 66%)';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = edge;
+    glow(ctx, edge, 22);
+    ctx.strokeRect(5, 5, f.w - 10, f.h - 10);
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#fff';
+    const L = 44;
+    for (const [cx, cy, sx, sy] of [[5, 5, 1, 1], [f.w - 5, 5, -1, 1], [f.w - 5, f.h - 5, -1, -1], [5, f.h - 5, 1, -1]]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + sx * L, cy);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx, cy + sy * L);
+      ctx.stroke();
+    }
+    noGlow(ctx);
   }
 
   /** Leuchtschweif und Ring um den Ball: zeigt, dass die Kamera ihn sieht. */
@@ -172,8 +205,8 @@ export class Engine {
       // Nicht auf den Ball selbst leuchten: farbiges Licht würde seine Farbe für die Kamera verfälschen.
       if (Math.hypot(trail[i].x - ball.x, trail[i].y - ball.y) < BALL_RADIUS * 2) continue;
       const k = i / trail.length;
-      ctx.globalAlpha = k * 0.5;
-      ctx.lineWidth = 4 + k * BALL_RADIUS;
+      ctx.globalAlpha = k * 0.4;
+      ctx.lineWidth = 2 + k * BALL_RADIUS * 0.7;
       ctx.beginPath();
       ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
       ctx.lineTo(trail[i].x, trail[i].y);
@@ -193,14 +226,15 @@ export class Engine {
     }
     ctx.globalAlpha = 1;
     const r = BALL_RADIUS + 13;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = '#fff';
-    glow(ctx, color, 18);
+    glow(ctx, color, 16);
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
     ctx.stroke();
     // zwei kreisende Bögen
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
     for (const o of [0, Math.PI]) {
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, r + 10, this.time * 3 + o, this.time * 3 + o + 0.9);
@@ -240,12 +274,7 @@ export class Engine {
       this.scene.draw(ctx);
       if (ball.visible) this.drawBall(ctx);
       ctx.restore();
-      const edge = 'hsl(212 100% 62%)';
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = edge;
-      glow(ctx, edge, 26);
-      ctx.strokeRect(2, 2, f.w - 4, f.h - 4);
-      noGlow(ctx);
+      this.drawFrame(ctx);
       if (this.fade > 0) {
         // weiche Überblendung nach einem Szenenwechsel
         ctx.fillStyle = `rgba(2,4,14,${this.fade})`;

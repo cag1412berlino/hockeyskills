@@ -65,7 +65,7 @@ class Spot {
       // äußerer Bogen: verbleibende Zeit
       ctx.beginPath();
       ctx.arc(t.x, t.y, t.rings[2] + 14, -Math.PI / 2, -Math.PI / 2 + (t.left / t.total) * Math.PI * 2);
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.strokeStyle = 'rgba(255,255,255,0.7)';
       ctx.stroke();
@@ -73,7 +73,7 @@ class Spot {
       if (rest.anchor && rest.progress > 0.05) {
         ctx.beginPath();
         ctx.arc(rest.anchor.x, rest.anchor.y, BALL_RADIUS + 30, -Math.PI / 2, -Math.PI / 2 + rest.progress * Math.PI * 2);
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 5;
         ctx.strokeStyle = tone(c1, 75);
         ctx.stroke();
       }

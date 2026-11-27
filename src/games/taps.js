@@ -85,7 +85,7 @@ class Taps {
     ctx.beginPath();
     ctx.moveTo(-260, 0);
     ctx.lineTo(260, 0);
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.strokeStyle = c0;
     glow(ctx, c0, 26);

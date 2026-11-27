@@ -91,7 +91,7 @@ class Eight {
     });
     ctx.setLineDash([10, 18]);
     ctx.lineDashOffset = -this.time * 70;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.stroke();

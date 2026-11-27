@@ -3,7 +3,7 @@
 // bei denen es ein Stück zurückgeht – wie die Richtungswechsel beim Hockey.
 // Auf der Bahn bleiben bringt Punkte, Sterne an den Ecken bringen Serien.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, hazard, star, tone } from '../ui.js';
+import { glow, noGlow, villain, randomVillain, star, tone } from '../ui.js';
 import { Fx } from './common.js';
 
 const LEVELS = {
@@ -74,8 +74,8 @@ class Run {
       // Weiche Kurve
       const nx = this.sideways(150, 420);
       const len = 300 + Math.random() * 160;
-      for (let i = 1; i <= 10; i++) {
-        const t = i / 10;
+      for (let i = 1; i <= 28; i++) {
+        const t = i / 28;
         this.pts.push({ x: x + (nx - x) * t * t * (3 - 2 * t), d: d + len * t });
       }
       if (Math.random() < 0.5) this.items.push({ kind: 'star', x: nx, d: d + len });
@@ -85,7 +85,7 @@ class Run {
     this.pts.push({ x: e.x, d: e.d + p.width + 60 });
     if (Math.random() < p.hazards) {
       const side = Math.random() < 0.5 ? 1 : -1;
-      this.items.push({ kind: 'hazard', x: e.x + side * p.width * 0.27, d: e.d + p.width / 2 + 30 });
+      this.items.push({ kind: 'hazard', face: randomVillain(), x: e.x + side * p.width * 0.27, d: e.d + p.width / 2 + 30 });
     }
   }
 
@@ -170,7 +170,7 @@ class Run {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     this.trace(ctx);
-    ctx.lineWidth = p.width + 10;
+    ctx.lineWidth = p.width + 6;
     ctx.strokeStyle = edge;
     glow(ctx, edge, 26);
     ctx.stroke();
@@ -181,7 +181,7 @@ class Run {
     // Mittelstreifen
     ctx.setLineDash([26, 40]);
     ctx.lineDashOffset = 0;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.stroke();
     ctx.setLineDash([]);
@@ -194,14 +194,14 @@ class Run {
         star(ctx, it.x, y, 34 + 4 * Math.sin(this.time * 6 + it.d), tone(c1, 68), this.time * 2);
         noGlow(ctx);
       } else if (it.kind === 'hazard') {
-        hazard(ctx, it.x, y, 32, this.time * 2, this.look);
+        villain(ctx, it.face, it.x, y, 32, this.time, this.look, Math.PI / 2);
       } else {
         // Pfeile zeigen die Richtung bei harten Wechseln
         ctx.save();
         ctx.translate(it.x, y);
         ctx.rotate(it.a);
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 7;
+        ctx.lineWidth = 4;
         ctx.globalAlpha = 0.5 + 0.5 * Math.sin(this.time * 8);
         for (const o of [-22, 8]) {
           ctx.beginPath();

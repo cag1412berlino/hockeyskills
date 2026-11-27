@@ -88,7 +88,7 @@ class Spotlight {
     ctx.fill();
     const blink = !this.inside && Math.floor(this.time * 6) % 2 === 0;
     const edge = this.inside ? c1 : blink ? '#fff' : c0;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = edge;
     glow(ctx, edge, 28);
     ctx.stroke();
@@ -97,7 +97,7 @@ class Spotlight {
     if (this.inside) {
       ctx.beginPath();
       ctx.arc(this.x, this.y, r + 14, -Math.PI / 2, -Math.PI / 2 + ((this.hold % 2) / 2) * Math.PI * 2);
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.strokeStyle = tone(c1, 78);
       ctx.stroke();

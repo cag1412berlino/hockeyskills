@@ -10,13 +10,13 @@ export class Fx {
     this.flashAmt = 0;
   }
 
-  burst(x, y, color, n = 22) {
+  burst(x, y, color, n = 30) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const v = 120 + Math.random() * 520;
       this.parts.push({
         x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, age: 0,
-        life: 0.4 + Math.random() * 0.45, size: 3 + Math.random() * 7, color,
+        life: 0.4 + Math.random() * 0.5, size: 1.5 + Math.random() * 4.5, color,
       });
     }
   }
@@ -55,7 +55,7 @@ export class Fx {
       ctx.globalAlpha = 1 - k;
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.r * (0.3 + 0.7 * k), 0, Math.PI * 2);
-      ctx.lineWidth = 6 * (1 - k) + 1;
+      ctx.lineWidth = 3 * (1 - k) + 0.5;
       ctx.strokeStyle = r.color;
       ctx.stroke();
     }
@@ -70,7 +70,7 @@ export class Fx {
       // springt kurz auf, steigt dann hoch und verblasst
       const pop = t.age < 0.12 ? 0.6 + (t.age / 0.12) * 0.6 : Math.max(1, 1.2 - (t.age - 0.12) * 2);
       ctx.globalAlpha = Math.min(1, (1 - t.age) * 2.5);
-      text(ctx, t.str, t.x, t.y - 30 - t.age * 90, t.size * pop, t.color);
+      text(ctx, t.str, t.x, t.y - 30 - t.age * 90, t.size * 0.72 * pop, t.color, 'center', t.size * 0.1, 600);
     }
     ctx.globalAlpha = 1;
     if (this.flashAmt > 0) {
@@ -154,7 +154,7 @@ export function drawPickup(ctx, p, kind, color, time) {
   ctx.arc(p.x, p.y, 46, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(10,10,30,0.85)';
   ctx.fill();
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 3;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.strokeStyle = color;
@@ -240,7 +240,7 @@ export function drawBullseye(ctx, t, rings, color, time) {
     ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
     ctx.fillStyle = tone(color, 8 + i * 7, 70);
     ctx.fill();
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = tone(color, 45 + i * 12);
     if (i === 2) glow(ctx, color, 18);
     ctx.stroke();

@@ -641,7 +641,7 @@ document.title = BRAND.name;
 $('#brand').textContent = BRAND.name;
 
 // Schrift vorab laden, damit schon das erste Bild stimmt.
-document.fonts?.load('600 20px "Fredoka"').catch(() => {});
+for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
 sound.muted = config.muted;
 voice.enabled = config.voice;

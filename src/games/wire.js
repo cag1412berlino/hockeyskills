@@ -113,7 +113,7 @@ class Wire {
     ctx.lineCap = 'round';
     ctx.beginPath();
     for (const q of path) ctx.lineTo(q.x, q.y);
-    ctx.lineWidth = this.width + 10;
+    ctx.lineWidth = this.width + 6;
     ctx.strokeStyle = wall;
     glow(ctx, wall, 24);
     ctx.stroke();
@@ -126,7 +126,7 @@ class Wire {
     if (this.idx > 0) {
       ctx.beginPath();
       for (let i = 0; i <= this.idx; i++) ctx.lineTo(path[i].x, path[i].y);
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = tone(c1, 70);
       ctx.stroke();
     }
@@ -135,7 +135,7 @@ class Wire {
       const q = path[cp.at];
       ctx.beginPath();
       ctx.arc(q.x, q.y, 18, 0, Math.PI * 2);
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = cp.done ? tone(c1, 70) : 'rgba(255,255,255,0.45)';
       ctx.stroke();
     }
@@ -148,7 +148,7 @@ class Wire {
       const s = path[this.from];
       ctx.beginPath();
       ctx.arc(s.x, s.y, 46 + 8 * Math.sin(this.time * 7), 0, Math.PI * 2);
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 3.5;
       ctx.strokeStyle = '#fff';
       glow(ctx, '#fff', 18);
       ctx.stroke();

@@ -50,7 +50,7 @@ class Blob {
     g.addColorStop(0, this.angry > 0 ? '#f4f4ff' : '#8f8fa8');
     g.addColorStop(1, this.angry > 0 ? '#9a9ab8' : '#2c2c40');
     ctx.fillStyle = g;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#fff';
     glow(ctx, '#fff', this.angry > 0 ? 44 : 20);
@@ -67,7 +67,7 @@ class Blob {
         by += this.base * 0.16;
         ctx.lineTo(bx, by);
       }
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = '#fff';
       ctx.stroke();
     }

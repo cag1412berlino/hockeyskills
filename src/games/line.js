@@ -2,7 +2,7 @@
 // Unterwegs gibt es einen Stopp-Punkt: dort muss der Ball kurz ruhig liegen.
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, hazard, star, tone, text } from '../ui.js';
+import { glow, noGlow, villain, star, tone, text } from '../ui.js';
 import { Fx, Rest } from './common.js';
 
 const LEVELS = {
@@ -187,7 +187,7 @@ class Line {
     // Geschaffter Teil leuchtet
     if (idx > 0) {
       this.trace(ctx, 0, idx);
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = c0;
       glow(ctx, c0, 24);
       ctx.stroke();
@@ -204,14 +204,14 @@ class Line {
       ctx.arc(s.x, s.y, 58, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(10,10,30,0.8)';
       ctx.fill();
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = c1;
       glow(ctx, c1, 20);
       ctx.stroke();
       if (this.rest.progress > 0) {
         ctx.beginPath();
         ctx.arc(s.x, s.y, 46, -Math.PI / 2, -Math.PI / 2 + this.rest.progress * Math.PI * 2);
-        ctx.lineWidth = 10;
+        ctx.lineWidth = 6;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
       }
@@ -226,13 +226,13 @@ class Line {
     const pulse = 26 + 10 * Math.sin(this.time * 7);
     ctx.beginPath();
     ctx.arc(path[idx].x, path[idx].y, pulse, 0, Math.PI * 2);
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#fff';
     glow(ctx, c0, 18);
     ctx.stroke();
     noGlow(ctx);
 
-    for (const o of this.obstacles) hazard(ctx, o.x, o.y, o.r, this.time * 2, this.look);
+    for (const o of this.obstacles) villain(ctx, 'saw', o.x, o.y, o.r, this.time, this.look);
     this.fx.draw(ctx, env.field);
   }
 }

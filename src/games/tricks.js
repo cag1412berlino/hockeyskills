@@ -6,7 +6,7 @@
 // Die Tricks sind als einfache Wege beschrieben und lassen sich hier leicht anpassen oder ergänzen:
 // Punkte [seitlich, vor/zurück] relativ zum Verteidiger; der Spieler kommt von unten (positives y).
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, hazard, orb, text, tone } from '../ui.js';
+import { glow, noGlow, villain, orb, text, tone } from '../ui.js';
 import { Fx, resample, nearestOnPath } from './common.js';
 
 const arc = (r, from, to, n = 14) =>
@@ -147,7 +147,7 @@ class Tricks {
     ctx.stroke();
     ctx.setLineDash([14, 18]);
     ctx.lineDashOffset = -this.time * 110;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = tone(c0, 68);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -155,7 +155,7 @@ class Tricks {
     if (state === 'do' && this.idx > 0) {
       ctx.beginPath();
       for (let i = 0; i <= this.idx; i++) ctx.lineTo(path[i].x, path[i].y);
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = c1;
       glow(ctx, c1, 24);
       ctx.stroke();
@@ -166,7 +166,7 @@ class Tricks {
     const end = path[path.length - 1];
     ctx.beginPath();
     ctx.arc(end.x, end.y, 30, 0, Math.PI * 2);
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = tone(c1, 70);
     ctx.stroke();
 
@@ -179,7 +179,7 @@ class Tricks {
     ctx.strokeStyle = 'rgba(255,255,255,0.4)';
     ctx.stroke();
     ctx.setLineDash([]);
-    hazard(ctx, d.x, d.y, REACH * 0.85, Math.sin(this.time * 2) * 0.2, this.look);
+    villain(ctx, 'brute', d.x, d.y, REACH * 0.8, this.time, this.look);
 
     if (state === 'show') {
       // Geisterball macht den Trick vor
@@ -191,7 +191,7 @@ class Tricks {
       const s = path[0];
       ctx.beginPath();
       ctx.arc(s.x, s.y, 46 + 8 * Math.sin(this.time * 7), 0, Math.PI * 2);
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 3.5;
       ctx.strokeStyle = '#fff';
       glow(ctx, '#fff', 18);
       ctx.stroke();
@@ -199,7 +199,7 @@ class Tricks {
     } else {
       // ablaufende Zeit als Balken unter dem Namen
       const left = Math.max(0, 1 - this.t / this.limit());
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 6;
       ctx.strokeStyle = 'rgba(255,255,255,0.15)';
       ctx.beginPath(); ctx.moveTo(env.field.w / 2 - 160, 262); ctx.lineTo(env.field.w / 2 + 160, 262); ctx.stroke();
       ctx.strokeStyle = left < 0.3 ? '#fff' : c1;

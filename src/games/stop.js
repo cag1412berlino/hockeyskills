@@ -129,7 +129,7 @@ class Stop {
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(this.anchor.x, this.anchor.y, r + 12, -Math.PI / 2, -Math.PI / 2 + (this.timer / this.total) * Math.PI * 2);
-        ctx.lineWidth = 7;
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#fff';
         ctx.stroke();

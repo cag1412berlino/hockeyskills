@@ -125,7 +125,7 @@ class Roll {
     ctx.lineTo(t.x, t.y);
     ctx.setLineDash([8, 20]);
     ctx.lineDashOffset = -this.time * 80;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.stroke();
@@ -138,7 +138,7 @@ class Roll {
     ctx.arc(start.x, start.y, PAD + (state === 'load' ? 6 * Math.sin(this.time * 7) : 0), 0, Math.PI * 2);
     ctx.fillStyle = tone(c1, ready ? 13 : 9, 70); // dunkel halten: Hier liegt der Ball, farbiges Licht würde ihn verfälschen
     ctx.fill();
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3;
     ctx.strokeStyle = ready ? '#fff' : c1;
     glow(ctx, c1, 22);
     ctx.stroke();
@@ -146,7 +146,7 @@ class Roll {
     if (state === 'load' && this.rest.progress > 0.05) {
       ctx.beginPath();
       ctx.arc(start.x, start.y, PAD - 12, -Math.PI / 2, -Math.PI / 2 + this.rest.progress * Math.PI * 2);
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 5;
       ctx.strokeStyle = '#fff';
       ctx.stroke();
     }
@@ -156,7 +156,7 @@ class Roll {
       // Ring um den Ball zeigt: Jetzt nicht mehr berühren
       ctx.beginPath();
       ctx.arc(this.rest.anchor?.x ?? 0, this.rest.anchor?.y ?? 0, BALL_RADIUS + 30, -Math.PI / 2, -Math.PI / 2 + this.rest.progress * Math.PI * 2);
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 5;
       ctx.strokeStyle = tone(c1, 75);
       if (this.rest.anchor) ctx.stroke();
     }

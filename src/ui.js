@@ -6,10 +6,10 @@ export const theme = {
   px: 1, // Bildschirm-Pixel pro Feld-Einheit (für den Leuchteffekt)
 };
 
-/** Neon-Leuchten für alles, was danach gezeichnet wird. Mit noGlow wieder ausschalten. */
+/** Sanftes Leuchten für alles, was danach gezeichnet wird. Mit noGlow wieder ausschalten. */
 export function glow(ctx, color, blur = 22) {
   ctx.shadowColor = color;
-  ctx.shadowBlur = blur * theme.px;
+  ctx.shadowBlur = blur * 0.55 * theme.px; // bewusst zurückhaltend: ein feiner Schein, kein Nebel
 }
 
 export function noGlow(ctx) {
@@ -22,8 +22,11 @@ export function tone(color, lightness, saturation = 90) {
   return m ? `hsl(${m[1]} ${saturation}% ${lightness}%)` : color;
 }
 
-export function text(ctx, str, x, y, size, color = '#fff', align = 'center', blur = size * 0.3) {
-  ctx.font = `600 ${size}px ${theme.family}`;
+/**
+ * Text. blur = Stärke des Scheins (0 = keiner). weight = Schriftstärke (400 fein, 500 normal, 600 kräftig).
+ */
+export function text(ctx, str, x, y, size, color = '#fff', align = 'center', blur = size * 0.2, weight = 500) {
+  ctx.font = `${weight} ${size}px ${theme.family}`;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;
@@ -32,10 +35,19 @@ export function text(ctx, str, x, y, size, color = '#fff', align = 'center', blu
   noGlow(ctx);
 }
 
-/** Überschrift wie eine Leuchtreklame: heller Kern, farbiger Schein. */
+/** Überschrift: klare, helle Schrift mit einem feinen farbigen Schein und etwas Luft zwischen den Buchstaben. */
 export function title(ctx, str, x, y, size, color) {
-  text(ctx, str, x, y, size, color, 'center', size * 0.5);
-  text(ctx, str, x, y, size, tone(color, 92), 'center', size * 0.12);
+  ctx.letterSpacing = `${(size * 0.015).toFixed(1)}px`;
+  text(ctx, str, x, y, size, tone(color, 93), 'center', size * 0.45, 600);
+  ctx.shadowColor = color;
+  ctx.letterSpacing = '0px';
+}
+
+/** Kleine Beschriftung in Großbuchstaben mit weitem Abstand, z. B. "PUNKTE". */
+export function caption(ctx, str, x, y, size = 20, color = 'rgba(255,255,255,0.6)', align = 'left') {
+  ctx.letterSpacing = `${(size * 0.14).toFixed(1)}px`;
+  text(ctx, String(str).toUpperCase(), x, y, size, color, align, 0, 500);
+  ctx.letterSpacing = '0px';
 }
 
 export function star(ctx, x, y, r, color = '#fff', rot = 0) {
@@ -48,7 +60,7 @@ export function star(ctx, x, y, r, color = '#fff', rot = 0) {
   ctx.closePath();
   ctx.fillStyle = color;
   ctx.lineJoin = 'round';
-  ctx.lineWidth = r * 0.18;
+  ctx.lineWidth = r * 0.14;
   ctx.strokeStyle = color;
   ctx.stroke();
   ctx.fill();
@@ -57,70 +69,258 @@ export function star(ctx, x, y, r, color = '#fff', rot = 0) {
 /** Zwei Augen, die in Richtung (lookX, lookY) schauen. */
 export function eyes(ctx, x, y, r, lookX, lookY, angry = false) {
   const d = Math.hypot(lookX - x, lookY - y) || 1;
-  const px = ((lookX - x) / d) * r * 0.07, py = ((lookY - y) / d) * r * 0.07;
+  const px = ((lookX - x) / d) * r * 0.06, py = ((lookY - y) / d) * r * 0.06;
   for (const s of [-1, 1]) {
-    const ex = x + s * r * 0.3, ey = y - r * 0.08;
+    const ex = x + s * r * 0.27, ey = y - r * 0.08;
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(ex, ey, r * 0.2, 0, Math.PI * 2);
+    ctx.ellipse(ex, ey, r * 0.16, r * 0.185, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#0a0a18';
+    ctx.fillStyle = '#0b1026';
     ctx.beginPath();
-    ctx.arc(ex + px, ey + py, r * 0.1, 0, Math.PI * 2);
+    ctx.arc(ex + px, ey + py, r * 0.085, 0, Math.PI * 2);
+    ctx.fill();
+    // Glanzpunkt im Auge
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(ex + px - r * 0.03, ey + py - r * 0.035, r * 0.028, 0, Math.PI * 2);
     ctx.fill();
     if (angry) {
       // schräge Augenbraue
-      ctx.strokeStyle = '#0a0a18';
-      ctx.lineWidth = r * 0.09;
+      ctx.strokeStyle = '#0b1026';
+      ctx.lineWidth = r * 0.06;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(ex - s * r * 0.22, ey - r * 0.14);
-      ctx.lineTo(ex + s * r * 0.22, ey - r * 0.32);
+      ctx.moveTo(ex - s * r * 0.2, ey - r * 0.16);
+      ctx.lineTo(ex + s * r * 0.19, ey - r * 0.3);
       ctx.stroke();
     }
   }
 }
 
-/** Leuchtende Kugel mit Glanzlicht; mit look = {x, y} bekommt sie Augen, die dorthin schauen. */
+/** Leuchtende Kugel mit weichem Verlauf, Randlicht und Glanz; mit look = {x, y} bekommt sie Augen. */
 export function orb(ctx, x, y, r, color, look = null) {
-  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r);
-  g.addColorStop(0, tone(color, 78));
-  g.addColorStop(0.55, color);
-  g.addColorStop(1, tone(color, 28));
+  const g = ctx.createRadialGradient(x - r * 0.28, y - r * 0.34, r * 0.05, x, y, r);
+  g.addColorStop(0, tone(color, 84));
+  g.addColorStop(0.35, tone(color, 62));
+  g.addColorStop(0.8, tone(color, 42));
+  g.addColorStop(1, tone(color, 26));
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fillStyle = g;
-  glow(ctx, color, 28);
+  glow(ctx, color, 30);
   ctx.fill();
   noGlow(ctx);
+  // feines Randlicht unten
   ctx.beginPath();
-  ctx.ellipse(x - r * 0.32, y - r * 0.5, r * 0.26, r * 0.13, -0.6, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.arc(x, y, r * 0.93, Math.PI * 0.18, Math.PI * 0.82);
+  ctx.lineWidth = r * 0.035;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.stroke();
+  // Glanz oben links
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.34, y - r * 0.52, r * 0.2, r * 0.09, -0.6, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.fill();
   if (look) eyes(ctx, x, y + r * 0.05, r, look.x, look.y);
 }
 
 /** Gefahr sieht in allen Spielen gleich aus: ein weißgrauer Stachelball mit bösem Blick. */
 export function hazard(ctx, x, y, r, rot = 0, look = null) {
+  // feine, leicht geschwungene Stacheln
+  const n = 14;
   ctx.beginPath();
-  for (let i = 0; i < 20; i++) {
-    const a = rot + (i * Math.PI) / 10;
-    const rr = i % 2 ? r * 0.7 : r;
-    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  for (let i = 0; i < n; i++) {
+    const a0 = rot + (i * Math.PI * 2) / n, a1 = rot + ((i + 0.5) * Math.PI * 2) / n, a2 = rot + ((i + 1) * Math.PI * 2) / n;
+    if (!i) ctx.moveTo(x + Math.cos(a0) * r * 0.74, y + Math.sin(a0) * r * 0.74);
+    ctx.lineTo(x + Math.cos(a1) * r, y + Math.sin(a1) * r);
+    ctx.lineTo(x + Math.cos(a2) * r * 0.74, y + Math.sin(a2) * r * 0.74);
   }
   ctx.closePath();
-  const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.3, r * 0.1, x, y, r);
-  g.addColorStop(0, '#e9e9f2');
-  g.addColorStop(1, '#6c6c7e');
+  const g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.3, r * 0.05, x, y, r);
+  g.addColorStop(0, '#f6f7fc');
+  g.addColorStop(0.55, '#b9bccd');
+  g.addColorStop(1, '#6a6e86');
   ctx.fillStyle = g;
   ctx.lineJoin = 'round';
-  ctx.lineWidth = r * 0.07;
-  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = r * 0.035;
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
   glow(ctx, '#fff', 16);
   ctx.fill();
-  ctx.stroke();
   noGlow(ctx);
-  eyes(ctx, x, y + r * 0.05, r * 0.85, look?.x ?? x, look?.y ?? y + 1, true);
+  ctx.stroke();
+  eyes(ctx, x, y + r * 0.06, r * 0.78, look?.x ?? x, look?.y ?? y + 1, true);
+}
+
+// ---------- Bösewichte ----------
+// Alle sind weißgrau mit bösem Blick: So erkennt man Gefahr in jedem Spiel sofort,
+// auch wenn die Gestalten verschieden sind.
+
+/** Grauer Verlauf und heller Rand für den gerade angelegten Pfad. */
+function villainSkin(ctx, x, y, r) {
+  const g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.3, r * 0.05, x, y, r * 1.05);
+  g.addColorStop(0, '#f6f7fc');
+  g.addColorStop(0.55, '#b9bccd');
+  g.addColorStop(1, '#6a6e86');
+  ctx.fillStyle = g;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(1.5, r * 0.035);
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  glow(ctx, '#fff', 16);
+  ctx.fill();
+  noGlow(ctx);
+  ctx.stroke();
+}
+
+/** Ein einzelnes großes Auge mit schwerem Lid. */
+function cyclops(ctx, x, y, r, look) {
+  const d = Math.hypot((look?.x ?? x) - x, (look?.y ?? y + 1) - y) || 1;
+  const px = (((look?.x ?? x) - x) / d) * r * 0.1, py = (((look?.y ?? y + 1) - y) / d) * r * 0.1;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0b1026';
+  ctx.beginPath();
+  ctx.arc(x + px, y + py, r * 0.17, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x + px - r * 0.06, y + py - r * 0.07, r * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  // Lid
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.37, Math.PI * 1.08, Math.PI * 1.92);
+  ctx.closePath();
+  ctx.fillStyle = '#7a7e96';
+  ctx.fill();
+}
+
+const VILLAIN_SHAPES = {
+  /** Zacke: der Stachelball. */
+  spike(ctx, x, y, r, t, look) {
+    hazard(ctx, x, y, r, t * 2, look);
+  },
+
+  /** Brummer: ein bulliger Klotz mit Hörnern und zusammengebissenen Zähnen. */
+  brute(ctx, x, y, r, t, look) {
+    const bob = Math.sin(t * 5) * r * 0.03;
+    ctx.beginPath();
+    for (const s of [-1, 1]) {
+      ctx.moveTo(x + s * r * 0.75, y - r * 0.55 + bob);
+      ctx.lineTo(x + s * r * 0.98, y - r * 1.08 + bob);
+      ctx.lineTo(x + s * r * 0.4, y - r * 0.72 + bob);
+    }
+    villainSkin(ctx, x, y, r);
+    ctx.beginPath();
+    ctx.roundRect(x - r * 0.86, y - r * 0.78 + bob, r * 1.72, r * 1.6, r * 0.34);
+    villainSkin(ctx, x, y, r);
+    eyes(ctx, x, y - r * 0.02 + bob, r * 0.95, look?.x ?? x, look?.y ?? y + 1, true);
+    // Zähne
+    ctx.beginPath();
+    for (let i = 0; i <= 6; i++) ctx.lineTo(x - r * 0.36 + i * r * 0.12, y + r * (i % 2 ? 0.5 : 0.38) + bob);
+    ctx.lineWidth = r * 0.05;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#0b1026';
+    ctx.stroke();
+  },
+
+  /** Glibber: ein wabernder Tropf mit einem einzigen großen Auge. */
+  blob(ctx, x, y, r, t, look) {
+    ctx.beginPath();
+    for (let i = 0; i <= 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      // unten hängen drei Zipfel herunter
+      const drip = Math.sin(a) > 0.2 ? Math.max(0, Math.cos(a * 3 + Math.PI)) * 0.2 : 0;
+      const rr = r * (0.86 + 0.07 * Math.sin(a * 3 + t * 3) + drip * (0.8 + 0.2 * Math.sin(t * 4 + a)));
+      ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    villainSkin(ctx, x, y, r);
+    cyclops(ctx, x, y - r * 0.12, r, look);
+  },
+
+  /** Flitzer: ein schmaler Pfeil mit Schweif, zeigt in Flugrichtung. */
+  dart(ctx, x, y, r, t, look, dir = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(dir);
+    // Fahrtstreifen
+    ctx.lineCap = 'round';
+    ctx.lineWidth = r * 0.05;
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    for (const [oy, len] of [[-0.42, 0.5], [0, 0.75], [0.42, 0.5]]) {
+      const flick = 0.2 * Math.sin(t * 14 + oy * 5);
+      ctx.beginPath();
+      ctx.moveTo(-r * 1.0, r * oy);
+      ctx.lineTo(-r * (1.0 + len + flick), r * oy);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(r * 1.08, 0);
+    ctx.quadraticCurveTo(r * 0.2, -r * 0.82, -r * 0.92, -r * 0.62);
+    ctx.quadraticCurveTo(-r * 0.5, 0, -r * 0.92, r * 0.62);
+    ctx.quadraticCurveTo(r * 0.2, r * 0.82, r * 1.08, 0);
+    ctx.closePath();
+    villainSkin(ctx, 0, 0, r);
+    ctx.restore();
+    eyes(ctx, x + Math.cos(dir) * r * 0.1, y + Math.sin(dir) * r * 0.1 + r * 0.04, r * 0.72, look?.x ?? x, look?.y ?? y + 1, true);
+  },
+
+  /** Krabbler: runder Leib auf sechs zappelnden Beinen. */
+  crawler(ctx, x, y, r, t, look) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = r * 0.09;
+    ctx.strokeStyle = '#d8dae8';
+    for (let i = 0; i < 6; i++) {
+      const s = i < 3 ? -1 : 1;
+      const k = (i % 3) - 1;
+      const step = Math.sin(t * 12 + i * 2.1) * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(x + s * r * 0.5, y + k * r * 0.3);
+      ctx.lineTo(x + s * r * 0.95, y + k * r * 0.45 - r * 0.25 + step * r);
+      ctx.lineTo(x + s * r * 1.15, y + k * r * 0.55 + r * 0.2 + step * r);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.ellipse(x, y, r * 0.72, r * 0.66, 0, 0, Math.PI * 2);
+    villainSkin(ctx, x, y, r * 0.72);
+    eyes(ctx, x, y + r * 0.02, r * 0.74, look?.x ?? x, look?.y ?? y + 1, true);
+  },
+
+  /** Wirbel: ein rotierendes Sägeblatt mit einem Auge in der Mitte. */
+  saw(ctx, x, y, r, t, look) {
+    const rot = t * 5;
+    const n = 9;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = rot + (i / n) * Math.PI * 2, b = rot + ((i + 1) / n) * Math.PI * 2;
+      if (!i) ctx.moveTo(x + Math.cos(a) * r * 0.66, y + Math.sin(a) * r * 0.66);
+      // jeder Zahn ist nach vorn gebogen
+      ctx.quadraticCurveTo(x + Math.cos(a + 0.2) * r * 1.02, y + Math.sin(a + 0.2) * r * 1.02, x + Math.cos(b - 0.12) * r, y + Math.sin(b - 0.12) * r);
+      ctx.lineTo(x + Math.cos(b) * r * 0.66, y + Math.sin(b) * r * 0.66);
+    }
+    ctx.closePath();
+    villainSkin(ctx, x, y, r);
+    cyclops(ctx, x, y, r * 0.95, look);
+  },
+};
+
+export const VILLAINS = Object.keys(VILLAIN_SHAPES);
+
+/** Zufälliger Bösewicht. */
+export function randomVillain() {
+  return VILLAINS[Math.floor(Math.random() * VILLAINS.length)];
+}
+
+/**
+ * Zeichnet einen Bösewicht. kind: 'spike', 'brute', 'blob', 'dart', 'crawler' oder 'saw'.
+ * time bewegt ihn, look = {x, y} ist, wohin er schaut, dir die Flugrichtung (nur für 'dart').
+ */
+export function villain(ctx, kind, x, y, r, time = 0, look = null, dir = 0) {
+  (VILLAIN_SHAPES[kind] ?? VILLAIN_SHAPES.spike)(ctx, x, y, r, time, look, dir);
 }
 
 /** Herz für die Lebensanzeige; x, y ist die Mitte. */
@@ -136,7 +336,7 @@ export function heart(ctx, x, y, size, color) {
 
 const stroke = (ctx, r) => {
   ctx.strokeStyle = '#fff';
-  ctx.lineWidth = r * 0.085;
+  ctx.lineWidth = r * 0.055;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 };
@@ -227,26 +427,41 @@ export class DwellButton {
 
   draw(ctx) {
     const { x, y } = this;
-    const r = this.r * (1 + 0.06 * this.progress);
-    const g = ctx.createRadialGradient(x, y - r * 0.3, r * 0.1, x, y, r);
-    g.addColorStop(0, tone(this.color, 24, 70));
-    g.addColorStop(1, tone(this.color, 7, 70));
+    const r = this.r * (1 + 0.05 * this.progress);
+    const white = this.color === '#fff';
+    // Glasfläche: dunkler Verlauf, oben etwas heller
+    const g = ctx.createRadialGradient(x, y - r * 0.45, r * 0.1, x, y, r * 1.05);
+    g.addColorStop(0, white ? 'rgba(70,80,120,0.55)' : tone(this.color, 26, 55));
+    g.addColorStop(1, white ? 'rgba(14,18,40,0.9)' : tone(this.color, 6, 60));
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = this.color === '#fff' ? 'rgba(30,30,48,0.9)' : g;
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.lineWidth = r * 0.05;
-    ctx.strokeStyle = this.color;
-    glow(ctx, this.color, 24);
+    // feiner Leuchtring
+    ctx.lineWidth = Math.max(2, r * 0.028);
+    ctx.strokeStyle = white ? 'rgba(255,255,255,0.9)' : tone(this.color, 66);
+    glow(ctx, this.color, 22);
     ctx.stroke();
     noGlow(ctx);
+    // Haarlinie innen und Lichtkante oben
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.9, 0, Math.PI * 2);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.9, Math.PI * 1.2, Math.PI * 1.8);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.stroke();
     if (this.progress > 0) {
+      // Fortschritt: feiner heller Bogen außen
       ctx.beginPath();
-      ctx.arc(x, y, r * 0.9, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
-      ctx.lineWidth = r * 0.09;
+      ctx.arc(x, y, r + 9, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
+      ctx.lineWidth = 5;
       ctx.lineCap = 'round';
       ctx.strokeStyle = '#fff';
-      glow(ctx, '#fff', 18);
+      glow(ctx, '#fff', 14);
       ctx.stroke();
       noGlow(ctx);
     }
@@ -256,8 +471,8 @@ export class DwellButton {
       this.icon(ctx, r);
       ctx.restore();
     }
-    if (this.label) text(ctx, this.label, x, y + this.r + 46, 44, tone(this.color, 70), 'center', 8);
-    if (this.sub) text(ctx, this.sub, x, y + this.r + 92, 30, '#fff', 'center', 0);
+    if (this.label) text(ctx, this.label, x, y + this.r + 40, Math.min(38, 24 + this.r * 0.12), white ? '#fff' : tone(this.color, 80), 'center', 0, 500);
+    if (this.sub) text(ctx, this.sub, x, y + this.r + 78, 23, 'rgba(255,255,255,0.6)', 'center', 0, 400);
   }
 }
 

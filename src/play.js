@@ -2,7 +2,7 @@
 // Vormachen, Countdown, Zeit, Punkte, Serien, steigende und sich anpassende Schwierigkeit,
 // Zufallsereignisse, Pause und die Abrechnung am Ende.
 import { BALL_RADIUS } from './engine.js';
-import { DwellButton, clickButtons, icons, text, title, heart, star, orb, glow, noGlow, tone } from './ui.js';
+import { DwellButton, clickButtons, icons, text, title, caption, heart, star, orb, glow, noGlow, tone } from './ui.js';
 import { SPEEDS, scoreKey, medals } from './scenebase.js';
 import { Bot, SKILLS, goals } from './bots.js';
 
@@ -117,7 +117,7 @@ export class PlayScene {
 
   layout() {
     this.exit = new DwellButton({
-      x: this.app.engine.field.w - 70, y: 100, r: 42, dwell: 1.5, icon: icons.close,
+      x: this.app.engine.field.w - 72, y: 108, r: 36, dwell: 1.5, icon: icons.close,
       onActivate: () => { this.app.sound.select(); this.app.music.stop(); this.app.menu(); },
     });
   }
@@ -291,8 +291,9 @@ export class PlayScene {
       ctx.globalAlpha = 1;
       ctx.fillStyle = 'rgba(0,0,10,0.55)';
       ctx.fillRect(0, 0, w, 150);
-      title(ctx, `So geht's: ${this.game.name}`, w / 2, 62, 62, c[1]);
-      if (this.game.hint) text(ctx, this.game.hint, w / 2, 122, 30, '#fff', 'center', 0);
+      caption(ctx, "So geht's", w / 2, 36, 18, 'rgba(255,255,255,0.7)', 'center');
+      title(ctx, this.game.name, w / 2, 78, 52, c[1]);
+      if (this.game.hint) text(ctx, this.game.hint, w / 2, 124, 26, 'rgba(255,255,255,0.9)', 'center', 0, 400);
       this.exit.draw(ctx);
       return;
     }
@@ -304,71 +305,87 @@ export class PlayScene {
       glow(ctx, '#fff', 30);
       star(ctx, l.x, l.y, 50 + 6 * Math.sin(this.elapsed * 7), '#fff', this.elapsed * 2);
       noGlow(ctx);
-      text(ctx, '+25', l.x, l.y + 2, 30, '#0b1d4a', 'center', 0);
+      text(ctx, '+25', l.x, l.y + 2, 26, '#0b1d4a', 'center', 0, 600);
       ctx.globalAlpha = 1;
     }
 
-    // Zeitbalken: abgerundet, mit Markierungen für die Schwierigkeitsstufen
+    // Zeitbalken: schmal und abgerundet, mit feinen Marken für die Schwierigkeitsstufen
     const frac = Math.max(0, this.timeLeft / this.duration);
-    const bw = w - 60;
+    const bw = w - 80;
     ctx.lineCap = 'round';
-    ctx.lineWidth = 12;
-    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-    ctx.beginPath(); ctx.moveTo(30, 34); ctx.lineTo(30 + bw, 34); ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw, 36); ctx.stroke();
     if (frac > 0) {
-      const bar = frac < 0.15 ? '#fff' : c[1];
+      const bar = frac < 0.15 ? '#fff' : tone(c[1], 68);
       ctx.strokeStyle = bar;
       glow(ctx, bar, 14);
-      ctx.beginPath(); ctx.moveTo(30, 34); ctx.lineTo(30 + bw * frac, 34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw * frac, 36); ctx.stroke();
       noGlow(ctx);
     }
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    for (let i = 1; i < STAGES; i++) ctx.fillRect(30 + bw * (1 - i / STAGES) - 2, 26, 4, 16);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
 
-    text(ctx, Math.round(this.shownScore), 34, 100, 84, '#fff', 'left', 10);
+    caption(ctx, 'Punkte', 42, 76, 18);
+    text(ctx, Math.round(this.shownScore), 40, 118, 66, '#fff', 'left', 8, 600);
     const mult = this.multiplier();
     if (mult > 1) {
       // Serien-Anzeige mit ablaufendem Ring
-      const x = 290, y = 100;
+      const x = 262, y = 112;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(x, y, 44, -Math.PI / 2, -Math.PI / 2 + (this.streakLeft / this.streakWindow) * Math.PI * 2);
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = c[0];
+      ctx.arc(x, y, 34, 0, Math.PI * 2);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (this.streakLeft / this.streakWindow) * Math.PI * 2);
+      ctx.strokeStyle = tone(c[0], 70);
       glow(ctx, c[0], 14);
       ctx.stroke();
       noGlow(ctx);
-      text(ctx, `x${mult}`, x, y + 2, 44, tone(c[0], 75), 'center', 8);
+      text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
     }
-    if (this.double > 0) text(ctx, 'Doppelt!', 34, 170, 36, '#fff', 'left', 10);
-    if (this.slow > 0) text(ctx, 'Zeitlupe', 34, this.double > 0 ? 212 : 170, 36, tone(c[3], 80), 'left', 10);
+    if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');
+    if (this.slow > 0) caption(ctx, 'Zeitlupe', 42, this.double > 0 ? 200 : 172, 18, tone(c[3], 82));
     if (this.lives != null) {
       for (let i = 0; i < (this.game.lives ?? 0); i++) {
         const on = i < this.lives;
-        if (on) glow(ctx, c[3], 14);
-        heart(ctx, w / 2 - 55 + i * 55, 100, 46, on ? tone(c[3], 68) : 'rgba(255,255,255,0.15)');
+        if (on) glow(ctx, c[3], 12);
+        heart(ctx, w / 2 - 44 + i * 44, 110, 32, on ? tone(c[3], 72) : 'rgba(255,255,255,0.14)');
         noGlow(ctx);
       }
     }
     this.exit.draw(ctx);
-    if (this.session) text(ctx, this.session.label, w / 2, 975, 28, 'rgba(255,255,255,0.75)', 'center', 0);
+    if (this.session) caption(ctx, this.session.label, w / 2, 972, 18, 'rgba(255,255,255,0.7)', 'center');
 
     if (this.banner) {
       const a = this.banner.age;
       const pop = a < 0.15 ? 0.5 + (a / 0.15) * 0.6 : Math.max(1, 1.1 - (a - 0.15));
       ctx.globalAlpha = Math.max(0, Math.min(1, (1.4 - a) * 3));
-      title(ctx, this.banner.str, w / 2, 300, 80 * pop, this.banner.color);
+      title(ctx, this.banner.str, w / 2, 300, 64 * pop, this.banner.color);
       ctx.globalAlpha = 1;
     }
     if (this.countdown > 0) {
       const n = Math.ceil(this.countdown - 0.5);
-      const beat = 1 + 0.25 * Math.max(0, 1 - ((3.5 - this.countdown) % 1) * 3);
-      title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 500, (n > 0 ? 360 : 240) * beat, c[1]);
-      if (this.game.hint) text(ctx, this.game.hint, w / 2, 800, 40, '#fff', 'center', 6);
+      const beat = 1 + 0.12 * Math.max(0, 1 - ((3.5 - this.countdown) % 1) * 3);
+      // feiner Ring, der sich mit jedem Zähler schließt
+      const phase = (3.5 - this.countdown) % 1;
+      ctx.beginPath();
+      ctx.arc(w / 2, 500, 210, -Math.PI / 2, -Math.PI / 2 + phase * Math.PI * 2);
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = tone(c[1], 70);
+      glow(ctx, c[1], 18);
+      ctx.stroke();
+      noGlow(ctx);
+      title(ctx, n > 0 ? String(n) : 'Los!', w / 2, 505, (n > 0 ? 250 : 150) * beat, c[1]);
+      if (this.game.hint) text(ctx, this.game.hint, w / 2, 800, 34, 'rgba(255,255,255,0.9)', 'center', 0, 400);
     } else if (this.paused || this.userPaused) {
       ctx.fillStyle = 'rgba(0,0,10,0.6)';
       ctx.fillRect(0, 0, w, 1000);
-      title(ctx, 'Pause', w / 2, 440, 160, c[1]);
-      text(ctx, this.userPaused ? 'Weiter mit der Leertaste' : 'Leg den Ball ins Feld', w / 2, 580, 44, '#fff', 'center', 6);
+      title(ctx, 'Pause', w / 2, 450, 120, c[1]);
+      text(ctx, this.userPaused ? 'Weiter mit der Leertaste' : 'Leg den Ball ins Feld', w / 2, 560, 34, 'rgba(255,255,255,0.85)', 'center', 0, 400);
     }
   }
 }

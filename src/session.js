@@ -1,5 +1,5 @@
 // Training und Duell: mehrere Übungen hintereinander, mit Pausen und Gesamtwertung.
-import { DwellButton, icons, text, title, star, glow, noGlow, tone, mascot, Confetti } from './ui.js';
+import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mascot, Confetti } from './ui.js';
 import { ButtonScene } from './scenebase.js';
 import { SESSIONS } from './games/index.js';
 import { initial, rewardLines } from './scenes.js';
@@ -78,8 +78,8 @@ export class SessionSetupScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, 'Training', this.field.w / 2, 140, 110, this.app.palette()[1]);
-    text(ctx, 'Alle Schwerpunkte hintereinander, zum Schluss ein Finale', this.field.w / 2, 255, 34, '#fff', 'center', 6);
+    title(ctx, 'Training', this.field.w / 2, 140, 86, this.app.palette()[1]);
+    text(ctx, 'Alle Schwerpunkte hintereinander, zum Schluss ein Finale', this.field.w / 2, 240, 26, 'rgba(255,255,255,0.8)', 'center', 0, 400);
     super.draw(ctx);
   }
 }
@@ -121,8 +121,8 @@ export class IntermissionScene extends ButtonScene {
     if (who != null) {
       title(ctx, `${names[who]} ist dran`, w / 2, 90, 60, c[who ? 3 : 1]);
     } else {
-      text(ctx, `Übung ${i + 1} von ${plan.length}`, w / 2, 90, 44, tone(c[3], 80), 'center', 6);
-      if (results.length) text(ctx, `Bisher ${results.reduce((sum, r) => sum + r.score, 0)} Punkte`, 40, 100, 30, '#fff', 'left', 0);
+      caption(ctx, `Übung ${i + 1} von ${plan.length}`, w / 2, 92, 24, tone(c[3], 82), 'center');
+      if (results.length) caption(ctx, `${results.reduce((sum, r) => sum + r.score, 0)} Punkte`, 44, 92, 20);
     }
 
     // Fortschritt: ein Punkt pro Übung
@@ -138,16 +138,16 @@ export class IntermissionScene extends ButtonScene {
     ctx.translate(w / 2, 360);
     ctx.beginPath();
     ctx.arc(0, 0, 118, -Math.PI / 2, -Math.PI / 2 + (this.left / BREAK) * Math.PI * 2);
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = c[1];
+    ctx.strokeStyle = tone(c[1], 70);
     glow(ctx, c[1], 20);
     ctx.stroke();
     noGlow(ctx);
     game.icon(ctx, 150);
     ctx.restore();
-    title(ctx, game.name, w / 2, 545, 90, c[1]);
-    if (game.hint) text(ctx, game.hint, w / 2, 630, 36, '#fff', 'center', 6);
+    title(ctx, game.name, w / 2, 545, 70, c[1]);
+    if (game.hint) text(ctx, game.hint, w / 2, 622, 28, 'rgba(255,255,255,0.85)', 'center', 0, 400);
     mascot(ctx, 120, 800, 56, 'happy', this.time, this.look);
     super.draw(ctx);
   }
@@ -186,12 +186,12 @@ export class SessionResultScene extends ButtonScene {
     const { w } = this.field;
     const c = this.app.palette();
     const { results } = this.session;
-    title(ctx, this.record ? 'Neuer Rekord!' : 'Training geschafft!', w / 2, 90, 80, this.record ? c[0] : c[1]);
-    text(ctx, Math.round(this.total * Math.min(1, this.time / 1.5)), w / 2, 200, 120, '#fff', 'center', 12);
+    title(ctx, this.record ? 'Neuer Rekord!' : 'Training geschafft!', w / 2, 90, 62, this.record ? c[0] : c[1]);
+    text(ctx, Math.round(this.total * Math.min(1, this.time / 1.5)), w / 2, 200, 104, '#fff', 'center', 8, 600);
     glow(ctx, c[1], 18);
     star(ctx, w / 2 - 185, 293, 20, tone(c[1], 70));
     noGlow(ctx);
-    text(ctx, `${this.stars} von ${results.length * 3} Sternen`, w / 2 + 25, 295, 36, tone(c[1], 80), 'center', 6);
+    text(ctx, `${this.stars} von ${results.length * 3} Sternen`, w / 2 + 25, 295, 28, tone(c[1], 82), 'center', 0);
 
     // Liste der Übungen, bei vielen in zwei Spalten
     const cols = results.length > 9 ? 2 : 1;
@@ -202,9 +202,9 @@ export class SessionResultScene extends ButtonScene {
       const x = (cols > 1 ? 40 : w / 2 - colW / 2) + Math.floor(k / perCol) * (w / 2);
       const y = 355 + (k % perCol) * rowH;
       const size = Math.min(30, rowH * 0.7);
-      text(ctx, r.game.name, x, y, size, '#fff', 'left', 0);
+      text(ctx, r.game.name, x, y, size * 0.85, '#fff', 'left', 0, 400);
       for (let i = 0; i < 3; i++) star(ctx, x + colW - 190 + i * (size * 0.9), y, size * 0.36, i < r.stars ? tone(c[1], 70) : 'rgba(255,255,255,0.15)');
-      text(ctx, r.score, x + colW - 20, y, size, tone(c[3], 82), 'right', 0);
+      text(ctx, r.score, x + colW - 20, y, size * 0.85, tone(c[3], 82), 'right', 0, 600);
     });
     this.lines.forEach((line, i) => text(ctx, line, 180, 800 + i * 38, 28, i ? '#fff' : tone(c[3], 82), 'left', 0));
     mascot(ctx, 90, 880, 54, 'cheer', this.time, this.look);
@@ -235,9 +235,9 @@ export class DuelSetupScene extends ButtonScene {
   }
   draw(ctx) {
     const { w } = this.field;
-    title(ctx, 'Duell', w / 2, 130, 110, this.app.palette()[1]);
-    text(ctx, `${this.app.profile.name} gegen …`, w / 2, 250, 40, '#fff', 'center', 6);
-    text(ctx, 'Drei Übungen, jeder spielt jede. Wer mehr Punkte holt, gewinnt.', w / 2, 760, 30, 'rgba(255,255,255,0.8)', 'center', 0);
+    title(ctx, 'Duell', w / 2, 130, 86, this.app.palette()[1]);
+    text(ctx, `${this.app.profile.name} gegen …`, w / 2, 240, 30, 'rgba(255,255,255,0.85)', 'center', 0, 400);
+    text(ctx, 'Drei Übungen, jeder spielt jede. Wer mehr Punkte holt, gewinnt.', w / 2, 760, 24, 'rgba(255,255,255,0.7)', 'center', 0, 400);
     super.draw(ctx);
   }
 }
@@ -274,20 +274,20 @@ export class DuelResultScene extends ButtonScene {
     const { w } = this.field;
     const c = this.app.palette();
     const { names, results } = this.session;
-    title(ctx, this.winner < 0 ? 'Unentschieden!' : `${names[this.winner]} gewinnt!`, w / 2, 100, 84, c[1]);
+    title(ctx, this.winner < 0 ? 'Unentschieden!' : `${names[this.winner]} gewinnt!`, w / 2, 100, 66, c[1]);
     const xs = [w / 2 - 250, w / 2 + 250];
     names.forEach((name, who) => {
-      text(ctx, name, xs[who], 215, 46, who === this.winner ? '#fff' : tone(c[3], 75), 'center', who === this.winner ? 12 : 0);
-      text(ctx, Math.round(this.totals[who] * Math.min(1, this.time / 1.5)), xs[who], 310, 110, '#fff', 'center', 10);
+      text(ctx, name, xs[who], 215, 36, who === this.winner ? '#fff' : tone(c[3], 78), 'center', 0, 600);
+      text(ctx, Math.round(this.totals[who] * Math.min(1, this.time / 1.5)), xs[who], 305, 96, '#fff', 'center', 8, 600);
     });
     const gamesPlayed = [...new Set(results.map((r) => r.game))];
     gamesPlayed.forEach((game, k) => {
       const y = 440 + k * 70;
-      text(ctx, game.name, w / 2, y, 34, tone(c[1], 80), 'center', 0);
+      text(ctx, game.name, w / 2, y, 26, tone(c[1], 82), 'center', 0, 400);
       [0, 1].forEach((who) => {
         const r = results.find((x) => x.game === game && x.who === who);
         const other = results.find((x) => x.game === game && x.who !== who);
-        text(ctx, r?.score ?? 0, xs[who], y, 40, r && other && r.score > other.score ? '#fff' : 'rgba(255,255,255,0.6)', 'center', 0);
+        text(ctx, r?.score ?? 0, xs[who], y, 32, r && other && r.score > other.score ? '#fff' : 'rgba(255,255,255,0.55)', 'center', 0, 600);
       });
     });
     mascot(ctx, 110, 880, 56, 'cheer', this.time, this.look);

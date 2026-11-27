@@ -69,7 +69,7 @@ Die Tricks sind in `src/games/tricks.js` als einfache Punktlisten beschrieben un
 
 Für alle Spiele gilt:
 
-- **Gefahr** ist immer weißgrau mit bösem Blick (Stachelbälle, Wolken) und kostet Punkte oder Leben.
+- **Gefahr** ist immer weißgrau mit bösem Blick und kostet Punkte oder Leben. Es gibt sechs Bösewichte: Zacke (Stachelball), Brummer (Klotz mit Hörnern), Glibber (einäugiger Tropf), Flitzer (Pfeil mit Schweif), Krabbler (auf sechs Beinen) und Wirbel (Sägeblatt). In „Fangen“ hat jeder Fänger seine eigene Gestalt, der Verteidiger im Trick-Trainer ist der Brummer.
 - **Serie:** Drei schnelle Treffer hintereinander verdoppeln die Punkte (x2), sechs geben x3, zehn x4. Ein Ring neben dem Punktestand zeigt, wie lange die Serie noch hält. Ein Fehler beendet sie.
 - **Es wird schwieriger:** Jede Runde hat vier Abschnitte (Striche im Zeitbalken). Mit jedem Abschnitt wird das Spiel etwas schneller, enger oder bekommt ein neues Element.
 - **Stoppzone:** In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit hinaus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
@@ -171,9 +171,9 @@ export default {
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
 - `env.palette` liefert die vier Blautöne des Vereinsstils. Nur diese (und Weiß/Grau) für große Flächen verwenden: Orange, Gelb, Grün oder Pink könnte die Kamera für den Ball halten.
 
-Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `glow`, `orb`, `hazard` und `star`, für Funken und Punktetexte die Klasse `Fx` in `src/games/common.js`.
+Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `title`, `caption`, `glow`, `orb`, `villain` und `star`, für Funken und Punktetexte die Klasse `Fx` in `src/games/common.js`.
 
-Die Schrift „Fredoka“ liegt unter `assets/fonts/` (SIL Open Font License).
+Die Schrift „Fredoka“ liegt in drei Stärken unter `assets/fonts/` (SIL Open Font License).
 
 ## Austarieren
 

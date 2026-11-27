@@ -3,7 +3,7 @@
 // Besondere Ziele: Doppel-Kugeln zerfallen in zwei kleine, die Uhr schenkt Zeit,
 // Stachelbällen (ab "Schwer" oder späten Stufen) muss man ausweichen.
 import { BALL_RADIUS } from '../engine.js';
-import { glow, noGlow, hazard, orb, text } from '../ui.js';
+import { glow, noGlow, villain, randomVillain, orb, text } from '../ui.js';
 import { Fx, StopZones } from './common.js';
 
 const LEVELS = {
@@ -42,7 +42,7 @@ class Targets {
     const a = Math.random() * Math.PI * 2;
     const speed = this.p.speed * (kind === 'mini' ? 1.8 : 1);
     this.targets.push({
-      kind, x, y, r, life, age: 0,
+      kind, x, y, r, life, age: 0, face: randomVillain(),
       vx: Math.cos(a) * speed, vy: Math.sin(a) * speed,
       color: kind === 'bomb' || kind === 'clock' ? '#fff' : palette[Math.floor(Math.random() * palette.length)],
     });
@@ -144,7 +144,7 @@ class Targets {
       const r = t.r * (k < 1 ? k * (1.25 - 0.25 * k) : 1 + 0.03 * Math.sin(this.time * 5 + t.x));
       ctx.globalAlpha = Math.min(1, (left * t.life) / 0.5);
       if (t.kind === 'bomb') {
-        hazard(ctx, t.x, t.y, r, this.time * 1.2, this.look);
+        villain(ctx, t.face, t.x, t.y, r, this.time, this.look, Math.atan2(t.vy, t.vx));
       } else if (t.kind === 'clock') {
         ctx.beginPath();
         ctx.arc(t.x, t.y, r * 0.8, 0, Math.PI * 2);
@@ -168,7 +168,7 @@ class Targets {
           ctx.arc(t.x, t.y, r * 1.18, 0, Math.PI * 2);
           ctx.setLineDash([10, 12]);
           ctx.lineDashOffset = -this.time * 40;
-          ctx.lineWidth = 4;
+          ctx.lineWidth = 2.5;
           ctx.strokeStyle = t.color;
           ctx.stroke();
           ctx.setLineDash([]);
@@ -176,7 +176,7 @@ class Targets {
         // Bogen zeigt, wie lange das Ziel noch bleibt.
         ctx.beginPath();
         ctx.arc(t.x, t.y, r + 9, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2);
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#fff';
         ctx.stroke();

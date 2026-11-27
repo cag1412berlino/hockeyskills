@@ -1,5 +1,5 @@
 // Die Bildschirme rund ums Spielen: Hauptmenü, Schwerpunkt, Stufenwahl, Ergebnis, Profil.
-import { DwellButton, icons, text, title, star, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
+import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
 import { BRAND } from './config.js';
 import { ButtonScene, grid, medals, scoreKey, LEVEL_NAMES, SPEEDS } from './scenebase.js';
 import { rankOf, BADGES } from './profile.js';
@@ -60,16 +60,16 @@ export const initial = (name) => (ctx, r) => text(ctx, (name[0] ?? '?').toUpperC
 /** Rang-Leiste: Rangname, Balken bis zum nächsten Rang, Punkte. */
 export function drawRank(ctx, profile, x, y, width, colors) {
   const rank = rankOf(profile.xp);
-  text(ctx, rank.name, x, y, 34, tone(colors[1], 80), 'left', 6);
+  text(ctx, rank.name, x, y, 28, tone(colors[1], 82), 'left', 0, 600);
   ctx.lineCap = 'round';
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)';
   ctx.beginPath(); ctx.moveTo(x, y + 36); ctx.lineTo(x + width, y + 36); ctx.stroke();
   ctx.strokeStyle = colors[1];
   glow(ctx, colors[1], 12);
   ctx.beginPath(); ctx.moveTo(x, y + 36); ctx.lineTo(x + Math.max(1, width * rank.progress), y + 36); ctx.stroke();
   noGlow(ctx);
-  text(ctx, rank.next ? `${profile.xp} / ${rank.next}` : `${profile.xp} Punkte`, x + width, y, 26, '#fff', 'right', 0);
+  text(ctx, rank.next ? `${profile.xp} / ${rank.next}` : `${profile.xp} Punkte`, x + width, y, 20, 'rgba(255,255,255,0.7)', 'right', 0, 400);
 }
 
 export class MenuScene extends ButtonScene {
@@ -124,9 +124,9 @@ export class MenuScene extends ButtonScene {
       const lw = logo.width * k, lh = logo.height * k;
       ctx.drawImage(logo, cx - 330 - size / 2 - lw / 2, 118 - lh / 2, lw, lh);
     }
-    title(ctx, 'Blau-Weiss', cx, 78, 84, '#fff');
-    title(ctx, 'Skiller Academy', cx, 160, 84, c[0]);
-    text(ctx, `${BRAND.club} · ${app.profile.name}, ${rankOf(app.profile.xp).name}`, cx, 228, 28, tone(c[3], 80), 'center', 0);
+    title(ctx, 'Blau-Weiss', cx, 78, 66, '#fff');
+    title(ctx, 'Skiller Academy', cx, 160, 66, c[0]);
+    caption(ctx, `${BRAND.club}  ·  ${app.profile.name}, ${rankOf(app.profile.xp).name}`, cx, 222, 19, tone(c[3], 82), 'center');
 
     // Buttons leicht versetzt schweben lassen (der Spieler-Button oben rechts bleibt ruhig)
     this.buttons.forEach((b, i) => {
@@ -160,7 +160,7 @@ export class CategoryScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, this.cat.name, this.field.w / 2, 130, 110, this.app.palette()[1]);
+    title(ctx, this.cat.name, this.field.w / 2, 130, 86, this.app.palette()[1]);
     super.draw(ctx);
   }
 }
@@ -198,9 +198,9 @@ export class LevelScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, this.opts.title, this.field.w / 2, 140, 110, this.app.palette()[1]);
+    title(ctx, this.opts.title, this.field.w / 2, 140, 86, this.app.palette()[1]);
     ctx.globalAlpha = this.pulse();
-    text(ctx, 'Wähle eine Stufe', this.field.w / 2, 255, 36, '#fff', 'center', 6);
+    caption(ctx, 'Wähle eine Stufe', this.field.w / 2, 240, 22, '#fff', 'center');
     ctx.globalAlpha = 1;
     super.draw(ctx);
   }
@@ -257,10 +257,10 @@ export class ResultScene extends ButtonScene {
     const c = this.app.palette();
     if (this.record) {
       ctx.globalAlpha = this.pulse();
-      title(ctx, 'Neuer Rekord!', cx, 100, 96, c[0]);
+      title(ctx, 'Neuer Rekord!', cx, 100, 75, c[0]);
       ctx.globalAlpha = 1;
     } else {
-      title(ctx, 'Geschafft!', cx, 100, 96, c[1]);
+      title(ctx, 'Geschafft!', cx, 100, 75, c[1]);
     }
     // Drei Sterne, die nacheinander aufleuchten
     for (let i = 0; i < 3; i++) {
@@ -271,13 +271,13 @@ export class ResultScene extends ButtonScene {
       noGlow(ctx);
     }
     // Die Punktzahl zählt hoch
-    text(ctx, Math.round(this.score * Math.min(1, this.time / 1.2)), cx, 400, 170, '#fff', 'center', 14);
-    if (this.best) text(ctx, `Rekord ${this.best}`, cx, 510, 40, tone(c[1], 75), 'center', 6);
+    text(ctx, Math.round(this.score * Math.min(1, this.time / 1.2)), cx, 395, 150, '#fff', 'center', 10, 600);
+    if (this.best) caption(ctx, `Rekord ${this.best}`, cx, 500, 22, tone(c[1], 80), 'center');
 
     // Was es fürs Profil gab, erscheint Zeile für Zeile
     this.lines.forEach((line, i) => {
       if (this.time < 1.2 + i * 0.5) return;
-      text(ctx, line, cx, 585 + i * 50, i ? 38 : 34, i ? '#fff' : tone(c[3], 82), 'center', i ? 10 : 0);
+      text(ctx, line, cx, 575 + i * 44, i ? 30 : 26, i ? '#fff' : tone(c[3], 82), 'center', 0, i ? 500 : 400);
     });
     drawRank(ctx, this.app.profile, 230, 800, 300, c);
     mascot(ctx, 110, 860, 62, this.stars >= 2 || this.record ? 'cheer' : this.stars ? 'happy' : 'sad', this.time, this.look);
@@ -305,10 +305,10 @@ export class ProfileScene extends ButtonScene {
     const { w } = this.field;
     const c = this.app.palette();
     const p = this.app.profile;
-    title(ctx, p.name, w / 2, 80, 84, c[1]);
+    title(ctx, p.name, w / 2, 80, 66, c[1]);
     drawRank(ctx, p, w / 2 - 300, 150, 600, c);
     const earned = BADGES.filter((b) => p.badges[b.id]).length;
-    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 245, 30, '#fff', 'center', 0);
+    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 240, 24, 'rgba(255,255,255,0.75)', 'center', 0, 400);
 
     // Album: sechs Abzeichen je Reihe
     const cols = 6, cell = Math.min(160, (w - 60) / cols);
@@ -320,13 +320,13 @@ export class ProfileScene extends ButtonScene {
       ctx.arc(x, y, 44, 0, Math.PI * 2);
       ctx.fillStyle = has ? tone(c[i % 4], 22, 70) : 'rgba(255,255,255,0.04)';
       ctx.fill();
-      ctx.lineWidth = has ? 5 : 2;
+      ctx.lineWidth = has ? 2.5 : 1;
       ctx.strokeStyle = has ? c[i % 4] : 'rgba(255,255,255,0.2)';
       if (has) glow(ctx, c[i % 4], 18);
       ctx.stroke();
       noGlow(ctx);
-      text(ctx, b.sym, x, y + 2, b.sym.length > 2 ? 26 : 34, has ? '#fff' : 'rgba(255,255,255,0.25)', 'center', 0);
-      text(ctx, b.name, x, y + 66, 19, has ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0);
+      text(ctx, b.sym, x, y + 2, b.sym.length > 2 ? 22 : 30, has ? '#fff' : 'rgba(255,255,255,0.25)', 'center', 0, 600);
+      text(ctx, b.name, x, y + 64, 17, has ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0, 400);
     });
     super.draw(ctx);
   }
@@ -347,7 +347,7 @@ export class PlayerPickScene extends ButtonScene {
     }));
   }
   draw(ctx) {
-    title(ctx, 'Wer spielt?', this.field.w / 2, 130, 110, this.app.palette()[1]);
+    title(ctx, 'Wer spielt?', this.field.w / 2, 130, 86, this.app.palette()[1]);
     super.draw(ctx);
   }
 }

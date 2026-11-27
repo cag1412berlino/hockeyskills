@@ -3,7 +3,7 @@
 // Extras: Der Schild fängt einen Treffer ab, die Schneeflocke bremst alle Stachelbälle.
 // In späten Stufen fliegen manche Stachelbälle im Zickzack.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow, hazard, tone } from '../ui.js';
+import { text, glow, noGlow, villain, randomVillain, tone } from '../ui.js';
 import { Fx, randomSpot, drawStar, drawPickup, PICKUP_SECONDS } from './common.js';
 
 const LEVELS = {
@@ -50,6 +50,7 @@ class Dodge {
       x: from.x, y: from.y, r, wait: WARN, age: 0,
       vx: ((aim.x - from.x) / len) * speed, vy: ((aim.y - from.y) / len) * speed,
       zigzag: env.stage >= 2 && Math.random() < 0.4,
+      face: randomVillain(),
       wx: Math.min(field.w - 40, Math.max(40, from.x)), wy: Math.min(field.h - 40, Math.max(40, from.y)),
     });
   }
@@ -156,13 +157,13 @@ class Dodge {
         // Blinkende Warnung am Rand
         if (Math.floor(h.wait * 8) % 2 === 0) text(ctx, '!', h.wx, h.wy, 100);
       } else {
-        hazard(ctx, h.x, h.y, h.r, this.time * 3, this.look);
+        villain(ctx, h.zigzag ? 'dart' : h.face, h.x, h.y, h.r, this.time, this.look, Math.atan2(h.vy, h.vx));
       }
     }
     if (this.shield && this.look) {
       ctx.beginPath();
       ctx.arc(this.look.x, this.look.y, BALL_RADIUS + 36, 0, Math.PI * 2);
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 3.5;
       ctx.strokeStyle = c0;
       glow(ctx, c0, 24);
       ctx.stroke();
