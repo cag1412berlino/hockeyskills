@@ -261,6 +261,10 @@ Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen,
 
 ## Wenn der Ball nicht zuverlässig erkannt wird
 
+**Der wichtigste Schritt: im Kamerabild auf den Ball klicken.** Die festen Ballfarben (Gelb, Pink …) erwarten eine kräftige Farbe. Im echten Raum wirkt ein Ball oft viel blasser, besonders ein Filzball oder bei viel Licht. Beim Klick lernt die App die beleuchtete Seite des Balls; wirkt er blass, sucht sie nach „heller als die Umgebung und leicht in Ballfarbe“. Danach sagt sie, ob die Farbe auch woanders im Bild vorkommt.
+
+**Ball und Schläger brauchen verschiedene Farben.** Ein gelber Ball mit einem gelb-grünen Schläger wird verwechselt (in einer Testaufnahme hat die App immer wieder das Schlägerblatt für den Ball gehalten). Dann besser einen pinken oder orangen Neonball nehmen – oder das Blatt abkleben.
+
 1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden und in wie viel Prozent der letzten Bilder der Ball erkannt wurde (gut sind über 90 %).
 2. Wird der Ball nur manchmal türkis: in der Einrichtung die **Farbtoleranz** erhöhen oder im Kamerabild auf den Ball klicken, während er im projizierten Feld liegt.
 3. Leuchtet anderes türkis auf (Kleidung, Möbel, Schläger): Toleranz senken oder die störenden Dinge aus dem Bild nehmen.

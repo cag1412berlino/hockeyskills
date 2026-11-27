@@ -162,3 +162,23 @@ test('Ballerkennung sucht nur im Spielfeld: Farbe außerhalb zählt nicht', asyn
   const inside = detectBall(img, w, h, BALL_PRESETS.pink, null, new Uint8Array(w * h), region);
   assert.ok(Math.abs(inside.x - 120) < 1 && Math.abs(inside.y - 60) < 1);
 });
+
+test('Blasser Ball (überbelichtet, Filz) auf ähnlich gefärbtem Boden: Farbe per Klick lernen und finden', async () => {
+  const { BallTracker, detectBall } = await import('../src/tracker.js');
+  // Werte aus einer echten Aufnahme: beiger Boden, gelber Filzball, hell beleuchtet
+  const w = 160, h = 90, data = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) data.set([179, 177, 135, 255], i * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.hypot(x - 100, y - 40);
+    if (d < 5) data.set(x < 100 ? [242, 244, 190, 255] : [180, 188, 140, 255], (y * w + x) * 4); // halb im Schatten
+    if (x > 20 && x < 50 && y > 60 && y < 70) data.set([250, 250, 250, 255], (y * w + x) * 4);   // weiße Projektion
+  }
+  const t = Object.create(BallTracker.prototype); // ohne Zeichenfläche (die gibt es nur im Browser)
+  t.frame = { width: w, height: h, data };
+  const color = t.learnBall(99 / w, 40 / h);
+  assert.ok(color.pale, 'als blass erkannt');
+  assert.ok(Math.abs(color.h - 64) < 12, `Farbton ${color.h}`);
+  const found = detectBall(data, w, h, color);
+  assert.ok(found && Math.abs(found.x - 98) < 3 && Math.abs(found.y - 40) < 3, JSON.stringify(found));
+  assert.ok(t.share(color) < 0.01, 'Boden und weiße Flächen zählen nicht');
+});

@@ -440,7 +440,7 @@ function drawPreview(target) {
     ctx.stroke();
   }
   if (target === preview) {
-    $('#track-status').textContent = detection ? `Ball erkannt ✔ (in ${quality()} % der letzten Bilder)` : 'Kein Ball im Bild erkannt.';
+    $('#track-status').textContent = detection ? `Ball erkannt ✔ (in ${quality()} % der letzten Bilder)` : 'Kein Ball im Bild erkannt. Ball ins Bild legen und im Kamerabild direkt auf den Ball klicken – dann lernt die App seine Farbe.';
     renderChecklist();
   }
 }
@@ -488,11 +488,17 @@ function buildSetup() {
 
   preview.onclick = (e) => {
     const r = preview.getBoundingClientRect();
-    const learned = tracker.sampleColor((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+    const learned = tracker.learnBall((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
     if (!learned) return;
-    config.ball = { preset: 'custom', ...learned };
+    const { pale, ...color } = learned;
+    config.ball = { preset: 'custom', ...color };
     saveConfig();
     refreshSetup();
+    // Rückmeldung: wie eindeutig ist die gelernte Farbe?
+    const share = tracker.share(config.ball);
+    setMessage(share > 0.02
+      ? 'Ballfarbe gelernt – aber diese Farbe kommt auch noch woanders im Bild vor (türkis markiert). Störende Dinge wegräumen oder die Farbtoleranz senken.'
+      : pale ? 'Ballfarbe gelernt. Der Ball wirkt im Kamerabild blass – die App sucht deshalb nach hellen Stellen in Ballfarbe. Weniger Licht oder „Projektion abdunkeln“ macht die Farbe kräftiger.' : 'Ballfarbe gelernt ✔');
   };
 
   for (const radio of document.querySelectorAll('input[name=shape]')) {

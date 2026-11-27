@@ -213,6 +213,51 @@ export class BallTracker {
     return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals: b.rivals } : null;
   }
 
+  /**
+   * Lernt die Ballfarbe aus einem Klick ins Kamerabild (nx, ny von 0 bis 1).
+   * Genommen wird die helle, beleuchtete Seite des Balls um den Klickpunkt. Wirkt der Ball im
+   * Kamerabild blass (überbelichtet, Filzball), sucht die App nach „heller als die Umgebung und
+   * leicht in Ballfarbe“ statt nach kräftiger Farbe – sonst würde ein blasser Ball nie gefunden.
+   */
+  learnBall(nx, ny, radius = 5) {
+    if (!this.frame) return null;
+    const { width: w, height: h, data } = this.frame;
+    const cx = Math.round(nx * w), cy = Math.round(ny * h);
+    const px = [];
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if (x < 0 || y < 0 || x >= w || y >= h || Math.hypot(x - cx, y - cy) > radius) continue;
+        const p = (y * w + x) * 4;
+        px.push(rgbToHsv(data[p], data[p + 1], data[p + 2]));
+      }
+    }
+    if (!px.length) return null;
+    // die hellsten 40 % mit etwas Farbe: die beleuchtete Seite des Balls
+    const lit = px.filter(([, sat]) => sat > 0.05).sort((a, b) => b[2] - a[2]).slice(0, Math.max(3, Math.round(px.length * 0.4)));
+    if (!lit.length) return null;
+    const rad = Math.PI / 180;
+    const hue = (Math.atan2(lit.reduce((a, q) => a + Math.sin(q[0] * rad) * q[1], 0), lit.reduce((a, q) => a + Math.cos(q[0] * rad) * q[1], 0)) / rad + 360) % 360;
+    const sat = lit.reduce((a, q) => a + q[1], 0) / lit.length;
+    const val = lit.reduce((a, q) => a + q[2], 0) / lit.length;
+    const pale = sat < 0.35;
+    return {
+      h: Math.round(hue),
+      hTol: pale ? 20 : 14,
+      sMin: Math.max(pale ? 0.07 : 0.3, sat * (pale ? 0.5 : 0.6)),
+      vMin: pale ? Math.max(0.3, val * 0.84) : Math.max(0.25, val * 0.5),
+      pale,
+    };
+  }
+
+  /** Anteil des Bildes (0..1), der zu einer Farbe passt – viel mehr als ein Ball heißt: Farbe nicht eindeutig. */
+  share(color) {
+    if (!this.frame) return 0;
+    const { width: w, height: h, data } = this.frame;
+    const m = colorMask(data, w, h, color, new Uint8Array(w * h));
+    if (this.useRegion && this.region) for (let i = 0; i < m.length; i++) if (!this.region[i]) m[i] = 0;
+    return m.reduce((a, b) => a + b, 0) / (w * h);
+  }
+
   /** Lernt die Ballfarbe aus dem letzten Bild an der normierten Stelle (nx, ny). */
   sampleColor(nx, ny, sFloor = 0.3, radius = 3) {
     if (!this.frame) return null;
