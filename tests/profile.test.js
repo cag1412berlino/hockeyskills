@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newProfile, rankOf, recordRound, recordEvent, dailyGame, summarize, BADGES, RANKS } from '../src/profile.js';
+import { newProfile, rankOf, recordRound, recordEvent, dailyGame, summarize, badgeProgress, BADGES, RANKS } from '../src/profile.js';
 import { categories, games } from '../src/games/index.js';
 
 const round = (over = {}) => ({ gameId: 'targets', level: 1, score: 100, stars: 1, maxMult: 1, ...over });
@@ -79,4 +79,18 @@ test('Verlauf: Schnitt und Tendenz', () => {
   const row = summarize(p, games).find((x) => x.game.id === 'targets');
   assert.deepEqual([row.rounds, row.best, row.recent, row.trend], [10, 50, 50, 1]);
   assert.equal(summarize(p, games).find((x) => x.game.id === 'cloud').rounds, 0);
+});
+
+test('Abzeichen: jedes hat eine Erklärung, zählbare zeigen den Fortschritt', () => {
+  const p = newProfile('Test');
+  for (const b of BADGES) assert.ok(b.desc.length > 15 && b.desc.endsWith('.'), b.id);
+  for (let i = 0; i < 7; i++) recordRound(p, round({ stars: 2 }), categories, '2026-01-10');
+  const of = (id) => badgeProgress(BADGES.find((b) => b.id === id), p, categories);
+  assert.deepEqual(of('r10'), [7, 10]);
+  assert.deepEqual(of('stars25'), [14, 25]);
+  assert.deepEqual(of('all'), [1, 18]);
+  assert.deepEqual(of('cat_treffen'), [1, 4]);
+  assert.equal(of('mult4'), null);
+  for (let i = 0; i < 300; i++) recordRound(p, round(), categories, '2026-01-10');
+  assert.deepEqual(of('r10'), [10, 10], 'Fortschritt läuft nicht über das Ziel hinaus');
 });

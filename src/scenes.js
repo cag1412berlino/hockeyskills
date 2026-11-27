@@ -2,7 +2,7 @@
 import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
 import { BRAND } from './config.js';
 import { ButtonScene, grid, medals, scoreKey, LEVEL_NAMES, SPEEDS } from './scenebase.js';
-import { rankOf, BADGES } from './profile.js';
+import { rankOf, BADGES, badgeProgress } from './profile.js';
 
 export { PlayScene } from './play.js';
 export { medals } from './scenebase.js';
@@ -287,38 +287,66 @@ export class ResultScene extends ButtonScene {
   }
 }
 
-/** Profil: Rang, Tage in Folge und das Album mit allen Abzeichen. */
+/**
+ * Profil: Rang, Tage in Folge und das Album mit allen Abzeichen.
+ * Liegt der Ball auf einem Abzeichen, steht unten, wie man es bekommt (und wird vorgelesen).
+ */
 export class ProfileScene extends ButtonScene {
   layout() {
     const { w } = this.field;
     const colors = this.app.palette();
     this.buttons = [new DwellButton({
-      x: 100, y: 910, r: 58, icon: icons.back, onActivate: this.act(() => this.app.menu()),
+      x: 90, y: 920, r: 54, icon: icons.back, onActivate: this.act(() => this.app.menu()),
     })];
     if (this.app.config.profiles.length > 1) {
       this.buttons.push(new DwellButton({
-        x: w - 100, y: 910, r: 58, color: colors[3], icon: initial('↔'),
+        x: w - 90, y: 920, r: 54, color: colors[3], icon: initial('↔'),
         onActivate: this.act(() => this.app.playerPick()),
       }));
     }
+    // Album: sechs Abzeichen je Reihe
+    const cols = 6, cell = Math.min(160, (w - 60) / cols);
+    this.spots = BADGES.map((badge, i) => ({
+      badge,
+      x: w / 2 + ((i % cols) - (cols - 1) / 2) * cell,
+      y: 330 + Math.floor(i / cols) * 128,
+    }));
+    this.chosen ??= null;
   }
+
+  update(dt, ball) {
+    super.update(dt, ball);
+    if (!ball.visible) return;
+    const hit = this.spots.find((s) => Math.hypot(ball.x - s.x, ball.y - s.y) < 62);
+    if (hit && hit !== this.chosen) {
+      this.chosen = hit;
+      this.app.sound.blip();
+      const has = !!this.app.profile.badges[hit.badge.id];
+      this.app.voice.say(`${hit.badge.name}. ${has ? 'Geschafft! ' : ''}${hit.badge.desc}`);
+    }
+  }
+
+  onClick(x, y) {
+    super.onClick(x, y);
+    const hit = this.spots.find((s) => Math.hypot(x - s.x, y - s.y) < 62);
+    if (hit) this.chosen = hit;
+  }
+
   draw(ctx) {
     const { w } = this.field;
     const c = this.app.palette();
     const p = this.app.profile;
-    title(ctx, p.name, w / 2, 80, 66, c[1]);
-    drawRank(ctx, p, w / 2 - 300, 150, 600, c);
+    title(ctx, p.name, w / 2, 74, 62, c[1]);
+    drawRank(ctx, p, w / 2 - 300, 138, 600, c);
     const earned = BADGES.filter((b) => p.badges[b.id]).length;
-    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 240, 24, 'rgba(255,255,255,0.75)', 'center', 0, 400);
+    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 226, 24, 'rgba(255,255,255,0.75)', 'center', 0, 400);
 
-    // Album: sechs Abzeichen je Reihe
-    const cols = 6, cell = Math.min(160, (w - 60) / cols);
-    BADGES.forEach((b, i) => {
-      const x = w / 2 + ((i % cols) - (cols - 1) / 2) * cell;
-      const y = 345 + Math.floor(i / cols) * 138;
-      const has = !!p.badges[b.id];
+    this.spots.forEach(({ badge, x, y }, i) => {
+      const has = !!p.badges[badge.id];
+      const picked = this.chosen?.badge === badge;
+      const r = picked ? 50 : 44;
       ctx.beginPath();
-      ctx.arc(x, y, 44, 0, Math.PI * 2);
+      ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = has ? tone(c[i % 4], 22, 70) : 'rgba(255,255,255,0.04)';
       ctx.fill();
       ctx.lineWidth = has ? 2.5 : 1;
@@ -326,11 +354,66 @@ export class ProfileScene extends ButtonScene {
       if (has) glow(ctx, c[i % 4], 18);
       ctx.stroke();
       noGlow(ctx);
-      text(ctx, b.sym, x, y + 2, b.sym.length > 2 ? 22 : 30, has ? '#fff' : 'rgba(255,255,255,0.25)', 'center', 0, 600);
-      text(ctx, b.name, x, y + 64, 17, has ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0, 400);
+      if (picked) {
+        ctx.beginPath();
+        ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      }
+      text(ctx, badge.sym, x, y + 2, badge.sym.length > 2 ? 22 : 30, has ? '#fff' : `rgba(255,255,255,${picked ? 0.6 : 0.25})`, 'center', 0, 600);
+      text(ctx, badge.name, x, y + 64, 17, has || picked ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0, 400);
     });
+
+    // Erklärung zum gewählten Abzeichen
+    const x0 = 165, x1 = w - (this.buttons.length > 1 ? 165 : 30);
+    ctx.beginPath();
+    ctx.roundRect(x0, 848, x1 - x0, 132, 22);
+    ctx.fillStyle = 'rgba(8,14,36,0.78)';
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(160,195,255,0.35)';
+    ctx.stroke();
+    const mid = (x0 + x1) / 2;
+    if (!this.chosen) {
+      ctx.globalAlpha = this.pulse();
+      text(ctx, 'Lege den Ball auf ein Abzeichen:', mid, 895, 26, '#fff', 'center', 0, 500);
+      text(ctx, 'Dann steht hier, wie du es bekommst.', mid, 934, 23, 'rgba(255,255,255,0.75)', 'center', 0, 400);
+      ctx.globalAlpha = 1;
+    } else {
+      const { badge } = this.chosen;
+      const has = p.badges[badge.id];
+      const progress = badgeProgress(badge, p, this.app.categories);
+      text(ctx, has ? `${badge.name} – geschafft!` : badge.name, mid, 878, 28, has ? tone(c[1], 80) : '#fff', 'center', 0, 600);
+      wrapText(ctx, badge.desc, mid, 916, x1 - x0 - 50, 23, 28);
+      if (!has && progress) {
+        // Fortschrittsbalken
+        const bw = Math.min(260, x1 - x0 - 200), bx = mid - bw / 2, by = 964;
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by); ctx.stroke();
+        ctx.strokeStyle = tone(c[1], 68);
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + Math.max(1, bw * (progress[0] / progress[1])), by); ctx.stroke();
+        text(ctx, `${progress[0]} von ${progress[1]}`, bx + bw + 14, by + 1, 18, 'rgba(255,255,255,0.8)', 'left', 0, 500);
+      }
+    }
     super.draw(ctx);
   }
+}
+
+/** Text mit Zeilenumbruch, mittig; höchstens zwei Zeilen. */
+function wrapText(ctx, str, x, y, maxWidth, size, lineHeight) {
+  ctx.font = `400 ${size}px "Fredoka", system-ui, sans-serif`;
+  const lines = [''];
+  for (const word of str.split(' ')) {
+    const trial = lines[lines.length - 1] ? `${lines[lines.length - 1]} ${word}` : word;
+    if (ctx.measureText(trial).width > maxWidth && lines[lines.length - 1]) lines.push(word);
+    else lines[lines.length - 1] = trial;
+  }
+  const shown = lines.slice(0, 2);
+  const top = shown.length > 1 ? y - lineHeight / 2 + 6 : y;
+  shown.forEach((line, i) => text(ctx, line, x, top + i * lineHeight, size, 'rgba(255,255,255,0.85)', 'center', 0, 400));
 }
 
 /** "Wer spielt?" – Auswahl des aktiven Spielers. */

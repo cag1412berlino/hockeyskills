@@ -61,30 +61,57 @@ export function dailyGame(games, day = dateString()) {
 
 // Abzeichen. test(p, categories) entscheidet, ob Profil p es verdient hat.
 export const BADGES = [
-  { id: 'first', sym: '1', name: 'Anpfiff', desc: 'Die erste Übung gespielt', test: (p) => p.stats.rounds >= 1 },
-  { id: 'r10', sym: '10', name: 'Fleißig', desc: '10 Übungen gespielt', test: (p) => p.stats.rounds >= 10 },
-  { id: 'r50', sym: '50', name: 'Dauerbrenner', desc: '50 Übungen gespielt', test: (p) => p.stats.rounds >= 50 },
-  { id: 'r200', sym: '200', name: 'Unermüdlich', desc: '200 Übungen gespielt', test: (p) => p.stats.rounds >= 200 },
-  { id: 'star3', sym: '★', name: 'Volltreffer', desc: 'Zum ersten Mal drei Sterne', test: (p) => Object.values(p.stats.best).some((s) => s >= 3) },
-  { id: 'stars25', sym: '25★', name: 'Sternensammler', desc: '25 Sterne gesammelt', test: (p) => p.stats.stars >= 25 },
-  { id: 'stars100', sym: '100★', name: 'Sternenhimmel', desc: '100 Sterne gesammelt', test: (p) => p.stats.stars >= 100 },
-  { id: 'mult4', sym: 'x4', name: 'Serienheld', desc: 'Eine Serie x4 geschafft', test: (p) => p.stats.maxMult >= 4 },
-  { id: 'all', sym: '18', name: 'Alleskönner', desc: 'Jede Übung einmal gespielt', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.played[g.id])) },
+  { id: 'first', sym: '1', name: 'Anpfiff', desc: 'Spiele deine erste Übung zu Ende.', test: (p) => p.stats.rounds >= 1 },
+  { id: 'r10', sym: '10', name: 'Fleißig', desc: 'Spiele 10 Übungen zu Ende.', test: (p) => p.stats.rounds >= 10 },
+  { id: 'r50', sym: '50', name: 'Dauerbrenner', desc: 'Spiele 50 Übungen zu Ende.', test: (p) => p.stats.rounds >= 50 },
+  { id: 'r200', sym: '200', name: 'Unermüdlich', desc: 'Spiele 200 Übungen zu Ende.', test: (p) => p.stats.rounds >= 200 },
+  { id: 'star3', sym: '★', name: 'Volltreffer', desc: 'Hole in einer Übung alle drei Sterne.', test: (p) => Object.values(p.stats.best).some((s) => s >= 3) },
+  { id: 'stars25', sym: '25★', name: 'Sternensammler', desc: 'Sammle insgesamt 25 Sterne.', test: (p) => p.stats.stars >= 25 },
+  { id: 'stars100', sym: '100★', name: 'Sternenhimmel', desc: 'Sammle insgesamt 100 Sterne.', test: (p) => p.stats.stars >= 100 },
+  { id: 'mult4', sym: 'x4', name: 'Serienheld', desc: 'Schaffe zehn schnelle Treffer hintereinander, bis oben „x4“ steht.', test: (p) => p.stats.maxMult >= 4 },
+  { id: 'all', sym: '18', name: 'Alleskönner', desc: 'Spiele jede der 18 Übungen mindestens einmal.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.played[g.id])) },
   ...[['treffen', 'Treffen'], ['fuehren', 'Führen'], ['wechsel', 'Wechsel'], ['stoppen', 'Stoppen'], ['tricks', 'Tricks']].map(([id, label]) => ({
-    id: `cat_${id}`, sym: label[0], name: `${label}-Meister`, desc: `Zwei Sterne in jeder Übung bei „${label}“`,
+    id: `cat_${id}`, sym: label[0], name: `${label}-Meister`, desc: `Hole in jeder Übung des Schwerpunkts „${label}“ mindestens zwei Sterne.`,
     test: (p, cats) => cats.find((c) => c.id === id)?.games.every((g) => (p.stats.best[g.id] || 0) >= 2) ?? false,
   })),
-  { id: 'hard', sym: '!!!', name: 'Harter Brocken', desc: 'Drei Sterne auf „Schwer“', test: (p) => p.stats.hard3 },
-  { id: 'flawless', sym: '♥', name: 'Unberührbar', desc: 'Eine Runde ohne Lebensverlust', test: (p) => p.stats.flawless >= 1 },
-  { id: 's_short', sym: 'K', name: 'Aufgewärmt', desc: 'Ein kurzes Training geschafft', test: (p) => p.stats.sessions.short >= 1 },
-  { id: 's_medium', sym: 'M', name: 'Durchgezogen', desc: 'Ein mittleres Training geschafft', test: (p) => p.stats.sessions.medium >= 1 },
-  { id: 's_full', sym: 'XL', name: 'Marathon', desc: 'Ein komplettes Training geschafft', test: (p) => p.stats.sessions.full >= 1 },
-  { id: 'days3', sym: '3T', name: 'Dranbleiber', desc: 'An 3 Tagen in Folge trainiert', test: (p) => p.days.streak >= 3 },
-  { id: 'days7', sym: '7T', name: 'Wochenheld', desc: 'An 7 Tagen in Folge trainiert', test: (p) => p.days.streak >= 7 },
-  { id: 'daily', sym: '☀', name: 'Tagesheld', desc: '5-mal die Übung des Tages gespielt', test: (p) => p.stats.dailyCount >= 5 },
-  { id: 'duel', sym: 'VS', name: 'Duellant', desc: 'Ein Duell gewonnen', test: (p) => p.stats.duelWins >= 1 },
-  { id: 'rank', sym: '▲', name: 'Aufsteiger', desc: 'Den Rang „Techniker“ erreicht', test: (p) => rankOf(p.xp).index >= 3 },
+  { id: 'hard', sym: '!!!', name: 'Harter Brocken', desc: 'Hole drei Sterne in einer Übung auf der Stufe „Schwer“.', test: (p) => p.stats.hard3 },
+  { id: 'flawless', sym: '♥', name: 'Unberührbar', desc: 'Beende „Ausweichen“, „Fangen“ oder „Stopp“ mit allen drei Herzen.', test: (p) => p.stats.flawless >= 1 },
+  { id: 's_short', sym: 'K', name: 'Aufgewärmt', desc: 'Spiele ein Training „Kurz“ bis zum Ende durch.', test: (p) => p.stats.sessions.short >= 1 },
+  { id: 's_medium', sym: 'M', name: 'Durchgezogen', desc: 'Spiele ein Training „Mittel“ bis zum Ende durch.', test: (p) => p.stats.sessions.medium >= 1 },
+  { id: 's_full', sym: 'XL', name: 'Marathon', desc: 'Spiele ein Training „Komplett“ mit allen Übungen durch.', test: (p) => p.stats.sessions.full >= 1 },
+  { id: 'days3', sym: '3T', name: 'Dranbleiber', desc: 'Trainiere an drei Tagen hintereinander.', test: (p) => p.days.streak >= 3 },
+  { id: 'days7', sym: '7T', name: 'Wochenheld', desc: 'Trainiere an sieben Tagen hintereinander.', test: (p) => p.days.streak >= 7 },
+  { id: 'daily', sym: '☀', name: 'Tagesheld', desc: 'Spiele an fünf verschiedenen Tagen die Übung unter „Heute“.', test: (p) => p.stats.dailyCount >= 5 },
+  { id: 'duel', sym: 'VS', name: 'Duellant', desc: 'Gewinne ein Duell gegen einen anderen Spieler.', test: (p) => p.stats.duelWins >= 1 },
+  { id: 'rank', sym: '▲', name: 'Aufsteiger', desc: 'Sammle 18.000 Punkte und erreiche den Rang „Techniker“.', test: (p) => rankOf(p.xp).index >= 3 },
 ];
+
+// Bei zählbaren Abzeichen: wie weit man schon ist, als [geschafft, nötig].
+const PROGRESS = {
+  r10: (p) => [p.stats.rounds, 10],
+  r50: (p) => [p.stats.rounds, 50],
+  r200: (p) => [p.stats.rounds, 200],
+  stars25: (p) => [p.stats.stars, 25],
+  stars100: (p) => [p.stats.stars, 100],
+  all: (p, cats) => [cats.reduce((n, c) => n + c.games.filter((g) => p.stats.played[g.id]).length, 0), cats.reduce((n, c) => n + c.games.length, 0)],
+  days3: (p) => [p.days.streak, 3],
+  days7: (p) => [p.days.streak, 7],
+  daily: (p) => [p.stats.dailyCount, 5],
+  rank: (p) => [p.xp, RANKS[3].xp],
+};
+
+/** Fortschritt zu einem Abzeichen als [geschafft, nötig] oder null, wenn es nichts zu zählen gibt. */
+export function badgeProgress(badge, p, categories) {
+  const cat = /^cat_(.+)$/.exec(badge.id);
+  if (cat) {
+    const games = categories.find((c) => c.id === cat[1])?.games ?? [];
+    return [games.filter((g) => (p.stats.best[g.id] || 0) >= 2).length, games.length];
+  }
+  const f = PROGRESS[badge.id];
+  if (!f) return null;
+  const [have, need] = f(p, categories);
+  return [Math.min(have, need), need];
+}
 
 /** Vergibt alle neu verdienten Abzeichen und liefert sie zurück. */
 export function awardBadges(p, categories, day = dateString()) {
