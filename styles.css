@@ -79,3 +79,4 @@ input[type=text] { font: inherit; padding: 9px 12px; border-radius: 10px; border
 #test-result li.g0::before { content: '✔ '; color: #7dffb0; }
 #test-result li.g1::before { content: '● '; color: #ffd76a; }
 #test-result li.g2::before { content: '✘ '; color: #ff8f8f; }
+body.fake-ball #stage { cursor: none; }

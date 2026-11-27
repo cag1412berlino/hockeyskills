@@ -23,7 +23,7 @@ export class SimCamera {
     ctx.drawImage(stage, 0, 0);
     ctx.globalAlpha = 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (this.mouse.inside) {
+    if (this.mouse.inside && this.showBall !== false) {
       const { x, y } = this.mouse;
       ctx.fillStyle = this.ballCss;
       ctx.beginPath();

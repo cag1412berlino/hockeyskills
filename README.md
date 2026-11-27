@@ -140,6 +140,8 @@ Spielstände liegen nur im Browser des Geräts. Unter **Verlauf** lassen sich al
 | Leertaste | Pause |
 | `M` | Ton an/aus |
 | `D` | Kamerabild mit erkannter Ballfarbe einblenden |
+| `B` | Test-Ball an der Maus an/aus |
+| `V` | Aufnahme für die Fehlersuche starten/beenden |
 | `Esc` | zurück zum Menü, vom Menü zur Einrichtung |
 
 Fehlt der Ball länger als 2,5 Sekunden (weggerollt, verdeckt), pausiert das Spiel von selbst und läuft weiter, sobald er wieder im Feld liegt.
@@ -154,6 +156,12 @@ Unter **2. Ballfarbe** gibt es den Knopf **Erkennung testen**. Der Test braucht 
 Danach zeigt die App, wie oft der Ball im Liegen und in Bewegung erkannt wurde, wie groß er im Bild ist, ob die Position zittert, ob etwas anderes dieselbe Farbe hat und wie viele Bilder pro Sekunde die Kamera liefert. Zu jedem Mangel steht ein Tipp dabei.
 
 Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen, im Kamerabild darauf klicken (die App lernt die Farbe) und den Test starten. Ein Post-it ist etwa so groß wie ein Hockeyball, liegt aber flach; ein echter Ball wirft Schatten und glänzt, das Ergebnis ist also ein guter Anhaltspunkt, kein Ersatz für den Test mit Ball.
+
+## Fehlersuche: Test-Ball und Filmen
+
+**Test-Ball** (Knopf in der Einrichtung oder Taste `B` im Spiel): Der Beamer malt an der Stelle der Maus einen Ball in der eingestellten Ballfarbe. Die Kamera filmt ihn, und die App arbeitet damit wie mit einem echten Ball. So lässt sich die ganze Kette aus Beamer, Kamera und Kalibrierung prüfen, ohne dass jemand im Feld steht. Sitzt der Ring genau auf dem gemalten Ball, stimmt die Kalibrierung; läuft er bei schnellen Bewegungen hinterher, den Vorhalt erhöhen.
+
+**Filmen** (Knopf unter „Fehlersuche“ oder Taste `V`, auch mitten im Spiel): nimmt bis zu 30 Sekunden auf. Der Film zeigt links das Kamerabild, in dem der Ball gesucht wird, und rechts die Projektion; darunter läuft eine Statuszeile mit. Dazu entsteht ein Protokoll (`.json`) mit Einstellungen, Kalibrierung und jeder einzelnen Messung. Beide Dateien landen im Download-Ordner und können zur Fehlersuche weitergegeben werden. **Kamerabild als Foto speichern** legt ein einzelnes Kamerabild in voller Auflösung ab.
 
 ## Wenn der Ball nicht zuverlässig erkannt wird
 
@@ -226,6 +234,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
 | `src/trackingtest.js` | Erkennungstest: Messwerte sammeln und bewerten |
+| `src/recorder.js` | Aufnahme für die Fehlersuche (Film und Protokoll) |
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |

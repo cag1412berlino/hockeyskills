@@ -14,6 +14,7 @@ import { newProfile, completeProfile, rankOf, summarize } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
 import { startHowTo } from './howto.js';
+import { Recorder, saveSnapshot, MAX_SECONDS } from './recorder.js';
 import { RecognitionTest, STILL_SECONDS, MOVE_SECONDS } from './trackingtest.js';
 
 const $ = (s) => document.querySelector(s);
@@ -40,6 +41,8 @@ let detection = null;   // letzte Ballposition im Kamerabild
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
+let fakeBall = false;   // Test-Ball: Maus malt einen Ball, den die Kamera filmt
+const recorder = new Recorder();
 let recognition = null; // laufender Erkennungstest oder null
 let lastTrackTime = 0;
 const recent = [];      // die letzten Kamerabilder: Ball erkannt oder nicht (für die Erkennungsquote)
@@ -65,6 +68,37 @@ engine.ballProvider = () => {
   return applyHomography(config.calib.H, detection.x, detection.y);
 };
 
+const ballCss = () => BALL_PRESETS[config.ball.preset]?.css ?? `hsl(${config.ball.h} 100% 50%)`;
+
+engine.fakeBall = () => (fakeBall && mode === 'camera' && mouse.inside && !calibrating
+  ? { x: mouse.x, y: mouse.y, color: ballCss() } : null);
+
+function setFakeBall(on) {
+  fakeBall = on;
+  if (sim) sim.showBall = !on;
+  document.body.classList.toggle('fake-ball', on);
+}
+
+async function toggleRecording() {
+  if (recorder.active) {
+    await recorder.stop();
+    $('#btn-record').textContent = 'Aufnahme starten';
+    engine.showToast('Aufnahme gespeichert (Download-Ordner)', 3);
+    return;
+  }
+  if (!source) { setMessage('Für die Aufnahme zuerst die Kamera starten.'); return; }
+  recorder.start({
+    version: VERSION, time: new Date().toISOString(), browser: navigator.userAgent,
+    ball: config.ball, calib: config.calib, fieldShape: config.fieldShape, fieldMeters: config.fieldMeters,
+    latency: config.latency, dim: config.dim, rotation: config.rotation, lockAuto: config.lockAuto,
+    field: { w: engine.field.w, h: engine.field.h }, stage: { w: stage.width, h: stage.height },
+    camera: { w: source.videoWidth || source.width, h: source.videoHeight || source.height },
+    fakeBall, simulated: !!sim, columns: { cam: ['x', 'y', 'area', 'rivals'], ball: ['x', 'y'] },
+  });
+  $('#btn-record').textContent = 'Aufnahme beenden';
+  engine.showToast(`Aufnahme läuft (höchstens ${MAX_SECONDS} s, Taste V beendet)`, 3);
+}
+
 engine.onFrame = () => {
   countFps();
   if (!source || calibrating) return;
@@ -81,6 +115,11 @@ engine.onFrame = () => {
   const now = performance.now();
   if (recognition) stepRecognition(Math.min(0.5, (now - lastTrackTime) / 1000));
   lastTrackTime = now;
+  if (recorder.active) {
+    recorder.frame(tracker.canvas, stage, detection, engine.ball,
+      `Bild ${fps.render}/s Kamera ${fps.camera}/s erkannt ${quality()} %${fakeBall ? ' Test-Ball' : ''}`);
+    if (recorder.seconds >= MAX_SECONDS) toggleRecording();
+  }
   if (!setupEl.hidden) drawPreview(preview);
   if (!debugEl.hidden) drawPreview($('#debug-view'));
 };
@@ -480,11 +519,20 @@ function buildSetup() {
   $('#btn-fullscreen').onclick = toggleFullscreen;
   $('#btn-auto').onclick = () => calibrate('auto');
   $('#btn-manual').onclick = () => calibrate('manual');
-  $('#btn-mouse').onclick = () => { mode = 'mouse'; startPlaying(); };
+  $('#btn-mouse').onclick = () => { mode = 'mouse'; setFakeBall(false); startPlaying(); };
+  $('#btn-fake').onclick = () => {
+    if (!source || !config.calib) { setMessage('Für den Test-Ball zuerst die Kamera starten und kalibrieren.'); return; }
+    mode = 'camera';
+    setFakeBall(true);
+    startPlaying();
+  };
+  $('#btn-record').onclick = toggleRecording;
+  $('#btn-snapshot').onclick = () => { if (!source || !saveSnapshot(source)) setMessage('Für das Foto zuerst die Kamera starten.'); };
   $('#btn-play').onclick = () => {
     if (!source) return setMessage('Bitte zuerst die Kamera starten.');
     if (!config.calib) return setMessage('Bitte zuerst kalibrieren.');
     mode = 'camera';
+    setFakeBall(false);
     startPlaying();
   };
 }
@@ -608,6 +656,11 @@ window.addEventListener('keydown', (e) => {
   else if (key === 'r') setRotation(config.rotation + 90);
   else if (key === 'm') { setMuted(!config.muted); engine.showToast(config.muted ? 'Ton aus' : 'Ton an', 1.5); }
   else if (key === 'd') debugEl.hidden = !debugEl.hidden;
+  else if (key === 'v') toggleRecording();
+  else if (key === 'b' && setupEl.hidden && mode === 'camera') {
+    setFakeBall(!fakeBall);
+    engine.showToast(fakeBall ? 'Test-Ball an: Maus bewegen' : 'Test-Ball aus', 2);
+  }
   else if (key === ' ' && setupEl.hidden) { e.preventDefault(); engine.scene?.togglePause?.(); }
   else if (key === 'c' && !calibrating && source) calibrate('auto');
   else if (key === 'escape') {

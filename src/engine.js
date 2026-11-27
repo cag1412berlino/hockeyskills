@@ -326,6 +326,14 @@ export class Engine {
         this.fade = Math.max(0, this.fade - dt * 4);
       }
       ctx.restore();
+      // Test-Ball: ein gemalter „Ball“ an der Maus, den die Kamera wie einen echten Ball filmt
+      const fake = this.fakeBall?.();
+      if (fake) {
+        ctx.fillStyle = fake.color;
+        ctx.beginPath();
+        ctx.arc(fake.x * canvas.width, fake.y * canvas.height, BALL_RADIUS * 0.8 * f.scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     if (this.toast && now < this.toast.until) {

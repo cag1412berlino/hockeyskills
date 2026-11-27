@@ -83,6 +83,7 @@
       <section class="row">
         <button id="btn-play" class="primary">Spielen</button>
         <button id="btn-mouse">Ohne Kamera testen (Maus als Ball)</button>
+        <button id="btn-fake">Test-Ball: Maus malt den Ball, Kamera filmt ihn</button>
       </section>
 
       <p id="message" class="error"></p>
@@ -98,6 +99,16 @@
         <p class="hint">Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft. Zu viel lässt ihn vorauseilen und zittern.</p>
         <label>Projektion abdunkeln <input type="range" id="dim" min="0" max="60" step="5"> <span id="dim-value"></span></label>
         <p class="hint">Erhöhen, wenn der Ball im projizierten Bild schlechter erkannt wird als auf dunklem Boden.</p>
+      </details>
+
+      <details>
+        <summary>Fehlersuche: filmen und Test-Ball</summary>
+        <p class="hint"><b>Test-Ball</b> (Taste <b>B</b>): Der Beamer malt an der Stelle der Maus einen Ball in der eingestellten Ballfarbe. Die Kamera filmt ihn und die App arbeitet damit wie mit einem echten Ball. So lässt sich die ganze Kette aus Beamer, Kamera und Kalibrierung prüfen, ohne dass jemand im Feld steht. Der Ring sollte genau auf dem gemalten Ball sitzen.</p>
+        <p class="hint"><b>Filmen</b> (Taste <b>V</b>, auch während des Spiels): nimmt bis zu 30 Sekunden auf, links das Kamerabild, rechts die Projektion, und speichert dazu ein Protokoll aller Messwerte. Film und Protokoll landen im Download-Ordner und können zur Fehlersuche weitergegeben werden.</p>
+        <div class="row">
+          <button id="btn-record">Aufnahme starten</button>
+          <button id="btn-snapshot">Kamerabild als Foto speichern</button>
+        </div>
       </details>
 
       <details open>
@@ -148,7 +159,7 @@
       </details>
 
       <p class="hint" id="version"></p>
-      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>R</b> Bild drehen · <b>Leertaste</b> Pause · <b>M</b> Ton · <b>D</b> Kamerabild einblenden · <b>Esc</b> zurück / Einrichtung</p>
+      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>R</b> Bild drehen · <b>Leertaste</b> Pause · <b>M</b> Ton · <b>B</b> Test-Ball · <b>V</b> filmen · <b>D</b> Kamerabild einblenden · <b>Esc</b> zurück / Einrichtung</p>
     </div>
   </div>
 
