@@ -39,7 +39,7 @@ export class MenuScene extends ButtonScene {
     const games = this.app.games;
     const colors = this.app.palette();
     const n = games.length;
-    const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : 3;
+    const cols = w > 1400 ? n : n <= 4 ? Math.min(2, n) : n <= 6 ? 3 : 4;
     const rows = Math.ceil(n / cols);
     const cell = w / cols;
     const r = rows > 1 ? Math.min(112, cell * 0.32) : 150;
