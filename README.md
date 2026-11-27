@@ -206,6 +206,18 @@ Danach in Chrome `http://localhost:8080` öffnen. Die Kamera funktioniert nur ü
 
 ## Einrichtung in der App
 
+Die Startseite hat fünf Reiter:
+
+| Reiter | Inhalt |
+| --- | --- |
+| **Start** | Spielen, ohne Kamera ausprobieren, was noch einzurichten ist, kurze Anleitung und Animation |
+| **Einrichten** | vier Schritte – Kamera, Ball, Spielfeld, Kalibrieren – mit dem Kamerabild daneben; erledigte Schritte bekommen einen Haken |
+| **Spieler** | Spieler mit Alter und Linkshänder, Verlauf, Spielstände sichern und laden |
+| **Einstellungen** | Ton und Aussehen, Feinabstimmung (Feldgröße, Vorhalt, Abdunkeln), eigenes Training, Fehlersuche |
+| **Hilfe** | Kurzanleitung, Tasten, was tun, wenn der Ball nicht erkannt wird |
+
+Oben rechts zeigen drei Punkte, ob Kamera, Ball und Kalibrierung bereit sind. Seltener gebrauchte Optionen (Belichtung, Schärfe, Tipps zur Ballfarbe) stecken aufklappbar unter den Schritten.
+
 Ganz oben in der Einrichtung läuft die Animation **„So funktioniert es“**: Sie zeigt in sechs Schritten, wie Beamer, Kamera, Laptop und Ball zusammenspielen (Klick = nächster Schritt).
 
 1. **Kamera starten** und die richtige Kamera wählen.
@@ -366,6 +378,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
 | `src/trackingtest.js` | Erkennungstest: Messwerte sammeln und bewerten |
 | `src/recorder.js` | Aufnahme für die Fehlersuche (Film und Protokoll) |
+| `src/setupui.js` | Reiter der Startseite |
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |

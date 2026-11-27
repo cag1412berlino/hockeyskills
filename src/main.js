@@ -13,6 +13,7 @@ import { games, categories } from './games/index.js';
 import { newProfile, completeProfile, rankOf, summarize, ageOf } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
+import { initTabs } from './setupui.js';
 import { startHowTo } from './howto.js';
 import { Recorder, saveSnapshot, MAX_SECONDS } from './recorder.js';
 import { RecognitionTest, STILL_SECONDS, MOVE_SECONDS } from './trackingtest.js';
@@ -333,22 +334,41 @@ function countFps() {
 /** Zeichnet das Kamerabild mit türkis markierter Ballfarbe in die Einrichtung oder die Einblendung. */
 /** Kleine Übersicht ganz oben: Was ist für den Betrieb mit Kamera schon erledigt? */
 function renderChecklist() {
-  const steps = [
-    ['Kamera läuft', !!source],
-    ['Ball erkannt', !!source && quality() >= 80],
-    [config.calib && config.calib.shape !== config.fieldShape ? 'Feldformat geändert – bitte neu kalibrieren'
-      : config.calib?.missing?.length ? `Kalibriert, aber es fehlt: ${config.calib.missing.join(', ')}` : 'Kalibriert',
-    !!config.calib && config.calib.shape === config.fieldShape && !config.calib.missing?.length],
-  ];
+  const calibFits = !!config.calib && config.calib.shape === config.fieldShape;
+  const state = {
+    camera: !!source,
+    ball: !!source && quality() >= 80,
+    calib: calibFits && !config.calib.missing?.length,
+  };
+  // kurze Statuspunkte oben rechts
+  const chips = [['Kamera', state.camera], ['Ball', state.ball], ['Kalibriert', state.calib]];
   const list = $('#checklist');
-  if (list.children.length !== steps.length) {
-    list.replaceChildren(...steps.map(() => document.createElement('li')));
-  }
-  steps.forEach(([label, done], i) => {
+  if (list.children.length !== chips.length) list.replaceChildren(...chips.map(() => document.createElement('li')));
+  chips.forEach(([label, done], i) => {
     const li = list.children[i];
-    li.textContent = `${done ? '✔' : '○'} ${label}`;
+    li.textContent = label;
     li.className = done ? 'done' : '';
   });
+  // Haken an den Schritten der Einrichtung
+  const stepState = {
+    'step-camera': state.camera ? 'erledigt' : '',
+    'step-ball': state.ball ? 'erkannt' : '',
+    'step-field': config.fieldShape === 'full' ? 'ganze Breite' : 'Quadrat',
+    'step-calib': state.calib ? 'erledigt' : config.calib && !calibFits ? 'neu nötig' : config.calib?.missing?.length ? `es fehlt: ${config.calib.missing.join(', ')}` : '',
+  };
+  for (const [id, text] of Object.entries(stepState)) {
+    const card = document.getElementById(id);
+    if (!card) continue;
+    card.querySelector('.state').textContent = text;
+    card.classList.toggle('done', id === 'step-field' || text === 'erledigt' || text === 'erkannt');
+  }
+  // Startseite: wer spielt, und was noch fehlt
+  $('#start-player').textContent = app.profile?.name ?? 'los';
+  const missing = [!state.camera && 'Kamera starten', !state.ball && state.camera && 'Ball anklicken', !state.calib && 'kalibrieren'].filter(Boolean);
+  $('#start-note').textContent = missing.length
+    ? `Noch zu tun: ${missing.join(', ')}. Oder gleich ohne Kamera ausprobieren.`
+    : 'Alles eingerichtet. Ball ins Feld – los geht’s!';
+  $('#start-setup').hidden = !missing.length;
 }
 
 /** Liste der Spieler: aktiven wählen, umbenennen, löschen. */
@@ -952,6 +972,7 @@ setBallHue(config.ball.h);
 setFieldMeters(config.fieldMeters);
 engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt
 $('#version').textContent = `Version ${VERSION}`;
+initTabs();
 sound.muted = config.muted;
 voice.enabled = config.voice;
 music.enabled = config.music;

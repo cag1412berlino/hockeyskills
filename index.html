@@ -13,173 +13,268 @@
   <div id="debug" hidden><canvas id="debug-view" width="480" height="270"></canvas><p id="debug-info"></p></div>
 
   <div id="setup">
-    <div class="panel">
-      <header><img id="logo" alt="Vereinslogo" hidden><h1 id="brand">Blau-Weiss Skiller Academy</h1></header>
-
-      <details open id="howto-box">
-        <summary>So funktioniert es</summary>
-        <canvas id="howto" width="880" height="500" aria-label="Animation: Der Beamer wirft das Spielfeld auf den Boden, die Kamera erkennt den Ball, der Laptop rechnet und der Beamer zeichnet das Spiel."></canvas>
-        <p class="hint">Die Animation läuft von selbst. Ein Klick darauf springt zum nächsten Schritt.</p>
-      </details>
-
-      <ul id="checklist" aria-label="Stand der Einrichtung"></ul>
-
-      <section>
-        <h2>1. Kamera</h2>
-        <div class="row">
-          <select id="camera-select" aria-label="Kamera"></select>
-          <button id="btn-camera">Kamera starten</button>
+    <div class="shell">
+      <header class="topbar">
+        <img id="logo" alt="Vereinslogo" hidden>
+        <div class="brand">
+          <h1 id="brand">Blau-Weiss Skiller Academy</h1>
+          <p class="tagline">Hockey-Training mit Beamer, Kamera und Ball</p>
         </div>
-        <div class="row">
-          <label>Kamera-Modus
-            <select id="camera-mode">
-              <option value="sharp">Scharf (Full HD)</option>
-              <option value="fast">Schnell (bis 60 Bilder pro Sekunde)</option>
-            </select>
-          </label>
-        </div>
-        <canvas id="preview" width="480" height="270"></canvas>
-        <p id="track-status" class="status">Kamera ist aus.</p>
-        <label><input type="checkbox" id="lock-auto"> Kamera-Automatik sperren (Belichtung, Weißabgleich)</label>
-        <p class="hint">Erst einschalten, wenn Beamer und Licht so sind wie beim Spielen. Dann bleibt die Ballfarbe im Bild stabil.</p>
-        <div id="focus-box">
-          <div class="row">
-            <label><input type="checkbox" id="focus-lock"> Autofokus aus</label>
-            <button id="btn-focus-once">Einmal scharf stellen und festhalten</button>
+        <ul id="checklist" class="chips" aria-label="Stand der Einrichtung"></ul>
+      </header>
+
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="start">Start</button>
+        <button role="tab" data-tab="setup">Einrichten</button>
+        <button role="tab" data-tab="players">Spieler</button>
+        <button role="tab" data-tab="settings">Einstellungen</button>
+        <button role="tab" data-tab="help">Hilfe</button>
+      </nav>
+
+      <p id="message" class="alert" role="status"></p>
+
+      <!-- ===================== Start ===================== -->
+      <section class="tab-panel" data-panel="start">
+        <div class="start-grid">
+          <div class="card hero">
+            <p class="eyebrow">Training</p>
+            <h2 class="hero-title">Bereit, <span id="start-player">los</span>?</h2>
+            <p class="lead" id="start-note">Einmal einrichten, dann nur noch spielen.</p>
+            <div class="actions">
+              <button id="btn-play" class="primary big">Spielen</button>
+              <button class="link" data-goto="setup" id="start-setup">Einrichtung öffnen</button>
+            </div>
+            <div class="actions quiet">
+              <button id="btn-mouse" class="ghost">Ohne Kamera ausprobieren</button>
+              <span class="muted">mit der Maus als Ball – ohne Wertung</span>
+            </div>
           </div>
-          <label id="focus-range-label" hidden>Schärfe <input type="range" id="focus-range"> <span id="focus-value"></span></label>
-          <p class="hint" id="focus-hint">Der Autofokus kann beim Spielen hin und her springen (Kinderbeine, Schläger). Den Ball auf den Boden ins Feld legen, „Einmal scharf stellen und festhalten“ drücken – dann bleibt die Schärfe auf der Bodenebene.</p>
+          <div class="card steps-card">
+            <p class="eyebrow">So geht's</p>
+            <ol class="howsteps">
+              <li><b>Aufbauen</b><span>Beamer wirft das Feld auf den Boden, die Kamera schaut darauf.</span></li>
+              <li><b>Einrichten</b><span>Kamera, Ball und Feld – einmalig, rund zwei Minuten.</span></li>
+              <li><b>Spielen</b><span>Ball eine Sekunde auf einen Knopf legen. Keine Maus nötig.</span></li>
+            </ol>
+          </div>
+        </div>
+        <div class="card media">
+          <canvas id="howto" width="880" height="500" aria-label="Animation: Der Beamer wirft das Spielfeld auf den Boden, die Kamera erkennt den Ball, der Laptop rechnet und der Beamer zeichnet das Spiel."></canvas>
+          <p class="caption">Klick auf die Animation: nächster Schritt.</p>
         </div>
       </section>
 
-      <section>
-        <h2>2. Ballfarbe</h2>
-        <div id="ball-presets" class="row"></div>
-        <p class="hint">Erkannte Ballfarbe leuchtet im Kamerabild türkis. Passt es nicht: im Kamerabild direkt auf den Ball klicken.</p>
-        <p class="hint">Wichtig: Der Ball muss eine andere Farbe haben als der Schläger und alles andere im Feld. Ein gelber Ball mit einem gelb-grünen Schläger wird verwechselt – dann besser einen pinken oder orangen Neonball nehmen. Noch kein Ball da? Ein Post-it in Neonfarbe (gelb, grün, pink oder orange) geht zum Ausprobieren genauso: auf den Boden legen und im Kamerabild darauf klicken.</p>
-        <label>Farbtoleranz <input type="range" id="tolerance" min="6" max="40" step="1"> <span id="tolerance-value"></span></label>
-        <p class="hint">Höher, wenn der Ball nicht immer erkannt wird. Niedriger, wenn anderes türkis aufleuchtet.</p>
-        <div class="row"><button id="btn-test">Erkennung testen</button></div>
-        <div id="test-box" hidden>
-          <p id="test-step"></p>
-          <div id="test-bar"><i></i></div>
-          <p id="test-verdict"></p>
-          <ul id="test-result"></ul>
+      <!-- ===================== Einrichten ===================== -->
+      <section class="tab-panel" data-panel="setup" hidden>
+        <div class="setup-grid">
+          <div class="steps">
+            <article class="card step" id="step-camera">
+              <header><span class="num">1</span><h3>Kamera</h3><span class="state"></span></header>
+              <p class="lead">Kamera wählen und starten. Sie sollte das ganze Feld sehen, am besten von oben.</p>
+              <div class="row">
+                <select id="camera-select" aria-label="Kamera"></select>
+                <button id="btn-camera" class="primary">Kamera starten</button>
+              </div>
+              <div class="row">
+                <label class="field">Modus
+                  <select id="camera-mode">
+                    <option value="sharp">Scharf (Full HD)</option>
+                    <option value="fast">Schnell (60 Bilder/s)</option>
+                  </select>
+                </label>
+              </div>
+              <details class="more">
+                <summary>Belichtung und Schärfe</summary>
+                <label class="check"><input type="checkbox" id="lock-auto"> Belichtung und Weißabgleich festhalten</label>
+                <p class="note">Erst einschalten, wenn Licht und Beamer so sind wie beim Spielen.</p>
+                <div id="focus-box">
+                  <div class="row">
+                    <label class="check"><input type="checkbox" id="focus-lock"> Autofokus aus</label>
+                    <button id="btn-focus-once">Einmal scharf stellen</button>
+                  </div>
+                  <label id="focus-range-label" class="field" hidden>Schärfe <input type="range" id="focus-range"> <span id="focus-value"></span></label>
+                  <p class="note" id="focus-hint">Ball ins Feld legen und „Einmal scharf stellen“ drücken – die Schärfe bleibt dann auf dem Boden.</p>
+                </div>
+              </details>
+            </article>
+
+            <article class="card step" id="step-ball">
+              <header><span class="num">2</span><h3>Ball</h3><span class="state"></span></header>
+              <p class="lead">Ball ins Bild legen und <b>im Kamerabild auf den Ball klicken</b>. Er leuchtet dann türkis.</p>
+              <div id="ball-presets" class="row"></div>
+              <label class="field">Toleranz <input type="range" id="tolerance" min="6" max="40" step="1"> <span id="tolerance-value"></span></label>
+              <div class="row">
+                <button id="btn-test">Erkennung testen</button>
+                <span class="muted">11 Sekunden: erst still liegen lassen, dann bewegen</span>
+              </div>
+              <div id="test-box" hidden>
+                <p id="test-step"></p>
+                <div id="test-bar"><i></i></div>
+                <p id="test-verdict"></p>
+                <ul id="test-result"></ul>
+              </div>
+              <details class="more">
+                <summary>Tipps zur Ballfarbe</summary>
+                <ul class="tips">
+                  <li>Ball und Schläger brauchen <b>verschiedene Farben</b> – sonst werden sie verwechselt.</li>
+                  <li>Neonpink oder Neonorange werden am sichersten erkannt.</li>
+                  <li>Noch kein Ball da? Ein Post-it in Neonfarbe geht zum Ausprobieren.</li>
+                  <li>Toleranz höher, wenn der Ball flackert; niedriger, wenn anderes türkis aufleuchtet.</li>
+                </ul>
+              </details>
+            </article>
+
+            <article class="card step" id="step-field">
+              <header><span class="num">3</span><h3>Spielfeld</h3><span class="state"></span></header>
+              <p class="lead">Wie groß soll das Spielfeld sein?</p>
+              <div class="segmented">
+                <label><input type="radio" name="shape" value="full"><span>Ganze Breite</span></label>
+                <label><input type="radio" name="shape" value="square"><span>Quadrat</span></label>
+              </div>
+              <div class="row">
+                <label class="field">Drehen
+                  <select id="rotation">
+                    <option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option>
+                  </select>
+                </label>
+                <span class="muted">so, dass die Schrift zum Kind zeigt</span>
+              </div>
+            </article>
+
+            <article class="card step" id="step-calib">
+              <header><span class="num">4</span><h3>Kalibrieren</h3><span class="state"></span></header>
+              <p class="lead">Fenster auf den Beamer ziehen, Vollbild, dann „Automatisch“. Während der Messung nicht durchs Bild laufen.</p>
+              <div class="row">
+                <button id="btn-fullscreen">Vollbild</button>
+                <button id="btn-auto" class="primary">Automatisch kalibrieren</button>
+                <button id="btn-manual" class="ghost">Ecken von Hand</button>
+              </div>
+              <p id="calib-status" class="muted"></p>
+            </article>
+          </div>
+
+          <aside class="card preview-card">
+            <p class="eyebrow">Kamerabild</p>
+            <canvas id="preview" width="480" height="270"></canvas>
+            <p id="track-status" class="status">Kamera ist aus.</p>
+            <p class="caption">Türkis = erkannte Ballfarbe · Gelber Rahmen = Spielfeld · Klick = Ballfarbe lernen</p>
+          </aside>
         </div>
-        <p class="hint">Der Test dauert 11 Sekunden: Ball oder Post-it erst still liegen lassen, dann langsam durchs ganze Kamerabild schieben. Danach steht hier, was gut ist und was sich verbessern lässt. Beamer und Kalibrierung braucht es dafür nicht.</p>
       </section>
 
-      <section>
-        <h2>3. Spielfeld</h2>
-        <div class="row">
-          <label><input type="radio" name="shape" value="full"> Ganze Projektionsfläche (volle Breite)</label>
-          <label><input type="radio" name="shape" value="square"> Quadrat in der Mitte</label>
+      <!-- ===================== Spieler ===================== -->
+      <section class="tab-panel" data-panel="players" hidden>
+        <div class="card">
+          <header class="card-head"><h3>Spieler</h3><span class="muted">Jeder hat eigene Rekorde, Rang und Abzeichen.</span></header>
+          <div id="players"></div>
+          <div class="row add-player">
+            <input type="text" id="new-player" placeholder="Name" maxlength="14" aria-label="Name des neuen Spielers">
+            <input type="number" id="new-age" class="age" min="3" max="99" placeholder="Alter" aria-label="Alter des neuen Spielers">
+            <button id="btn-add-player" class="primary">Hinzufügen</button>
+          </div>
+          <p class="note">Alter für faire Ranglisten nach Altersklasse. „Linkshänder“ spiegelt Vorhand und Rückhand im Tricktrainer.</p>
         </div>
-        <div class="row">
-          <label>Bild drehen
-            <select id="rotation">
-              <option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option>
-            </select>
-          </label>
+        <div class="card">
+          <header class="card-head"><h3>Verlauf</h3><span class="muted" id="history-title"></span></header>
+          <div class="table-wrap"><table id="history"></table></div>
         </div>
-        <p class="hint">Nach dem Umstellen des Feldformats neu kalibrieren – die Kamera muss dann die ganze Breite der Projektion sehen. So drehen, dass die Schrift vom Platz des Kindes aus richtig herum steht. 90° und 270° gehen nur beim Quadrat. Nach einem Neustart steht die Drehung wieder auf 0°.</p>
+        <div class="card">
+          <header class="card-head"><h3>Spielstände</h3><span class="muted">Liegen nur in diesem Browser.</span></header>
+          <div class="row">
+            <button id="btn-export">Sichern</button>
+            <button id="btn-import">Sicherung laden</button>
+            <button id="btn-reset-scores" class="danger">Bestwerte dieses Spielers löschen</button>
+            <input type="file" id="import-file" accept="application/json,.json" hidden>
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h2>4. Kalibrierung</h2>
-        <p class="hint">Fenster zuerst auf den Beamer legen und Vollbild einschalten. Die Kamera muss das ganze Spielfeld sehen.</p>
-        <div class="row">
-          <button id="btn-fullscreen">Vollbild</button>
-          <button id="btn-auto">Automatisch (mit Beamer)</button>
-          <button id="btn-manual">Manuell (4 Ecken anklicken)</button>
+      <!-- ===================== Einstellungen ===================== -->
+      <section class="tab-panel" data-panel="settings" hidden>
+        <div class="settings-grid">
+          <div class="card">
+            <header class="card-head"><h3>Ton und Aussehen</h3></header>
+            <div class="toggles">
+              <label class="check"><input type="checkbox" id="sound-on"> Ton</label>
+              <label class="check"><input type="checkbox" id="voice-on"> Sprachansagen</label>
+              <label class="check"><input type="checkbox" id="music-on"> Musik</label>
+              <label class="check"><input type="checkbox" id="demos-on"> Neue Übungen vormachen</label>
+            </div>
+            <label class="field">Themenwelt <select id="theme"></select></label>
+          </div>
+
+          <div class="card">
+            <header class="card-head"><h3>Feinabstimmung</h3></header>
+            <label class="field">Feldgröße
+              <select id="field-meters"><option value="1.5">1,5 m</option><option value="2">2 m</option><option value="2.5">2,5 m</option><option value="3">3 m</option></select>
+            </label>
+            <p class="note">Höhe der Projektion – für Ballgröße und Tempo-Messung.</p>
+            <label class="field">Vorhalt <input type="range" id="latency" min="0" max="250" step="10"> <span id="latency-value"></span></label>
+            <div class="row"><button id="btn-latency">Verzögerung messen</button><span class="muted">Feld blitzt kurz auf, Vorhalt wird gesetzt</span></div>
+            <label class="field">Abdunkeln <input type="range" id="dim" min="0" max="60" step="5"> <span id="dim-value"></span></label>
+            <p class="note">Hilft, wenn der Ball im hellen Beamerbild schlechter erkannt wird.</p>
+          </div>
+
+          <div class="card wide">
+            <header class="card-head"><h3>Eigenes Training</h3><span class="muted">Ankreuzen, was im Training „Eigenes“ drankommt.</span></header>
+            <div id="custom-games"></div>
+            <label class="field">Dauer je Übung
+              <select id="custom-seconds"><option value="30">30 Sekunden</option><option value="40">40 Sekunden</option><option value="60">60 Sekunden</option></select>
+            </label>
+          </div>
+
+          <div class="card">
+            <header class="card-head"><h3>Fehlersuche</h3></header>
+            <div class="stack">
+              <button id="btn-fake">Test-Ball (Maus malt den Ball)</button>
+              <button id="btn-record">Aufnahme starten</button>
+              <button id="btn-snapshot">Kamerabild als Foto</button>
+            </div>
+            <p class="note">Aufnahme: 30 Sekunden Film und Messwerte in den Download-Ordner (auch im Spiel mit Taste V).</p>
+          </div>
         </div>
-        <p id="calib-status" class="status"></p>
       </section>
 
-      <section class="row">
-        <button id="btn-play" class="primary">Spielen</button>
-        <button id="btn-mouse">Ohne Kamera testen (Maus als Ball)</button>
-        <button id="btn-fake">Test-Ball: Maus malt den Ball, Kamera filmt ihn</button>
-        <p class="hint">Gewertet wird nur mit echtem Ball vor der Kamera. Mit der Maus oder dem Test-Ball läuft der <b>Übungsmodus</b>: Es gibt keine Punkte, Rekorde, Abzeichen oder Plätze in der Bestenliste.</p>
+      <!-- ===================== Hilfe ===================== -->
+      <section class="tab-panel" data-panel="help" hidden>
+        <div class="settings-grid">
+          <div class="card">
+            <header class="card-head"><h3>Kurzanleitung</h3></header>
+            <ol class="howsteps compact">
+              <li><b>Aufbau</b><span>Beamer und Kamera oben oder seitlich erhöht, Feld 2–3 m, Raum eher dunkel.</span></li>
+              <li><b>Einrichten</b><span>Kamera starten, auf den Ball klicken, Feldformat wählen, automatisch kalibrieren.</span></li>
+              <li><b>Bedienen</b><span>Ball eine Sekunde auf einen Knopf legen. Fehlt der Ball, pausiert das Spiel.</span></li>
+              <li><b>Wertung</b><span>Punkte, Rekorde und Abzeichen gibt es nur mit echtem Ball, nicht mit Maus oder Test-Ball.</span></li>
+            </ol>
+          </div>
+          <div class="card">
+            <header class="card-head"><h3>Tasten</h3></header>
+            <dl class="keys">
+              <dt>F</dt><dd>Vollbild</dd>
+              <dt>C</dt><dd>neu kalibrieren</dd>
+              <dt>Esc</dt><dd>zurück / Einrichtung</dd>
+              <dt>Leertaste</dt><dd>Pause</dd>
+              <dt>M</dt><dd>Ton an/aus</dd>
+              <dt>R</dt><dd>Bild drehen</dd>
+              <dt>D</dt><dd>Kamerabild einblenden</dd>
+              <dt>B</dt><dd>Test-Ball</dd>
+              <dt>V</dt><dd>Aufnahme</dd>
+            </dl>
+          </div>
+          <div class="card wide">
+            <header class="card-head"><h3>Wenn der Ball nicht erkannt wird</h3></header>
+            <ul class="tips">
+              <li>Im Kamerabild direkt auf den Ball klicken – das lernt seine Farbe.</li>
+              <li>„Erkennung testen“ sagt, was nicht passt, und gibt Tipps.</li>
+              <li>Ball und Schläger in verschiedenen Farben; nichts anderes in Ballfarbe im Feld.</li>
+              <li>Kamera so, dass das Feld das Bild gut ausfüllt; einmal scharf stellen.</li>
+              <li>Ring hinkt hinterher? „Verzögerung messen“ und am Beamer den Spielmodus einschalten.</li>
+            </ul>
+          </div>
+        </div>
       </section>
 
-      <p id="message" class="error"></p>
-      <details>
-        <summary>Feinabstimmung für den Aufbau</summary>
-        <div class="row">
-          <label>Feldgröße (Höhe der Projektion)
-            <select id="field-meters"><option value="1.5">1,5 m</option><option value="2">2 m</option><option value="2.5">2,5 m</option><option value="3">3 m</option></select>
-          </label>
-        </div>
-        <p class="hint">Damit der Ring um den Ball und die Trefferflächen zur echten Ballgröße passen.</p>
-        <label>Vorhalt <input type="range" id="latency" min="0" max="250" step="10"> <span id="latency-value"></span></label>
-        <div class="row"><button id="btn-latency">Verzögerung messen (mit Beamer)</button></div>
-        <p class="hint">Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft. Zu viel lässt ihn vorauseilen und zittern. „Verzögerung messen“ lässt das Feld ein paar Mal hell aufblitzen, misst, wie lange es dauert, bis die Kamera das sieht, und stellt den Vorhalt passend ein (nach dem Kalibrieren, Feld frei lassen).</p>
-        <label>Projektion abdunkeln <input type="range" id="dim" min="0" max="60" step="5"> <span id="dim-value"></span></label>
-        <p class="hint">Erhöhen, wenn der Ball im projizierten Bild schlechter erkannt wird als auf dunklem Boden.</p>
-      </details>
-
-      <details>
-        <summary>Fehlersuche: filmen und Test-Ball</summary>
-        <p class="hint"><b>Test-Ball</b> (Taste <b>B</b>): Der Beamer malt an der Stelle der Maus einen Ball in der eingestellten Ballfarbe. Die Kamera filmt ihn und die App arbeitet damit wie mit einem echten Ball. So lässt sich die ganze Kette aus Beamer, Kamera und Kalibrierung prüfen, ohne dass jemand im Feld steht. Der Ring sollte genau auf dem gemalten Ball sitzen.</p>
-        <p class="hint"><b>Filmen</b> (Taste <b>V</b>, auch während des Spiels): nimmt bis zu 30 Sekunden auf, links das Kamerabild, rechts die Projektion, und speichert dazu ein Protokoll aller Messwerte. Film und Protokoll landen im Download-Ordner und können zur Fehlersuche weitergegeben werden.</p>
-        <div class="row">
-          <button id="btn-record">Aufnahme starten</button>
-          <button id="btn-snapshot">Kamerabild als Foto speichern</button>
-        </div>
-      </details>
-
-      <details open>
-        <summary>Spieler</summary>
-        <div id="players"></div>
-        <div class="row">
-          <input type="text" id="new-player" placeholder="Name" maxlength="14" aria-label="Name des neuen Spielers">
-          <input type="number" id="new-age" class="age" min="3" max="99" placeholder="Alter" aria-label="Alter des neuen Spielers">
-          <button id="btn-add-player">Spieler hinzufügen</button>
-        </div>
-        <p class="hint">Bitte bei jedem Spieler das Alter eintragen und, wer mit links spielt, „Linkshänder“ ankreuzen (dann sind Vorhand und Rückhand im Tricktrainer gespiegelt). In der Bestenliste lässt sich dann auf die eigene Altersklasse (U8, U10, U12 …) umschalten, damit Jüngere nicht gegen Ältere antreten müssen. Das Alter zählt jedes Jahr von selbst weiter.</p>
-        <p class="hint">Jeder Spieler hat eigene Bestwerte, einen Rang und ein Abzeichen-Album. Gewechselt wird hier oder im Spiel über den Kreis oben rechts.</p>
-      </details>
-
-      <details>
-        <summary>Ton, Stimme und Aussehen</summary>
-        <div class="row">
-          <label><input type="checkbox" id="sound-on"> Ton</label>
-          <label><input type="checkbox" id="voice-on"> Sprachansagen</label>
-          <label><input type="checkbox" id="music-on"> Musik</label>
-          <label><input type="checkbox" id="demos-on"> Neue Übungen vormachen</label>
-        </div>
-        <div class="row">
-          <label>Themenwelt <select id="theme"></select></label>
-        </div>
-      </details>
-
-      <details>
-        <summary>Eigenes Training</summary>
-        <p class="hint">Übungen ankreuzen, die im Training „Eigenes“ der Reihe nach gespielt werden sollen.</p>
-        <div id="custom-games"></div>
-        <div class="row">
-          <label>Dauer je Übung
-            <select id="custom-seconds"><option value="30">30 Sekunden</option><option value="40">40 Sekunden</option><option value="60">60 Sekunden</option></select>
-          </label>
-        </div>
-      </details>
-
-      <details>
-        <summary>Verlauf</summary>
-        <p class="hint" id="history-title"></p>
-        <table id="history"></table>
-        <div class="row"><button id="btn-reset-scores">Bestwerte dieses Spielers löschen</button></div>
-        <div class="row">
-          <button id="btn-export">Alle Spielstände sichern</button>
-          <button id="btn-import">Sicherung laden</button>
-          <input type="file" id="import-file" accept="application/json,.json" hidden>
-        </div>
-        <p class="hint">Spielstände liegen nur in diesem Browser auf diesem Gerät. Die Sicherung ist eine Datei, die sich auf einem anderen Gerät wieder laden lässt.</p>
-      </details>
-
-      <p class="hint" id="version"></p>
-      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>R</b> Bild drehen · <b>Leertaste</b> Pause · <b>M</b> Ton · <b>B</b> Test-Ball · <b>V</b> filmen · <b>D</b> Kamerabild einblenden · <b>Esc</b> zurück / Einrichtung</p>
+      <footer class="foot"><span id="version"></span></footer>
     </div>
   </div>
 
