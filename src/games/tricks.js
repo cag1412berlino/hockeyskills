@@ -10,7 +10,7 @@
 // Punkte [seitlich, vor/zurück] relativ zum Verteidiger; der Spieler kommt von unten (positives y).
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, orb, text, tone } from '../ui.js';
-import { Fx, resample, nearestOnPath } from './common.js';
+import { Fx, resample, nearestOnPath, OffTrack } from './common.js';
 
 const arc = (r, from, to, n = 14) =>
   Array.from({ length: n + 1 }, (_, i) => {
@@ -96,6 +96,7 @@ class Tricks {
     this.n = 0;          // wie viele Tricks schon geschafft sind
     this.done = {};      // geschafft je Trick (Dauertraining)
     this.fx = new Fx();
+    this.guard = new OffTrack({ grace: 0.25, every: 0.4, start: 2, step: 2 });
     this.defender = { x: env.field.w / 2, y: 530 };
     this.pool = variants(env.level, env.topic ?? null);
     this.deck = [];
@@ -149,6 +150,7 @@ class Tricks {
     this.t += dt;
     this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
     fx.update(dt);
+    if (this.state !== 'do') this.guard.update(dt, false, env, fx, ball);
 
     if (this.state === 'show') {
       if (this.t >= this.ghostTime + 0.3) { this.state = 'ready'; this.t = 0; }
@@ -175,9 +177,11 @@ class Tricks {
     }
     if (this.t > this.limit()) return this.fail('Zu langsam!', ball);
     const { k, d } = nearestOnPath(path, ball, this.idx - 6, this.idx + 14);
+    // Neben dem Weg: rot blinken und Abzug, der immer größer wird; nach 1,6 Sekunden ist der Trick verpatzt.
+    this.guard.update(dt, d > p.tol, env, fx, ball);
     if (d > p.tol) {
       this.offFor += dt;
-      if (this.offFor > 0.8) this.fail('Zu weit vom Weg!', ball);
+      if (this.offFor > 1.6) this.fail('Zu weit vom Weg!', ball);
       return;
     }
     this.offFor = 0;
@@ -211,12 +215,12 @@ class Tricks {
     ctx.beginPath();
     for (const q of path) ctx.lineTo(q.x, q.y);
     ctx.lineWidth = this.p.tol * 0.7;
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeStyle = this.guard.heat > 0.05 ? OffTrack.red(50, 0.3 * this.guard.heat) : 'rgba(255,255,255,0.06)';
     ctx.stroke();
     ctx.setLineDash([14, 18]);
     ctx.lineDashOffset = -this.time * 110;
     ctx.lineWidth = 3.5;
-    ctx.strokeStyle = tone(c0, 68);
+    ctx.strokeStyle = this.guard.color(tone(c0, 68));
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -279,6 +283,7 @@ class Tricks {
     const sub = state === 'show' ? 'Schau zu …' : state === 'ready' ? 'Ball zum Startpunkt' : '';
     if (sub) text(ctx, sub, env.field.w / 2, 262, 32, '#fff', 'center', 0);
     this.fx.draw(ctx, env.field);
+    this.guard.draw(ctx, env.field);
   }
 }
 
@@ -288,8 +293,8 @@ export default module.default = {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.75,
-  medals: [[140, 680, 1070], [70, 540, 940], [20, 470, 800]],
+  scale: 0.85,
+  medals: [[130, 760, 1220], [60, 600, 1060], [20, 430, 900]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

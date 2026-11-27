@@ -10,7 +10,7 @@
 // Jedes Rennen ist anders: andere Startzone, andere Reihenfolge, andere Strecke.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, randomVillain, collectible, tone, text } from '../ui.js';
-import { Fx, penalty } from './common.js';
+import { Fx, penalty, OffTrack } from './common.js';
 import { Show, drawBlock, rainbow, tint, fireHsl, gold, drawSign } from './spectacle.js';
 
 const LEVELS = {
@@ -65,6 +65,7 @@ class Run {
     this.burnCool = 0;
     this.fx = new Fx();
     this.show = new Show();
+    this.guard = new OffTrack({ grace: 0.4, every: 0.5, start: 3, step: 3 });
   }
 
   get end() { return this.pts[this.pts.length - 1]; }
@@ -205,9 +206,10 @@ class Run {
         if (segDist(ball, this.screen[i - 1], this.screen[i]) < p.width / 2) { this.onTrack = true; break; }
       }
     }
+    // Neben der Bahn: rot blinken und Abzug, je länger, desto mehr
+    this.guard.update(dt, ball.visible && !this.onTrack, env, fx, ball);
     if (this.onTrack) {
       this.offFor = 0;
-      this.offPaid = false;
       this.acc += dt * 3 * (this.boost > 0 ? 2 : 1);
       while (this.acc >= 1) { this.acc -= 1; env.addScore(env.mult); }
     } else {
@@ -215,15 +217,10 @@ class Run {
       // Kurz daneben ist verziehen, länger daneben kostet die Serie.
       if (this.offFor > 0.5 && ball.visible) {
         env.miss();
-        if (!this.offPaid) {
-          this.offPaid = true;
-          penalty(env, this.fx, ball.x, ball.y - 50, 8);
-        }
         // Endlos: wer länger neben der Bahn bleibt, verliert ein Herz
         // (bleibt man weiter daneben, kostet es nach derselben Zeit das nächste Herz)
         if (env.endless && this.offFor > 1.3) {
           this.offFor = 0;
-          this.offPaid = false;
           env.loseLife();
           env.shake(14);
         }
@@ -412,7 +409,7 @@ class Run {
         this.trace(ctx, from, to);
         if (pass === 0) {
           const base = z.hue == null ? (this.onTrack ? c0 : c2) : z.mat === 'fire' ? fireHsl(z.hue, 95, this.onTrack ? 58 : 45) : tint(z.hue, 85, this.onTrack ? 62 : 45);
-          const edge = off ? '#fff' : this.boost > 0 ? '#fff' : base;
+          const edge = this.guard.active ? this.guard.color(base) : off ? '#fff' : this.boost > 0 ? '#fff' : base;
           ctx.lineWidth = p.width + 6;
           ctx.strokeStyle = edge;
           glow(ctx, edge, this.boost > 0 ? 40 : 26);
@@ -490,6 +487,7 @@ class Run {
       }
     }
     this.fx.draw(ctx, field);
+    this.guard.draw(ctx, field);
     this.show.draw(ctx, field, this.look ? { visible: true, ...this.look } : null);
     // Kette oben rechts: so viele Perlen in Folge
     if (this.chain >= 2) {
@@ -505,8 +503,8 @@ export default {
   name: 'Rennen',
   duration: 60,
   endless: { lives: 3 }, // als einzelne Übung endlos mit drei Herzen
-  scale: 0.7,
-  medals: [[270, 920, 1960], [30, 480, 1530], [20, 120, 700]],
+  scale: 0.8,
+  medals: [[290, 1060, 1970], [50, 630, 1430], [20, 240, 700]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

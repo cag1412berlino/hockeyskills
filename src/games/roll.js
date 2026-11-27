@@ -170,8 +170,8 @@ export default {
   hint: 'Schieb den Ball an und lass ihn ins Ziel rollen!',
   name: 'Zielrollen',
   duration: 60,
-  scale: 1.95,
-  medals: [[140, 990, 3160], [90, 560, 2500], [30, 210, 1800]],
+  scale: 2.4,
+  medals: [[170, 1260, 3870], [100, 620, 2970], [50, 320, 1960]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

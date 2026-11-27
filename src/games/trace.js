@@ -2,7 +2,7 @@
 // Am Ende jeder Form gibt es Punkte nach Genauigkeit: Je näher an der Linie, desto mehr.
 // Die Formen werden der Reihe nach schwieriger, die erlaubte Abweichung mit jeder Stufe kleiner.
 import { glow, noGlow, text, tone } from '../ui.js';
-import { Fx, resample, nearestOnPath, penalty } from './common.js';
+import { Fx, resample, nearestOnPath, OffTrack } from './common.js';
 
 const LEVELS = { 1: { tol: 95 }, 2: { tol: 72 }, 3: { tol: 42 } };
 
@@ -41,8 +41,7 @@ class Trace {
     this.devSum = 0;
     this.devN = 0;
     this.off = false;
-    this.offFor = 0;
-    this.offPaid = false;
+    this.guard = new OffTrack({ grace: 0.4, every: 0.5, start: 2, step: 2 });
   }
 
   tol() {
@@ -65,19 +64,9 @@ class Trace {
     // Nur ein Stück voraus suchen: Bei geschlossenen Formen liegt das Ende am Anfang.
     const { k, d } = nearestOnPath(path, ball, this.idx - 6, this.idx + 14);
     this.off = d > this.tol();
-    if (this.off) {
-      // Neben der Linie: kurz verziehen, dann kostet es einmal Punkte und die Serie.
-      this.offFor += dt;
-      if (this.offFor > 0.6 && !this.offPaid) {
-        this.offPaid = true;
-        env.miss();
-        env.sound.tick();
-        penalty(env, this.fx, ball.x, ball.y - 50, 6);
-      }
-      return;
-    }
-    this.offFor = 0;
-    this.offPaid = false;
+    // Neben der Linie: rot blinken und Abzug, je länger, desto mehr
+    this.guard.update(dt, this.off, env, this.fx, ball);
+    if (this.off) return;
     if (k > this.idx) {
       if (Math.floor(k / 12) > Math.floor(this.idx / 12)) env.sound.blip();
       this.idx = k;
@@ -107,11 +96,11 @@ class Trace {
     ctx.beginPath();
     for (const q of path) ctx.lineTo(q.x, q.y);
     ctx.lineWidth = this.tol() * 0.7;
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeStyle = this.guard.heat > 0.05 ? OffTrack.red(50, 0.3 * this.guard.heat) : 'rgba(255,255,255,0.06)';
     ctx.stroke();
     ctx.setLineDash([4, 16]);
     ctx.lineWidth = 3.5;
-    ctx.strokeStyle = tone(c2, 70);
+    ctx.strokeStyle = this.guard.color(tone(c2, 70));
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -141,6 +130,7 @@ class Trace {
     if (!this.running) text(ctx, 'Start', here.x, here.y - 72, 36);
     text(ctx, this.shape.name, env.field.w / 2, 215, 50, tone(c1, 78), 'center', 8);
     this.fx.draw(ctx, env.field);
+    this.guard.draw(ctx, env.field);
   }
 }
 
@@ -149,8 +139,8 @@ export default {
   hint: 'Fahre die Form mit dem Ball genau nach!',
   name: 'Zeichnen',
   duration: 60,
-  scale: 1.3,
-  medals: [[130, 630, 1150], [70, 560, 1110], [20, 320, 990]],
+  scale: 1.35,
+  medals: [[110, 640, 1190], [60, 570, 1150], [20, 230, 1020]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

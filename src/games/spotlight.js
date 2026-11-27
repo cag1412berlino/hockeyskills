@@ -2,7 +2,7 @@
 // Je länger am Stück, desto mehr Punkte. Mit jeder Stufe wird der Kreis kleiner,
 // schneller und wechselt öfter die Richtung.
 import { glow, noGlow, tone } from '../ui.js';
-import { Fx, penalty } from './common.js';
+import { Fx, OffTrack } from './common.js';
 
 const LEVELS = {
   1: { r: 155, speed: 95 },
@@ -24,8 +24,7 @@ class Spotlight {
     this.inside = false;
     this.hold = 0;       // Sekunden am Stück im Licht
     this.outFor = 0;
-    this.left = false;  // schon für das Verlassen bestraft
-    this.drain = 0;
+    this.guard = new OffTrack({ grace: 0.5, every: 0.7, start: 4, step: 3 });
     this.acc = 0;
     this.fx = new Fx();
   }
@@ -55,9 +54,9 @@ class Spotlight {
     this.y += this.vy * dt;
 
     this.inside = ball.visible && Math.hypot(ball.x - this.x, ball.y - this.y) < r;
+    this.guard.update(dt, ball.visible && !this.inside, env, fx, ball);
     if (this.inside) {
       this.outFor = 0;
-      this.left = false;
       const before = Math.floor(this.hold / 2);
       this.hold += dt;
       this.acc += dt * 3;
@@ -70,22 +69,9 @@ class Spotlight {
       }
     } else if (ball.visible) {
       this.outFor += dt;
-      // Kurz draußen ist verziehen. Danach kostet es einmal Punkte und die Serie,
-      // und jede weitere Sekunde im Dunkeln kostet noch einmal ein wenig.
-      if (this.outFor > 0.5 && !this.left) {
-        this.left = true;
-        this.hold = 0;
-        this.drain = 0;
-        env.miss();
-        env.sound.bad();
-        penalty(env, fx, ball.x, ball.y - 50, 10);
-      } else if (this.left) {
-        this.drain += dt;
-        if (this.drain >= 1) {
-          this.drain -= 1;
-          penalty(env, fx, ball.x, ball.y - 50, 4);
-        }
-      }
+      // Kurz draußen ist verziehen. Danach blinkt es rot, die Serie ist weg, und solange man
+      // im Dunkeln bleibt, wird der Abzug immer größer.
+      if (this.outFor > 0.5) this.hold = 0;
     }
   }
 
@@ -101,7 +87,7 @@ class Spotlight {
     ctx.fillStyle = g;
     ctx.fill();
     const blink = !this.inside && Math.floor(this.time * 6) % 2 === 0;
-    const edge = this.inside ? c1 : blink ? '#fff' : c0;
+    const edge = this.inside ? c1 : this.guard.active ? this.guard.color(c0) : blink ? '#fff' : c0;
     ctx.lineWidth = 3.5;
     ctx.strokeStyle = edge;
     glow(ctx, edge, 28);
@@ -117,6 +103,7 @@ class Spotlight {
       ctx.stroke();
     }
     this.fx.draw(ctx, env.field);
+    this.guard.draw(ctx, env.field);
   }
 }
 
@@ -126,7 +113,7 @@ export default {
   name: 'Lichtkegel',
   duration: 60,
   scale: 0.45,
-  medals: [[230, 670, 940], [20, 520, 830], [20, 180, 610]],
+  medals: [[240, 670, 940], [50, 570, 830], [20, 220, 600]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

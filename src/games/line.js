@@ -3,7 +3,7 @@
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, collectible, tone, text } from '../ui.js';
-import { Fx, Rest } from './common.js';
+import { Fx, Rest, OffTrack } from './common.js';
 
 const LEVELS = {
   1: { tol: 95, points: 4, obstacles: 0, period: 3.5 },
@@ -65,6 +65,7 @@ class Line {
     this.path = spline(ctrl, field);
     this.idx = 0;
     this.tol = p.tol * (1 - 0.07 * env.stage); // mit jeder Stufe muss man genauer führen
+    this.guard ??= new OffTrack({ grace: 0.4, every: 0.5, start: 2, step: 2 });
     // Stopp-Punkt ungefähr in der Mitte
     this.stopAt = Math.round((this.path.length - 1) * (0.4 + Math.random() * 0.2));
     this.rest = new Rest(HOLD, 24);
@@ -98,6 +99,10 @@ class Line {
       o.x = o.cx + o.nx * s;
       o.y = o.cy + o.ny * s;
     }
+    // Neben der Linie (an der Stelle, an der man gerade ist): rot blinken und steigender Abzug
+    let near = Infinity;
+    for (let k = Math.max(0, this.idx - 8); k < Math.min(path.length, this.idx + 14); k++) near = Math.min(near, dist(ball, path[k]));
+    this.guard.update(dt, ball.visible && near > this.tol * 1.15, env, fx, ball);
     if (!ball.visible) return;
 
     // Am Stopp-Punkt geht es erst weiter, wenn der Ball kurz ruhig gelegen hat.
@@ -173,7 +178,7 @@ class Line {
     // Noch offener Teil: zarte Spur mit Lichtpunkten zum Einsammeln
     this.trace(ctx, idx, last);
     ctx.lineWidth = this.tol * 0.6;
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.strokeStyle = this.guard.heat > 0.05 ? OffTrack.red(50, 0.3 * this.guard.heat) : 'rgba(255,255,255,0.07)';
     ctx.stroke();
     ctx.fillStyle = tone(c2, 70);
     glow(ctx, c2, 14);
@@ -234,6 +239,7 @@ class Line {
 
     for (const o of this.obstacles) villain(ctx, 'saw', o.x, o.y, o.r, this.time, this.look);
     this.fx.draw(ctx, env.field);
+    this.guard.draw(ctx, env.field);
   }
 }
 
@@ -243,7 +249,7 @@ export default {
   name: 'Linie',
   duration: 60,
   scale: 0.4,
-  medals: [[330, 1260, 2700], [20, 420, 960], [20, 50, 370]],
+  medals: [[320, 1320, 2730], [20, 390, 960], [20, 50, 380]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;

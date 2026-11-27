@@ -1,5 +1,6 @@
 // Gemeinsame Bausteine für mehrere Spiele: Effekte und die Stoppzone.
 import { glow, noGlow, text, collectible, tone } from '../ui.js';
+import { safeHue } from '../themes.js';
 
 /** Sammelt alle kurzlebigen Effekte eines Spiels: Funken, Druckwellen, Punktetexte, Blitz. */
 export class Fx {
@@ -256,4 +257,99 @@ export function drawBullseye(ctx, t, rings, color, time) {
 export function penalty(env, fx, x, y, points) {
   env.addScore(-points);
   fx.text(x, y, `−${points}`, '#ff8f8f', 44);
+}
+
+/**
+ * Außerhalb der Spur: für alle Übungen mit Korridor (Weg, Bahn, Linie, Lichtkreis).
+ * Nach einer kurzen Schonzeit leuchtet der Rand rot und blinkt, und solange der Ball draußen
+ * bleibt, gibt es immer wieder Punktabzug – jedes Mal etwas mehr (2, 4, 6 …).
+ * update() jedes Bild mit off = true/false, draw() nach dem Spiel; color() liefert die Farbe,
+ * in der die Übung ihre Spur gerade zeichnen soll (rot blinkend, wenn man draußen ist).
+ */
+export class OffTrack {
+  constructor({ grace = 0.3, every = 0.5, start = 2, step = 2, max = 12 } = {}) {
+    Object.assign(this, { grace, every, start, step, max });
+    this.out = 0;     // Sekunden am Stück draußen
+    this.paid = 0;    // Abzüge in diesem Ausflug
+    this.tick = 0;
+    this.heat = 0;    // 0..1, wie stark der rote Rand leuchtet
+    this.time = 0;
+    this.lost = 0;    // Punkte, die das Draußensein bisher gekostet hat
+  }
+
+  get active() { return this.out > this.grace; }
+
+  /** Kurzer roter Blitz, z. B. beim Anstoßen an eine Wand. */
+  hit() { this.heat = 1; }
+
+  update(dt, off, env, fx, ball) {
+    this.time += dt;
+    if (!off || !ball?.visible) {
+      this.out = 0;
+      this.paid = 0;
+      this.tick = 0;
+      this.heat = Math.max(0, this.heat - dt * 3);
+      return;
+    }
+    this.out += dt;
+    this.heat = Math.min(1, this.heat + dt * 5);
+    if (this.out <= this.grace) return;
+    if (this.paid === 0) {
+      // gerade hinaus: Serie weg, erster Abzug
+      env.miss();
+      env.sound.bad();
+      this.pay(env, fx, ball);
+      return;
+    }
+    this.tick += dt;
+    if (this.tick >= this.every) {
+      this.tick -= this.every;
+      this.pay(env, fx, ball);
+    }
+  }
+
+  /** Ein Abzug, jedes Mal etwas mehr. */
+  pay(env, fx, ball) {
+    const points = Math.min(this.max, this.start + this.step * this.paid);
+    this.paid++;
+    this.lost += points;
+    penalty(env, fx, ball.x, ball.y - 70, points);
+    env.shake(3 + Math.min(10, this.paid * 2));
+  }
+
+  /** Warnfarbe: Rot, aber immer mit Abstand zur Ballfarbe. */
+  static red(l = 58, a = 1) {
+    return `hsl(${Math.round(safeHue(0))} 95% ${l}% / ${a})`;
+  }
+
+  /** Farbe für die Spur: normal oder, wenn man draußen ist, rot blinkend. */
+  color(normal) {
+    if (this.heat <= 0.05) return normal;
+    return Math.floor(this.time * 10) % 2 === 0 ? OffTrack.red() : '#ffffff';
+  }
+
+  draw(ctx, field) {
+    if (this.heat <= 0.02) return;
+    // roter Schein an allen vier Rändern, pulsierend
+    const a = this.heat * (0.35 + 0.2 * Math.sin(this.time * 14));
+    const band = 140;
+    const sides = [
+      [0, 0, field.w, band, 0, 0, 0, band],
+      [0, field.h - band, field.w, band, 0, field.h, 0, field.h - band],
+      [0, 0, band, field.h, 0, 0, band, 0],
+      [field.w - band, 0, band, field.h, field.w, 0, field.w - band, 0],
+    ];
+    for (const [x, y, w, h, x0, y0, x1, y1] of sides) {
+      const g = ctx.createLinearGradient(x0, y0, x1, y1);
+      g.addColorStop(0, OffTrack.red(50, a));
+      g.addColorStop(1, OffTrack.red(50, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, w, h);
+    }
+    if (this.active) {
+      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(this.time * 12);
+      text(ctx, 'Zurück in die Spur!', field.w / 2, field.h - 150, 40, OffTrack.red(70), 'center', 10, 600);
+      ctx.globalAlpha = 1;
+    }
+  }
 }

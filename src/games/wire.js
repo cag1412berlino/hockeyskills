@@ -3,7 +3,7 @@
 // Kein Tempo-Spiel: Es zählt, wie weit man sauber kommt. Mit jeder Stufe wird der Gang enger.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, collectible, text, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, OffTrack } from './common.js';
 import { spline } from './line.js';
 
 const LEVELS = { 1: { width: 205 }, 2: { width: 172 }, 3: { width: 142 } };
@@ -38,6 +38,7 @@ class Wire {
     if (start) ctrl[0] = { ...start };
     this.path = spline(ctrl, field);
     this.width = p.width * (1 - 0.06 * env.stage);
+    this.guard ??= new OffTrack();
     const last = this.path.length - 1;
     this.checkpoints = [1 / 3, 2 / 3].map((f) => ({ at: Math.round(last * f), done: false }));
     this.from = 0;                       // hier geht es nach einem Fehler weiter
@@ -51,6 +52,7 @@ class Wire {
     this.time += dt;
     this.zap = Math.max(0, this.zap - dt);
     fx.update(dt);
+    this.guard.update(dt, false, env, fx, ball);
     if (!ball.visible) return;
 
     if (!this.running) {
@@ -76,6 +78,7 @@ class Wire {
       env.sound.bad();
       env.shake(16);
       this.zap = 0.5;
+      this.guard.hit();
       fx.text(ball.x, ball.y, 'Angestoßen! -5');
       this.running = false;
       return;
@@ -108,7 +111,7 @@ class Wire {
     const last = path.length - 1;
 
     // Gang: erst breit in Leuchtfarbe, dann etwas schmaler dunkel darüber – übrig bleiben die Wände.
-    const wall = this.zap > 0 && Math.floor(this.time * 20) % 2 === 0 ? '#fff' : c0;
+    const wall = this.zap > 0 ? this.guard.color(c0) : c0;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -156,6 +159,7 @@ class Wire {
       text(ctx, 'Start', s.x, s.y - 80, 40);
     }
     this.fx.draw(ctx, env.field);
+    this.guard.draw(ctx, env.field);
   }
 }
 
@@ -165,7 +169,7 @@ export default {
   name: 'Draht',
   duration: 60,
   scale: 0.6,
-  medals: [[30, 730, 1280], [20, 570, 1270], [20, 160, 1270]],
+  medals: [[40, 760, 1260], [20, 560, 1260], [20, 210, 1280]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

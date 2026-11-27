@@ -145,6 +145,8 @@ Punkte, Rekorde, Sterne im Profil, Abzeichen, Rang und die Plätze in der Besten
 
 Fehler kosten in jeder Übung ein paar Punkte und die laufende Serie, damit sauberes Spielen mehr bringt als schnelles Herumschieben: den Lichtkegel verlassen (einmal 10, danach 4 je Sekunde im Dunkeln), im Rennen oder beim Zeichnen neben der Spur bleiben, im Rhythmus eine Note verpassen, bei Punktlandung zu spät kommen, beim Zielrollen vorbeirollen, beim Pendel trödeln, einen Trick verpatzen. Die Punktzahl fällt nie unter null.
 
+**Außerhalb der Spur** (Tricks, Zeichnen, Linie, Rennen, Lichtkegel; beim Draht beim Anstoßen): Nach einer kurzen Schonzeit leuchtet der Rand des Bildes rot, die Spur blinkt rot-weiß und „Zurück in die Spur!“ erscheint. Die Serie ist weg, und solange der Ball draußen bleibt, gibt es immer wieder Abzug – jedes Mal mehr (2, 4, 6 … bis höchstens 12). Das Rot hält wie alle Farben Abstand zur Ballfarbe; bei einem orangen oder pinken Ball wird es entsprechend verschoben.
+
 ## Bestenliste
 
 Im Profil (Knopf mit der Krone) gibt es vier Ranglisten aller Spieler auf diesem Gerät:
