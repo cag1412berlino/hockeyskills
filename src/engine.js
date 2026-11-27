@@ -187,7 +187,7 @@ export class Engine {
       this.lostFor += dt;
       // Kurze Aussetzer (Schläger verdeckt den Ball) überbrücken: Der Ball rollt gedämpft weiter.
       if (b.visible && this.lostFor <= 0.45) {
-        const s = this.seen, k = Math.max(0, 1 - this.lostFor * 3);
+        const s = this.seen, k = Math.max(0, 1 - this.lostFor * 5);
         s.x += s.vx * dt * k;
         s.y += s.vy * dt * k;
         b.x = s.x; b.y = s.y;
@@ -197,8 +197,12 @@ export class Engine {
     }
     // s = geglättete Position aus dem Kamerabild, v = beruhigte Geschwindigkeit
     const s = this.seen;
-    if (!b.visible || dt <= 0) {
+    // Taucht der Ball nach einer Lücke wieder auf oder springt er weit, gilt die neue Stelle sofort –
+    // ohne Glättung und ohne Schwung aus dem Sprung, sonst schießt der Ring über das Ziel hinaus.
+    const reappear = this.lostFor > 0.05 || Math.hypot(x - s.x, y - s.y) > 180;
+    if (!b.visible || dt <= 0 || reappear) {
       s.x = x; s.y = y; s.vx = s.vy = 0;
+      b.vx = b.vy = 0;
     } else {
       // Glättung je nach Tempo: Liegt der Ball fast still, wird kräftig beruhigt (kein Zittern),
       // bei schnellen Bewegungen folgt der Ring fast sofort (keine Verzögerung).
@@ -214,7 +218,7 @@ export class Engine {
     }
     // Vorhalt gleicht die Verzögerung von Kamera und Beamer aus (0 = aus).
     const lead = (this.config.latency || 0) / 1000;
-    const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead) : s;
+    const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead, 80) : s;
     b.x = at.x; b.y = at.y;
     if (!b.visible) b.vx = b.vy = 0;
     b.visible = true;

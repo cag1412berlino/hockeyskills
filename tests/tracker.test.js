@@ -203,3 +203,12 @@ test('Ball-Verfolgung: bleibt am Ball, auch wenn das Schlägerblatt in Ballfarbe
   for (let i = 0; i < 6; i++) taken = f.step([ball(60, 230)]);
   assert.ok(taken && taken.x === 60, 'neuer Ball an anderer Stelle wird nach kurzer Zeit gefunden');
 });
+
+test('Ball-Verfolgung: ein riesiger Fleck (Ball und Fuß verschmolzen) wird nicht übernommen', async () => {
+  const { BallFollower } = await import('../src/tracker.js');
+  const f = new BallFollower(1280);
+  for (let i = 0; i < 5; i++) f.step([{ x: 600 + i, y: 400, area: 1500, fill: 0.78 }]);
+  assert.equal(f.step([{ x: 640, y: 430, area: 5400, fill: 0.6 }]), null, 'kurz zu groß: lieber kurz nichts');
+  const back = f.step([{ x: 606, y: 401, area: 1480, fill: 0.78 }]);
+  assert.ok(back && back.x === 606);
+});

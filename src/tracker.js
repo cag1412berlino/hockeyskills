@@ -164,6 +164,9 @@ export class BallFollower {
     for (const b of list) {
       const d = Math.hypot(b.x - px, b.y - py);
       if (d > gate) continue;
+      // viel größer oder kleiner als der Ball bisher: eher Ball und Schläger/Fuß verschmolzen oder ein Stück davon
+      const ratio = b.area / this.last.area;
+      if (this.last.area > 30 && (ratio > 2.5 || ratio < 0.3)) continue;
       // nah an der Vorhersage und ähnlich groß wie bisher
       const size = Math.abs(Math.log(b.area / this.last.area));
       const score = -d / gate - size * 0.5 + b.fill * 0.3;
