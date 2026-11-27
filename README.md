@@ -88,7 +88,16 @@ Fehler kosten in jeder Übung ein paar Punkte und die laufende Serie, damit saub
 
 ## Bestenliste
 
-Im Profil (Knopf mit der Krone) gibt es die Bestenliste aller Spieler auf diesem Gerät: einmal nach Gesamtpunkten, einmal mit dem Rekordhalter je Übung. Sie liegt wie die Spielstände nur im Browser dieses Geräts.
+Im Profil (Knopf mit der Krone) gibt es vier Ranglisten aller Spieler auf diesem Gerät:
+
+| Liste | Was zählt |
+| --- | --- |
+| **Woche** | Meiste Spiele in der laufenden Woche (Montag bis Sonntag). Jeden Montag steht sie wieder bei null, damit alle neu um Platz 1 spielen. |
+| **Spiele** | Meiste Spiele insgesamt |
+| **Punkte** | Meiste Punkte insgesamt |
+| **Rekorde** | Wer in welcher Übung den Rekord hält |
+
+Bei Gleichstand teilen sich die Spieler den Platz. Die Listen liegen wie die Spielstände nur im Browser dieses Geräts.
 
 ## Vereinslogo
 

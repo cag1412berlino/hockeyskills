@@ -107,3 +107,18 @@ test('Alte oder unvollständige Spielstände werden ergänzt, ohne etwas zu verl
   assert.equal(p.days.streak, 1);
   assert.equal(completeProfile({ xp: 'kaputt', history: null }).xp, 0);
 });
+
+test('Wochenrangliste: zählt Montag bis Sonntag und beginnt jeden Montag neu', async () => {
+  const { weekStart, weekStats } = await import('../src/profile.js');
+  assert.equal(weekStart('2026-11-27'), '2026-11-23'); // Freitag -> Montag derselben Woche
+  assert.equal(weekStart('2026-11-23'), '2026-11-23'); // Montag bleibt Montag
+  assert.equal(weekStart('2026-11-29'), '2026-11-23'); // Sonntag gehört noch dazu
+  assert.equal(weekStart('2026-03-01'), '2026-02-23'); // über den Monatswechsel
+  const p = newProfile('Test');
+  recordRound(p, round({ score: 500, stars: 2 }), categories, '2026-11-22'); // Sonntag der Vorwoche
+  recordRound(p, round({ score: 300, stars: 1 }), categories, '2026-11-23');
+  recordRound(p, round({ score: 700, stars: 3 }), categories, '2026-11-27');
+  assert.deepEqual(weekStats(p, '2026-11-27'), { rounds: 2, points: 1000, stars: 4 });
+  assert.deepEqual(weekStats(p, '2026-11-30'), { rounds: 0, points: 0, stars: 0 }, 'am nächsten Montag steht alles wieder auf null');
+  assert.equal(p.stats.rounds, 3, 'die Gesamtzahl bleibt');
+});

@@ -70,6 +70,27 @@ function dayBefore(day) {
   return dateString(new Date(y, m - 1, d - 1));
 }
 
+/** Der Montag der Woche, in der day liegt (als Datum 'JJJJ-MM-TT'). */
+export function weekStart(day = dateString()) {
+  const [y, m, d] = day.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return dateString(new Date(y, m - 1, d - ((date.getDay() + 6) % 7)));
+}
+
+/**
+ * Was ein Spieler in der laufenden Woche (Montag bis Sonntag) geschafft hat. Jeden Montag
+ * beginnt die Zählung von vorn, damit alle wieder die gleiche Chance haben.
+ */
+export function weekStats(p, day = dateString()) {
+  const from = weekStart(day);
+  const rows = p.history.filter((h) => h.d >= from && h.d <= day);
+  return {
+    rounds: rows.length,
+    points: rows.reduce((a, h) => a + (h.s || 0), 0),
+    stars: rows.reduce((a, h) => a + (h.st || 0), 0),
+  };
+}
+
 /** Übung des Tages: an einem Tag für alle gleich, jeden Tag eine andere. */
 export function dailyGame(games, day = dateString()) {
   let h = 0;
