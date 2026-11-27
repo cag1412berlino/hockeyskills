@@ -150,7 +150,7 @@ export default {
   name: 'Zeichnen',
   duration: 60,
   scale: 1.25,
-  medals: [[110, 600, 1100], [70, 550, 1060], [20, 270, 950]],
+  medals: [[130, 610, 1100], [70, 550, 1070], [20, 320, 950]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

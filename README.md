@@ -93,6 +93,22 @@ Für alle Spiele gilt:
 - **Der Trainer redet mit:** Im Menü begrüßt er je nach Tageszeit und erinnert sich („Gestern: 2 Sterne bei Slalom – schaffst du heute mehr?“, „Bei Achter fehlt dir nur noch ein Stern!“, „Wie wäre es mal wieder mit Stoppen?“). Während der Runde schaut er unten links kurz herein und ruft zu: bei Serien, zur Halbzeit (vor oder hinter dem Rekord), im Endspurt, beim Rekord und aufmunternd nach Fehlern. Mit Sprachansagen spricht er es auch.
 - **Mehr Wumms:** Jeder Treffer einer Serie klingt einen Halbton höher. Bei Serie x4 und bei einem neuen Rekord regnet Konfetti; der Rekord bekommt dazu eine kurze Zeitlupe und einen hellen Blitz. Die letzten fünf Sekunden ticken hörbar herunter.
 
+## Rennen und Slalom: Überraschungen
+
+**Rennen** läuft als einzelne Übung **endlos**: drei Herzen, alle 20 Sekunden wird es schneller, bis alle Herzen weg sind. Ein Herz kostet es, gegen ein Hindernis zu fahren oder zu lange neben der Bahn zu bleiben. Oben steht, wie lange man schon durchhält, im Ergebnis „Durchgehalten 1:23“. Im Training und im Duell bleibt Rennen eine Runde mit fester Zeit.
+
+Jedes Rennen ist anders: Die Strecke führt durch wechselnde Zonen in zufälliger Reihenfolge – Neonstraße, Backsteinstadt, Holzbrücke, Felsenpass, Eispalast, Vulkan –, jede mit eigenem Belag und eigenen Hindernissen (Mauern, Kisten, Felsbrocken, Eisblöcke, Feuer), die man umspielen muss. Wer dagegen fährt, lässt sie zerbersten. Dazu:
+
+- **Perlenkette:** bunte Perlen auf der Bahn, jede in einer anderen Farbe. Je länger die Kette, desto mehr Punkte; jede zehnte gibt ein Feuerwerk.
+- **Durchs Feuer:** Wer knapp an einem Feuer vorbeikommt, setzt das ganze Bild kurz in Flammen.
+- **Knapp vorbei:** knapp an einem Hindernis vorbei bringt Bonuspunkte.
+- **Turbo-Felder:** schneller und doppelte Punkte für ein paar Sekunden.
+- **Goldener Stern:** selten, mit Goldregen und Feuerwerk.
+
+**Slalom** wechselt mit jeder Runde das Material der Tore (Lichttore, Feuerfackeln, Eiskristalle, Backstein, Holz). Die Lichtschranke wechselt mit jedem Tor in Folge die Farbe, manchmal ist ein Tor golden (dreifache Punkte, Goldregen). Wer eine Runde ohne Pfostenberührung schafft, bekommt „Perfekte Runde!“ mit Feuerwerk; eine Feuerrunde endet mit einer Flammenwand über das ganze Bild. Berührte Pfosten zerbröseln.
+
+Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus. Ist der Ball orange oder rot, brennt das Feuer blau, damit die Kamera es nicht für den Ball hält.
+
 ## Gewertet wird nur mit echtem Ball
 
 Punkte, Rekorde, Sterne im Profil, Abzeichen, Rang und die Plätze in der Bestenliste gibt es nur, wenn mit dem echten Ball vor der Kamera gespielt wird. Mit der Maus als Ball, mit dem gemalten Test-Ball und mit der simulierten Kamera (`?sim`) läuft der **Übungsmodus**: Alles lässt sich ausprobieren, aber nichts wird verbucht. Am unteren Feldrand steht dann „Übungsmodus – Punkte zählen nicht“.
@@ -280,6 +296,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/engine.js` | Zeichenschleife, Spielfeld-Koordinaten, Ballposition, Hintergrund |
 | `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |
 | `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
+| `src/games/spectacle.js` | Hindernisse aus Backstein, Holz, Fels, Eis und Feuer; Flammenwand, Feuerwerk, Turbo, Goldregen |
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
 | `src/trackingtest.js` | Erkennungstest: Messwerte sammeln und bewerten |
 | `src/recorder.js` | Aufnahme für die Fehlersuche (Film und Protokoll) |

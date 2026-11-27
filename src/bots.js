@@ -68,6 +68,12 @@ export const goals = {
         if (s < score) { score = s; best = p; }
       }
     }
+    // Hindernissen auf der Bahn weicht der Bot zur freien Seite aus.
+    for (const it of g.items ?? []) {
+      if (it.kind !== 'block' || !best) continue;
+      const y = g.scroll - it.d;
+      if (y > best.y - 320 && y < best.y + 60 && Math.abs(best.x - it.x) < it.w / 2 + 50) best = { x: it.gapX, y: best.y };
+    }
     return best;
   },
   wire: (g) => (g.running ? ahead(g.path, g.idx, 5) : g.path[g.from]),

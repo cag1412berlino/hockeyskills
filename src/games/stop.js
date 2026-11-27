@@ -148,7 +148,7 @@ export default {
   duration: 60,
   lives: 3,
   scale: 0.25,
-  medals: [[220, 560, 920], [240, 580, 920], [220, 580, 890]],
+  medals: [[230, 560, 920], [240, 570, 910], [220, 570, 860]],
   icon(ctx, r) {
     // Hand-Stopp-Zeichen: Achteck
     ctx.strokeStyle = '#fff';

@@ -28,10 +28,14 @@ export class PlayScene {
     Object.assign(this, { app, game, level, session, opts });
     this.score = 0;
     this.shownScore = 0;
-    this.duration = session?.seconds ?? game.duration ?? 60;
-    this.timeLeft = this.duration;
+    // Endlos (nur als einzelne Übung, nicht im Training oder Duell): keine Zeitgrenze, nur Herzen.
+    // Es wird immer schneller, bis alle Herzen weg sind.
+    this.endless = !!game.endless && !session;
+    this.duration = this.endless ? game.duration ?? 60 : session?.seconds ?? game.duration ?? 60;
+    this.timeLeft = this.endless ? Infinity : this.duration;
     this.elapsed = 0;
-    this.lives = game.lives ?? null;
+    this.lives = this.endless ? game.endless.lives : game.lives ?? null;
+    this.pace = 0;           // Endlos: so oft wurde es schon schneller
     this.countdown = 3.5;
     this.lastTick = 4;
     this.speed = SPEEDS[app.config.speed].factor;
@@ -111,10 +115,12 @@ export class PlayScene {
       get score() { return demo ? 0 : scene.score; },
       get timeLeft() { return scene.timeLeft; },
       get lives() { return demo ? scene.game.lives : scene.lives; },
+      /** Endlos: Die Übung läuft, bis alle Herzen weg sind, und wird ständig schneller. */
+      get endless() { return !demo && scene.endless; },
       /** 0 bis 3: Das Spiel wird im Lauf der Runde stufenweise schwieriger. */
       get stage() { return demo ? 0 : scene.stage; },
       /** Tempo-Faktor passend zur Stufe und dazu, wie gut es gerade läuft. */
-      get ramp() { return demo ? 1 : (1 + 0.2 * scene.stage) * scene.assist; },
+      get ramp() { return demo ? 1 : (scene.endless ? 1 + 0.011 * scene.elapsed : 1 + 0.2 * scene.stage) * scene.assist; },
       get mult() { return demo ? 1 : scene.multiplier(); },
       addScore: demo ? nothing : (n) => { scene.score = Math.max(0, scene.score + (n > 0 ? n * scene.scale * (scene.double > 0 ? 2 : 1) : n)); },
       /** Punkte für eine gelungene Aktion. Schnelle Treffer in Folge bauen eine Serie auf, die die Punkte vervielfacht. */
@@ -294,7 +300,16 @@ export class PlayScene {
     // Je höher die Serie, desto farbiger und lebendiger wird die Welt.
     this.app.engine.bloomTo?.(0.25 + 0.25 * (this.multiplier() - 1));
 
-    const stage = Math.min(STAGES - 1, Math.floor(this.elapsed / (this.duration / STAGES)));
+    if (this.endless) {
+      // Alle 20 Sekunden wird es schneller – ohne Ende
+      const pace = Math.floor(this.elapsed / 20);
+      if (pace > this.pace) {
+        this.pace = pace;
+        this.app.sound.stage();
+        this.banner = { str: pace === 1 ? 'Schneller!' : pace < 4 ? 'Noch schneller!' : `Tempo ${pace + 1}!`, age: 0, color: '#fff' };
+      }
+    }
+    const stage = Math.min(STAGES - 1, Math.floor(this.elapsed / ((this.endless ? 60 : this.duration) / STAGES)));
     if (stage > this.stage) {
       this.stage = stage;
       this.app.sound.stage();
@@ -340,9 +355,9 @@ export class PlayScene {
     const { app, game, level } = this;
     this.score = Math.round(this.score);
     app.music.stop();
-    const stars = medals(game, this.score, level, this.duration);
+    const stars = medals(game, this.score, level, this.endless ? game.duration ?? 60 : this.duration);
     const rewards = app.record(
-      { game, level, score: this.score, stars, maxMult: this.maxMult, lives: game.lives ?? 0, livesLeft: this.lives ?? 0 },
+      { game, level, score: this.score, stars, maxMult: this.maxMult, lives: this.endless ? 0 : game.lives ?? 0, livesLeft: this.lives ?? 0 },
       this.player(),
     );
     if (this.session) {
@@ -357,7 +372,7 @@ export class PlayScene {
       app.profile.highscores[key] = this.score;
       app.save();
     }
-    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards });
+    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards, held: this.endless ? this.elapsed : null });
   }
 
   onClick(x, y) { clickButtons([this.exit], x, y); }
@@ -393,13 +408,18 @@ export class PlayScene {
       ctx.globalAlpha = 1;
     }
 
+    if (this.endless) {
+      // Endlos: statt Zeitbalken die Zeit, die man schon durchhält
+      const sec = Math.floor(this.elapsed);
+      text(ctx, `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, w / 2, 40, 34, '#fff', 'center', 8, 600);
+    }
     // Zeitbalken: schmal und abgerundet, mit feinen Marken für die Schwierigkeitsstufen
-    const frac = Math.max(0, this.timeLeft / this.duration);
+    const frac = this.endless ? 0 : Math.max(0, this.timeLeft / this.duration);
     const bw = w - 80;
     ctx.lineCap = 'round';
     ctx.lineWidth = 6;
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw, 36); ctx.stroke();
+    if (!this.endless) { ctx.beginPath(); ctx.moveTo(40, 36); ctx.lineTo(40 + bw, 36); ctx.stroke(); }
     if (frac > 0) {
       const bar = frac < 0.15 ? '#fff' : tone(this.accent, 68);
       ctx.strokeStyle = bar;
@@ -408,15 +428,15 @@ export class PlayScene {
       noGlow(ctx);
     }
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
+    if (!this.endless) for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
 
     caption(ctx, 'Punkte', 42, 76, 18);
     if (this.best > 0) {
       // Liegt man gerade vor oder hinter dem Tempo des eigenen Rekords?
-      const pace = this.best * Math.min(1, this.elapsed / this.duration);
+      const pace = this.endless ? this.best : this.best * Math.min(1, this.elapsed / this.duration);
       const ahead = this.score >= pace;
       caption(ctx, this.beaten ? `Rekord ${Math.round(this.best)} geknackt!` : `Rekord ${Math.round(this.best)} · ${ahead ? '▲ du liegst vorn' : '▼ du liegst zurück'}`,
-        w / 2, 76, 18, this.beaten || ahead ? '#7dffb0' : 'rgba(255,255,255,0.65)', 'center');
+        w / 2, this.endless ? 78 : 76, 18, this.beaten || ahead ? '#7dffb0' : 'rgba(255,255,255,0.65)', 'center');
     }
     text(ctx, Math.round(this.shownScore), 40, 118, 66 * (1 + 0.14 * (this.bump || 0)), '#fff', 'left', 8, 600);
     const mult = this.multiplier();
@@ -440,7 +460,7 @@ export class PlayScene {
     if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');
     if (this.slow > 0) caption(ctx, 'Zeitlupe', 42, this.double > 0 ? 200 : 172, 18, tone(c[3], 82));
     if (this.lives != null) {
-      for (let i = 0; i < (this.game.lives ?? 0); i++) {
+      for (let i = 0; i < (this.endless ? this.game.endless.lives : this.game.lives ?? 0); i++) {
         const on = i < this.lives;
         // das gerade verlorene Herz zuckt und verblasst
         const lost = i === this.lives && this.heartHit > 0;

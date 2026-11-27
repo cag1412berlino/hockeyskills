@@ -1,9 +1,21 @@
 // Spiel "Slalom": Den Ball der Reihe nach durch die leuchtenden Tore führen.
 // Schnell hintereinander geschaffte Tore bauen eine Serie auf. Ab "Mittel" kosten berührte
 // Pfosten Punkte, auf "Schwer" bewegen sich die Tore. Ab Stufe 1 gibt es ein schmales Bonus-Tor.
+// Jede Runde hat ihr eigenes Material (Feuerfackeln, Eiskristalle, Backstein, Holz), manchmal ist
+// ein Tor golden, und wer eine Runde ohne Pfostenberührung schafft, bekommt ein Feuerwerk.
 import { BALL_RADIUS } from '../engine.js';
 import { text, glow, noGlow, star, tone } from '../ui.js';
 import { Fx } from './common.js';
+import { Show, drawPost, rainbow, fireHsl, gold, drawSign } from './spectacle.js';
+
+// Materialien der Runden mit Ansage
+const KINDS = [
+  { mat: 'neon', name: 'Lichttore' },
+  { mat: 'fire', name: 'Feuertore!' },
+  { mat: 'ice', name: 'Eistore!' },
+  { mat: 'brick', name: 'Backsteintore!' },
+  { mat: 'wood', name: 'Holztore!' },
+];
 
 const LEVELS = {
   1: { width: 250, gates: 4, posts: false, move: 0 },
@@ -27,6 +39,12 @@ class Slalom {
     this.down = true;
     this.prev = null;
     this.fx = new Fx();
+    this.show = new Show();
+    this.kind = KINDS[0];
+    this.courses = 0;
+    this.chainN = 0;     // Tore in Folge ohne Fehler (bestimmt die Farbe der Lichtschranke)
+    this.lastPass = -10;
+    this.sign = null;
     this.newCourse();
   }
 
@@ -54,6 +72,17 @@ class Slalom {
       const g = this.gates[1 + Math.floor(Math.random() * (n - 2))];
       this.bonus = { x: field.w - g.cx + (g.cx > field.w / 2 ? -40 : 40), y: g.y, half: 62 };
     }
+    // Material der Runde: die erste mit Lichttoren, danach jedes Mal ein anderes
+    if (this.courses++ > 0) {
+      const pool = KINDS.filter((k) => k !== this.kind);
+      this.kind = pool[Math.floor(Math.random() * pool.length)];
+      this.sign = { str: this.kind.name, age: 0 };
+      env.say(this.kind.name.replace('!', ''));
+      if (this.kind.mat === 'ice') this.show.sparkle(field.w / 2, 250, 'snow', 36, field.w / 2);
+    }
+    // Manchmal ist ein Tor golden: dreifache Punkte
+    this.gold = Math.random() < 0.4 ? 1 + Math.floor(Math.random() * (n - 1)) : -1;
+    this.clean = true;   // noch kein Pfosten berührt
     this.next = 0;
     this.down = !this.down;
   }
@@ -70,6 +99,9 @@ class Slalom {
     this.hurt = Math.max(0, this.hurt - dt);
     for (const g of this.gates) if (g.passed) g.passed += dt;
     fx.update(dt);
+    this.show.update(dt);
+    if (this.sign) this.sign.age += dt;
+    if (this.time - this.lastPass > 4) this.chainN = 0;
 
     if (!ball.visible) { this.prev = null; return; }
     const cur = { x: ball.x, y: ball.y };
@@ -78,13 +110,19 @@ class Slalom {
 
     if (this.p.posts && this.hurt <= 0) {
       for (const g of this.gates) {
-        if (this.posts(g).some((q) => Math.hypot(q.x - cur.x, q.y - cur.y) < POST + BALL_RADIUS * 0.6)) {
+        const hit = this.posts(g).find((q) => Math.hypot(q.x - cur.x, q.y - cur.y) < POST + BALL_RADIUS * 0.6);
+        if (hit) {
           env.addScore(-5);
           env.miss();
           env.sound.bad();
-          env.shake(10);
+          env.shake(14);
           this.hurt = 1;
+          this.clean = false;
+          this.chainN = 0;
           fx.text(cur.x, cur.y, '-5');
+          if (this.kind.mat === 'neon') fx.burst(hit.x, hit.y, '#fff', 18);
+          else this.show.shatter(hit.x, hit.y, this.kind.mat, 14, 0.7);
+          if (this.kind.mat === 'fire') this.show.burn(0.8);
           break;
         }
       }
@@ -104,15 +142,36 @@ class Slalom {
     if (this.prev && crosses(this.prev, cur, a, b)) {
       gate.passed = 0.001;
       const mid = (a.x + b.x) / 2;
-      const points = env.combo(10, 3.5);
+      const golden = this.next === this.gold;
+      const color = golden ? gold(62) : rainbow(this.chainN);
+      const points = env.combo(golden ? 30 : 10, 3.5);
+      this.chainN++;
+      this.lastPass = this.time;
       env.sound.pop(this.next);
-      fx.text(mid, a.y, `+${points}`, env.palette[0], 50 + env.mult * 8);
-      fx.ring(mid, a.y, env.palette[0], this.width * 0.7);
+      fx.text(mid, a.y, golden ? `Goldtor! +${points}` : `+${points}`, color, (golden ? 62 : 50) + env.mult * 8);
+      fx.ring(mid, a.y, color, this.width * 0.8);
+      // Jedes Material feiert anders
+      const mat = this.kind.mat;
+      if (golden) { this.show.coins(env.field, 30); env.sound.win(); }
+      if (mat === 'fire') this.show.sparkle(mid, a.y, 'ember', 26, this.width / 2);
+      else if (mat === 'ice') this.show.sparkle(mid, a.y, 'snow', 18, this.width / 2);
+      else if (mat === 'brick' || mat === 'wood') this.show.shatter(mid, a.y, mat, 8, 0.5);
       this.next++;
       if (this.next >= this.gates.length) {
-        env.addScore(30);
-        env.sound.win();
-        fx.text(env.field.w / 2, 520, 'Runde geschafft! +30', env.palette[1], 64);
+        const { field } = env;
+        if (this.clean) {
+          env.addScore(50);
+          env.sound.win();
+          this.show.fireworks(field, 5);
+          fx.text(field.w / 2, 520, 'Perfekte Runde! +50', gold(65), 70);
+          env.say('Perfekte Runde!');
+        } else {
+          env.addScore(30);
+          env.sound.win();
+          fx.text(field.w / 2, 520, 'Runde geschafft! +30', env.palette[1], 64);
+        }
+        // Eine Feuerrunde endet mit einer Flammenwand über das ganze Bild
+        if (mat === 'fire') { this.show.burn(1.4); env.shake(12); }
         this.newCourse();
       }
     }
@@ -142,7 +201,8 @@ class Slalom {
     this.gates.forEach((g, i) => {
       const [a, b] = this.posts(g);
       const active = i === this.next;
-      const color = g.passed ? c0 : active ? c1 : c2;
+      const golden = i === this.gold;
+      const color = golden ? gold(60) : g.passed ? c0 : active ? rainbow(this.chainN) : c2;
       ctx.globalAlpha = g.passed ? Math.max(0.25, 1 - g.passed) : active ? 1 : 0.8;
 
       // Lichtschranke zwischen den Pfosten
@@ -155,7 +215,9 @@ class Slalom {
       if (active) glow(ctx, color, 26);
       ctx.stroke();
 
+      noGlow(ctx);
       for (const q of [a, b]) {
+        if (this.kind.mat !== 'neon' && !golden) { drawPost(ctx, this.kind.mat, q.x, q.y, POST, this.time); continue; }
         const g2 = ctx.createRadialGradient(q.x - 6, q.y - 8, 2, q.x, q.y, POST);
         g2.addColorStop(0, tone(color, 85));
         g2.addColorStop(1, tone(color, 40));
@@ -164,7 +226,7 @@ class Slalom {
         ctx.fillStyle = g2;
         ctx.fill();
       }
-      noGlow(ctx);
+      if (golden && !g.passed) star(ctx, (a.x + b.x) / 2, a.y + 46, 16, gold(65), this.time * 2);
       if (!g.passed) text(ctx, i + 1, (a.x + b.x) / 2, a.y - 54, active ? 60 : 40, tone(color, 75), 'center', active ? 12 : 0);
       ctx.globalAlpha = 1;
     });
@@ -184,16 +246,19 @@ class Slalom {
       noGlow(ctx);
     }
     this.fx.draw(ctx, env.field);
+    this.show.draw(ctx, env.field, this.prev ? { visible: true, ...this.prev } : null);
+    if (this.chainN >= 2) text(ctx, `${this.chainN} Tore in Folge`, env.field.w / 2, 130, 24, rainbow(this.chainN), 'center', 8, 600);
+    if (this.sign) drawSign(ctx, env.field, this.sign.str, this.sign.age, this.kind.mat === 'fire' ? fireHsl(30, 100, 65) : this.kind.mat === 'ice' ? 'hsl(195 90% 80%)' : '#fff');
   }
 }
 
 export default {
   id: 'slalom',
-  hint: 'Führe den Ball der Reihe nach durch die Tore!',
+  hint: 'Führe den Ball der Reihe nach durch die Tore – ohne die Pfosten zu berühren!',
   name: 'Slalom',
   duration: 60,
-  scale: 0.75,
-  medals: [[960, 2460, 4290], [180, 540, 1060], [90, 360, 850]],
+  scale: 0.65,
+  medals: [[1070, 2690, 4820], [160, 500, 990], [80, 330, 800]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

@@ -64,7 +64,7 @@ for (const game of games) {
         const { result, scene } = play(game, level, speed);
         assert.ok(result, 'Runde endet');
         assert.ok(Number.isFinite(result.score) && result.score >= 0, `Punktestand gültig: ${result.score}`);
-        if (game.lives == null) assert.equal(scene.stage, 3, 'alle Schwierigkeitsstufen erreicht');
+        if (game.lives == null && !game.endless) assert.equal(scene.stage, 3, 'alle Schwierigkeitsstufen erreicht');
       }
     });
   }
@@ -161,6 +161,8 @@ test('Simulierte Spieler: Ein starker Spieler holt in jeder Übung Punkte', () =
       scene.update(1 / 30, bot.ball);
       bot.step(1 / 30, goals[game.id](scene.instance, bot.ball));
     }
+    // Endlos-Übungen laufen, solange man durchhält – ein starker Spieler schafft zwei Minuten.
+    if (game.endless && !result) scene.finish();
     assert.ok(result, `${game.name} endet`);
     assert.ok(result.score > 0, `${game.name}: ${result.score} Punkte`);
   }
@@ -279,4 +281,32 @@ test('Erklär-Animation: jeder Schritt lässt sich zu jedem Zeitpunkt zeichnen',
   for (let step = 0; step < HOWTO_STEPS; step++) {
     for (let t = 0; t < 8; t += 0.25) drawHowTo(ctx, step, t);
   }
+});
+
+test('Rennen endlos: nur Herzen beenden es, es wird immer schneller; im Training bleibt es eine feste Runde', () => {
+  const run = games.find((g) => g.id === 'run');
+  let result = null;
+  const app = fakeApp({ demos: false });
+  app.result = (r) => { result = r; };
+  const scene = new PlayScene(app, run, 2, null, { events: false });
+  scene.layout();
+  scene.countdown = 0;
+  assert.equal(scene.endless, true);
+  assert.equal(scene.lives, 3);
+  const off = { x: 5, y: 5, vx: 0, vy: 0, visible: true }; // weit neben der Bahn
+  const ramps = [scene.env.ramp];
+  scene.elapsed = 120;
+  ramps.push(scene.env.ramp); // nach zwei Minuten
+  scene.elapsed = 0;
+  for (let i = 0; i < 60 * 300 && !result; i++) {
+    scene.update(1 / 60, off);
+  }
+  assert.ok(result, 'endet, wenn alle Herzen weg sind');
+  assert.ok(result.held > 3 && result.held < 10, `wer neben der Bahn bleibt, verliert alle drei Herzen in wenigen Sekunden (${result.held} s)`);
+  assert.ok(ramps[1] > ramps[0] * 2, `wird schneller: ${ramps}`);
+  // Im Training: feste Zeit, keine Herzen
+  const timed = new PlayScene(fakeApp({ demos: false }), run, 2, { seconds: 40, onFinish() {} });
+  assert.equal(timed.endless, false);
+  assert.equal(timed.lives, null);
+  assert.equal(timed.timeLeft, 40);
 });

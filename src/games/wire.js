@@ -165,7 +165,7 @@ export default {
   name: 'Draht',
   duration: 60,
   scale: 0.65,
-  medals: [[40, 880, 1380], [20, 600, 1390], [20, 220, 1370]],
+  medals: [[60, 830, 1380], [20, 570, 1380], [20, 230, 1380]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;
