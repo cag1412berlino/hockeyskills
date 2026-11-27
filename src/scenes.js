@@ -4,6 +4,7 @@ import { BRAND } from './config.js';
 import { ButtonScene, grid, medals, scoreKey, thresholds, LEVEL_NAMES, SPEEDS } from './scenebase.js';
 import { todaysMissions } from './quests.js';
 import { nextGoals, weekLeader } from './goals.js';
+import { memories } from './coach.js';
 import { rankOf, BADGES, badgeProgress, weekStats, weekStart, dayBefore, ageOf, ageClass } from './profile.js';
 
 export { PlayScene } from './play.js';
@@ -116,7 +117,9 @@ export class MenuScene extends ButtonScene {
     const { app } = this;
     const p = app.profile;
     const today = app.today();
-    const lines = [`Hallo ${p.name}!`, 'Lege den Ball auf einen Kreis'];
+    // Begrüßung und Erinnerungen an das letzte Training, dann der Hinweis zur Bedienung
+    this.memo ??= memories(p, app.games, app.categories, today, new Date().getHours());
+    const lines = [this.memo[0], 'Lege den Ball auf einen Kreis', ...this.memo.slice(1, 3)];
     // Montags (oder beim ersten Start der Woche): Wer hat die letzte Woche gewonnen?
     if (this.champion) lines.unshift(`Sieger der letzten Woche: ${this.champion.name}!`);
     const quest = todaysMissions(p, app.categories, today);
@@ -280,6 +283,7 @@ export class ResultScene extends ButtonScene {
     if (r.stars) said.push(r.stars === 1 ? 'Ein Stern.' : `${r.stars} Sterne.`);
     if (r.rewards?.rankUp) said.push(`Du bist jetzt ${rankOf(app.profile.xp).name}!`);
     for (const b of r.rewards?.badges ?? []) said.push(`Neues Abzeichen: ${b.name}.`);
+    if (this.goals[0]) said.push(`${this.goals[0]}.`);
     app.voice.say(said.join(' '));
   }
   layout() {

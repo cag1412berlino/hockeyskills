@@ -90,6 +90,8 @@ Für alle Spiele gilt:
 - **Schatzkiste:** Sind alle drei Aufgaben erledigt, geht die Kiste auf: 500 Bonuspunkte und ein neues Sammelstück. Danach ist für heute Schluss mit Aufgaben, morgen gibt es neue.
 - **Sammlung:** Zehn Sammelstücke – fünf bunte Ballschweife und fünf Mützen für den Trainer. Im Profil führt der Knopf mit der Kiste zur Sammlung; dort lässt sich an- und ablegen, was man schon hat.
 - **Krone der Woche:** Wer die Wochenliste anführt, trägt im Menü und in der Spielerwahl eine Krone am Namen. Beim ersten Start einer neuen Woche ruft der Trainer den Sieger der Vorwoche aus.
+- **Der Trainer redet mit:** Im Menü begrüßt er je nach Tageszeit und erinnert sich („Gestern: 2 Sterne bei Slalom – schaffst du heute mehr?“, „Bei Achter fehlt dir nur noch ein Stern!“, „Wie wäre es mal wieder mit Stoppen?“). Während der Runde schaut er unten links kurz herein und ruft zu: bei Serien, zur Halbzeit (vor oder hinter dem Rekord), im Endspurt, beim Rekord und aufmunternd nach Fehlern. Mit Sprachansagen spricht er es auch.
+- **Mehr Wumms:** Jeder Treffer einer Serie klingt einen Halbton höher. Bei Serie x4 und bei einem neuen Rekord regnet Konfetti; der Rekord bekommt dazu eine kurze Zeitlupe und einen hellen Blitz. Die letzten fünf Sekunden ticken hörbar herunter.
 
 ## Gewertet wird nur mit echtem Ball
 
@@ -284,6 +286,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
+| `src/coach.js` | Zurufe des Trainers und seine Erinnerungen im Menü |
 | `src/quests.js`, `src/goals.js`, `src/collection.js` | Tagesaufgaben, Schatzkiste und Sammelstücke; nächste Ziele und Krone der Woche; Bildschirm „Sammlung“ |
 | `src/profile.js` | Spielerprofile, Rang, Abzeichen, Verlauf, Übung des Tages |
 | `src/bots.js` | Simulierte Spieler fürs Vormachen und Austarieren |

@@ -2,7 +2,8 @@
 // Vormachen, Countdown, Zeit, Punkte, Serien, steigende und sich anpassende Schwierigkeit,
 // Zufallsereignisse, Pause und die Abrechnung am Ende.
 import { BALL_RADIUS } from './engine.js';
-import { DwellButton, clickButtons, icons, text, title, caption, heart, star, orb, glow, noGlow, tone } from './ui.js';
+import { DwellButton, clickButtons, icons, text, title, caption, heart, star, orb, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
+import { shout, cheerful } from './coach.js';
 import { SPEEDS, scoreKey, medals } from './scenebase.js';
 import { Bot, SKILLS, goals } from './bots.js';
 
@@ -54,6 +55,14 @@ export class PlayScene {
     // Jagd auf den eigenen Rekord (nur in der einzelnen Übung, nicht im Training oder Übungsmodus)
     this.best = !session && !app.practice?.() ? app.profile?.highscores?.[scoreKey(app, game, level)] || 0 : 0;
     this.beaten = false;
+    this.coach = null;       // Zuruf des Trainers: { kind, str, age }
+    this.shouted = new Set(); // jeder Anlass höchstens einmal je Runde
+    this.lastShout = -10;
+    this.misses = 0;         // Fehler in Folge
+    this.slowmo = 0;         // Sekunden Zeitlupe nach einem neuen Rekord
+    this.flash = 0;
+    this.party = null;       // Konfetti bei Serie x4 und neuem Rekord
+    this.lastSecond = 99;
     this.lastLives = this.lives;
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
@@ -140,9 +149,17 @@ export class PlayScene {
     this.streak = this.streakLeft > 0 ? this.streak + 1 : 1;
     this.streakLeft = this.streakWindow = window;
     const mult = this.multiplier();
+    this.misses = 0;
+    // Jeder Treffer einer Serie klingt einen Halbton höher – man hört, wie die Serie wächst.
+    if (this.streak > 1) this.app.sound.tone(392 * 2 ** (Math.min(this.streak, 14) / 12), 0.08, { type: 'triangle', vol: 0.1 });
     if (mult > before) {
       this.maxMult = Math.max(this.maxMult, mult);
       this.app.sound.streak(mult);
+      if (mult === 3) this.shoutOnce('streak3');
+      if (mult >= 4) {
+        this.shoutOnce('streak4');
+        this.celebrate();
+      }
       this.banner = { str: `Serie x${mult}!`, age: 0, color: this.env.palette[0] };
       // Läuft es richtig gut, zieht das Tempo unauffällig etwas an.
       if (mult >= 3) this.assist = Math.min(1.15, this.assist + 0.04);
@@ -152,7 +169,27 @@ export class PlayScene {
     return awarded;
   }
 
+  /** Der Trainer ruft etwas herein: höchstens einmal je Anlass und Runde, nicht zu dicht hintereinander. */
+  shoutOnce(kind) {
+    if (this.demo || this.shouted.has(kind) || this.elapsed - this.lastShout < 5) return;
+    const str = shout(kind);
+    if (!str) return;
+    this.shouted.add(kind);
+    this.lastShout = this.elapsed;
+    this.coach = { kind, str, age: 0 };
+    this.app.voice?.say?.(str);
+  }
+
+  /** Konfetti und ein kurzer Ruck: für die ganz großen Momente. */
+  celebrate() {
+    const { w } = this.app.engine.field;
+    this.party = new Confetti(w, [...this.colors, '#fff'], 70);
+    this.partyLeft = 3;
+    this.app.engine.shake?.(14);
+  }
+
   miss() {
+    if (++this.misses === 3) this.shoutOnce('misses');
     this.streak = 0;
     this.streakLeft = 0;
     // Nach Fehlern wird es unauffällig etwas langsamer.
@@ -166,6 +203,7 @@ export class PlayScene {
       return;
     }
     this.lives -= 1;
+    if (this.lives > 0) this.shoutOnce('life');
     this.assist = Math.max(0.75, this.assist - 0.08);
     if (this.lives <= 0) this.finish();
   }
@@ -190,6 +228,18 @@ export class PlayScene {
       this.beaten = true;
       this.banner = { str: 'Neuer Rekord!', age: 0, color: '#7dffb0' };
       this.app.sound.power?.();
+      // Der große Moment: kurze Zeitlupe, heller Blitz, Konfetti
+      this.slowmo = 0.7;
+      this.flash = 1;
+      this.celebrate();
+      this.shoutOnce('record');
+    }
+    this.flash = Math.max(0, this.flash - dt * 2.5);
+    this.slowmo = Math.max(0, this.slowmo - dt);
+    if (this.coach && (this.coach.age += dt) > 2.6) this.coach = null;
+    if (this.party) {
+      this.party.update(dt);
+      if ((this.partyLeft -= dt) <= 0) this.party = null;
     }
     // Punktzahl federt kurz auf, wenn Punkte dazukommen; ein verlorenes Herz zuckt.
     if (this.score > this.lastScore) this.bump = 1;
@@ -250,6 +300,17 @@ export class PlayScene {
       this.app.sound.stage();
       this.banner = { str: 'Es wird schwieriger!', age: 0, color: '#fff' };
     }
+    // Zur Halbzeit sagt der Trainer, wie man zum eigenen Rekord steht; am Ende feuert er an.
+    if (this.best > 0 && !this.beaten && this.elapsed >= this.duration / 2) {
+      this.shoutOnce(this.score >= this.best / 2 ? 'ahead' : 'behind');
+    }
+    if (this.duration >= 30 && this.timeLeft <= 10) this.shoutOnce('endspurt');
+    // Die letzten fünf Sekunden ticken hörbar herunter.
+    const second = Math.ceil(this.timeLeft);
+    if (second < this.lastSecond) {
+      this.lastSecond = second;
+      if (second >= 1 && second <= 5) this.app.sound.tick();
+    }
     while (this.events.length && this.elapsed >= this.events[0].at) this.trigger(this.events.shift().kind);
 
     if (this.lucky) {
@@ -265,7 +326,7 @@ export class PlayScene {
     }
 
     // Tempo und Zeitlupe lassen die Spielwelt schneller oder langsamer laufen, die Rundenzeit bleibt gleich.
-    this.instance.update(dt * this.speed * (this.slow > 0 ? 0.55 : 1), ball);
+    this.instance.update(dt * this.speed * (this.slow > 0 ? 0.55 : 1) * (this.slowmo > 0 ? 0.3 : 1), ball);
     if (this.timeLeft <= 0) this.finish();
   }
 
@@ -392,6 +453,22 @@ export class PlayScene {
     this.exit.draw(ctx);
     if (this.session) caption(ctx, this.session.label, w / 2, 972, 18, 'rgba(255,255,255,0.7)', 'center');
 
+    if (this.flash > 0) {
+      ctx.fillStyle = `rgba(190,255,220,${0.3 * this.flash})`;
+      ctx.fillRect(0, 0, w, 1000);
+    }
+    this.party?.draw(ctx);
+    if (this.coach) {
+      // Der Trainer schaut kurz unten links herein und ruft etwas zu
+      const a = this.coach.age;
+      const slide = Math.min(1, a / 0.2) * Math.min(1, (2.6 - a) / 0.3);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, slide);
+      ctx.translate(0, (1 - slide) * 90);
+      mascot(ctx, 62, 925, 44, cheerful(this.coach.kind) ? 'cheer' : 'happy', this.elapsed, null);
+      bubble(ctx, this.coach.str, 122, 905, 24);
+      ctx.restore();
+    }
     if (this.banner) {
       const a = this.banner.age;
       const pop = a < 0.15 ? 0.5 + (a / 0.15) * 0.6 : Math.max(1, 1.1 - (a - 0.15));

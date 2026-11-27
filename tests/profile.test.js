@@ -197,3 +197,23 @@ test('Nächste Ziele: Stern, Aufgabe, Wochenplatz, Abzeichen, Rang', async () =>
   assert.equal(weekLeader([a, b], '2026-11-30'), null, 'neue Woche, noch niemand');
   assert.equal(nextGoals(a, [a], { score: 950, stars: 3, thresholds: [200, 500, 900] }, categories, '2026-11-27').some((g) => g.includes('bis zum')), false);
 });
+
+test('Trainer: Zurufe und Erinnerungen im Menü', async () => {
+  const { shout, SHOUTS, memories, cheerful } = await import('../src/coach.js');
+  for (const kind of Object.keys(SHOUTS)) assert.ok(SHOUTS[kind].includes(shout(kind)), kind);
+  assert.equal(shout('gibtsnicht'), null);
+  assert.ok(cheerful('record') && !cheerful('misses'));
+  const p = newProfile('Lotta');
+  assert.deepEqual(memories(p, games, categories, '2026-11-27', 9), ['Guten Morgen Lotta!']);
+  recordRound(p, round({ gameId: 'slalom', score: 800, stars: 2 }), categories, '2026-11-26');
+  recordRound(p, round({ gameId: 'targets', score: 300, stars: 1 }), categories, '2026-11-26');
+  const m = memories(p, games, categories, '2026-11-27', 15);
+  assert.equal(m[0], 'Hallo Lotta!');
+  assert.equal(m[1], 'Gestern: 2 Sterne bei „Slalom“ – schaffst du heute mehr?');
+  assert.ok(m.includes('Bei „Slalom“ fehlt dir nur noch ein Stern!'));
+  assert.equal(memories(p, games, categories, '2026-12-05', 20)[0], 'Schön, dass du wieder da bist, Lotta!');
+  for (let i = 0; i < 6; i++) recordRound(p, round({ gameId: 'targets' }), categories, '2026-11-27');
+  const later = memories(p, games, categories, '2026-11-28', 12);
+  assert.ok(later.some((l) => l.startsWith('Wie wäre es mal wieder mit')), later.join(' / '));
+  assert.ok(later.some((l) => l.startsWith('Deine Lieblingsübung: „Ziele“')), later.join(' / '));
+});
