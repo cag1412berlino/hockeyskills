@@ -9,7 +9,7 @@ import { Fx, StopZones } from './common.js';
 const LEVELS = {
   1: { r: 125, target: 95, sway: 0, chase: 0, stop: 380 },
   2: { r: 115, target: 78, sway: 130, chase: 0, stop: 300 },
-  3: { r: 105, target: 64, sway: 0, chase: 120, stop: 240 },
+  3: { r: 118, target: 52, sway: 0, chase: 175, stop: 200 },
 };
 
 /** Eine Wolke als weiche, sich verformende Blase. */
@@ -209,7 +209,7 @@ export default {
   name: 'Wolke',
   duration: 60,
   scale: 1.15,
-  medals: [[280, 830, 1450], [90, 590, 1270], [80, 550, 1260]],
+  medals: [[300, 860, 1490], [90, 520, 1250], [30, 330, 900]],
   icon(ctx, r) {
     const s = r * 0.42;
     ctx.beginPath();

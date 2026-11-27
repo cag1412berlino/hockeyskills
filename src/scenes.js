@@ -2,7 +2,7 @@
 import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
 import { BRAND } from './config.js';
 import { ButtonScene, grid, medals, scoreKey, LEVEL_NAMES, SPEEDS } from './scenebase.js';
-import { rankOf, BADGES, badgeProgress, weekStats } from './profile.js';
+import { rankOf, BADGES, badgeProgress, weekStats, ageOf, ageClass } from './profile.js';
 
 export { PlayScene } from './play.js';
 export { medals } from './scenebase.js';
@@ -300,12 +300,12 @@ export class ProfileScene extends ButtonScene {
     })];
     if (this.app.config.profiles.length > 1) {
       this.buttons.push(new DwellButton({
-        x: w - 90, y: 920, r: 54, color: colors[3], icon: initial('↔'),
+        x: w - 90, y: 920, r: 54, color: colors[3], icon: icons.people,
         onActivate: this.act(() => this.app.playerPick()),
       }));
     }
     this.buttons.push(new DwellButton({
-      x: w - 70, y: 800, r: 40, color: colors[1], icon: initial('♛'),
+      x: w - 70, y: 800, r: 40, color: colors[1], icon: icons.trophy,
       onActivate: this.act(() => this.app.leaderboard()),
     }));
     // Album: acht Abzeichen je Reihe
@@ -422,10 +422,10 @@ function wrapText(ctx, str, x, y, maxWidth, size, lineHeight) {
 
 /** "Wer spielt?" – Auswahl des aktiven Spielers. */
 const BOARDS = [
-  { id: 'week', label: 'Woche', sym: '7', sub: 'Meiste Spiele in dieser Woche – jeden Montag geht es von vorn los' },
-  { id: 'rounds', label: 'Spiele', sym: '∑', sub: 'Meiste Spiele insgesamt' },
-  { id: 'points', label: 'Punkte', sym: '♛', sub: 'Meiste Punkte insgesamt' },
-  { id: 'records', label: 'Rekorde', sym: '★', sub: 'Wer hält den Rekord in welcher Übung?' },
+  { id: 'week', label: 'Woche', icon: 'calendar', sub: 'Meiste Spiele in dieser Woche – jeden Montag geht es von vorn los' },
+  { id: 'rounds', label: 'Spiele', icon: 'stick', sub: 'Meiste Spiele insgesamt' },
+  { id: 'points', label: 'Punkte', icon: 'trophy', sub: 'Meiste Punkte insgesamt' },
+  { id: 'records', label: 'Rekorde', icon: 'medal', sub: 'Wer hält den Rekord in welcher Übung?' },
 ];
 
 /**
@@ -442,25 +442,45 @@ export class LeaderboardScene extends ButtonScene {
       new DwellButton({ x: 80, y: 880, r: 46, icon: icons.back, onActivate: this.act(() => this.app.profileScene()) }),
       ...BOARDS.map((board, i) => new DwellButton({
         x: w - 90 - (BOARDS.length - 1 - i) * step, y: 872, r: 40,
-        color: board.id === this.view ? '#fff' : colors[i % 4], icon: initial(board.sym), label: board.label,
+        color: board.id === this.view ? '#fff' : colors[i % 4], icon: icons[board.icon], label: board.label,
         onActivate: this.act(() => { this.view = board.id; this.layout(); }),
       })),
     ];
+    // Fair bleiben: nur die eigene Altersklasse zeigen (wenn ein Alter eingetragen ist)
+    const mine = ageClass(ageOf(this.app.profile));
+    if (mine) {
+      this.buttons.push(new DwellButton({
+        x: w - 80, y: 70, r: 38, color: this.own ? '#fff' : colors[2], icon: this.own ? initial(mine.replace('Erwachsene', 'E')) : icons.people,
+        label: this.own ? mine : 'Alle',
+        onActivate: this.act(() => { this.own = !this.own; this.layout(); }),
+      }));
+    } else {
+      this.own = false;
+    }
+  }
+
+  /** Die Spieler, die in der Liste stehen: alle oder nur die Altersklasse des aktuellen Spielers. */
+  players() {
+    const all = this.app.config.profiles;
+    if (!this.own) return all;
+    const mine = ageClass(ageOf(this.app.profile));
+    return all.filter((p) => ageClass(ageOf(p)) === mine);
   }
 
   /** Zeilen der gewählten Rangliste: sortiert, mit großer Zahl rechts und kleiner Zeile darunter. */
   rows() {
     const { app } = this;
     const today = app.today();
-    const all = app.config.profiles.map((p) => {
+    const tag = (p) => { const k = ageClass(ageOf(p)); return k ? `${k} · ` : ''; };
+    const all = this.players().map((p) => {
       const week = weekStats(p, today);
       if (this.view === 'week') {
-        return { p, value: week.rounds, big: `${week.rounds}`, unit: week.rounds === 1 ? 'Spiel' : 'Spiele', small: `${week.points.toLocaleString('de-DE')} Punkte · ${week.stars} Sterne in dieser Woche`, tie: week.points };
+        return { p, value: week.rounds, big: `${week.rounds}`, unit: week.rounds === 1 ? 'Spiel' : 'Spiele', small: `${tag(p)}${week.points.toLocaleString('de-DE')} Punkte · ${week.stars} Sterne in dieser Woche`, tie: week.points };
       }
       if (this.view === 'rounds') {
-        return { p, value: p.stats.rounds, big: `${p.stats.rounds}`, unit: p.stats.rounds === 1 ? 'Spiel' : 'Spiele', small: `${rankOf(p.xp).name} · ${p.stats.stars} Sterne`, tie: p.xp };
+        return { p, value: p.stats.rounds, big: `${p.stats.rounds}`, unit: p.stats.rounds === 1 ? 'Spiel' : 'Spiele', small: `${tag(p)}${rankOf(p.xp).name} · ${p.stats.stars} Sterne`, tie: p.xp };
       }
-      return { p, value: p.xp, big: p.xp.toLocaleString('de-DE'), unit: 'Punkte', small: `${rankOf(p.xp).name} · ${p.stats.stars} Sterne · ${Object.keys(p.badges).length} Abzeichen`, tie: p.stats.rounds };
+      return { p, value: p.xp, big: p.xp.toLocaleString('de-DE'), unit: 'Punkte', small: `${tag(p)}${rankOf(p.xp).name} · ${p.stats.stars} Sterne · ${Object.keys(p.badges).length} Abzeichen`, tie: p.stats.rounds };
     });
     return all.sort((a, b) => b.value - a.value || b.tie - a.tie).slice(0, 8);
   }
@@ -472,7 +492,7 @@ export class LeaderboardScene extends ButtonScene {
     const me = app.profile;
     const board = BOARDS.find((b) => b.id === this.view);
     title(ctx, 'Bestenliste', w / 2, 80, 70, c[1]);
-    text(ctx, board.sub, w / 2, 142, 22, 'rgba(255,255,255,0.75)', 'center', 0, 400);
+    text(ctx, this.own ? `${board.sub.split(' – ')[0]} · nur Altersklasse ${ageClass(ageOf(me))}` : board.sub, w / 2, 142, 22, 'rgba(255,255,255,0.75)', 'center', 0, 400);
     if (this.view !== 'records') {
       let place = 0, last = null;
       this.rows().forEach((row, i) => {
@@ -495,7 +515,7 @@ export class LeaderboardScene extends ButtonScene {
     } else {
       const rows = app.games.map((g) => {
         let best = null;
-        for (const p of app.config.profiles) {
+        for (const p of this.players()) {
           for (const [key, score] of Object.entries(p.highscores)) {
             if (key.startsWith(`${g.id}:`) && (!best || score > best.score)) best = { score, name: p.name, mine: p.id === me.id };
           }

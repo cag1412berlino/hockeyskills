@@ -9,7 +9,7 @@ import { Fx, randomSpot, drawCollectible, drawPickup, PICKUP_SECONDS } from './c
 const LEVELS = {
   1: { speed: 140, every: 2.2, r: 58, max: 3 },
   2: { speed: 220, every: 1.5, r: 50, max: 5 },
-  3: { speed: 310, every: 1.1, r: 44, max: 7 },
+  3: { speed: 390, every: 0.8, r: 48, max: 9 },
 };
 const WARN = 0.9; // Sekunden Vorwarnung
 
@@ -179,8 +179,8 @@ export default {
   name: 'Ausweichen',
   duration: 60,
   lives: 3,
-  scale: 1.05,
-  medals: [[200, 600, 1350], [190, 600, 1220], [190, 540, 1210]],
+  scale: 1.2,
+  medals: [[220, 690, 1460], [230, 650, 1290], [200, 510, 970]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;

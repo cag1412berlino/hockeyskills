@@ -122,3 +122,16 @@ test('Wochenrangliste: zählt Montag bis Sonntag und beginnt jeden Montag neu', 
   assert.deepEqual(weekStats(p, '2026-11-30'), { rounds: 0, points: 0, stars: 0 }, 'am nächsten Montag steht alles wieder auf null');
   assert.equal(p.stats.rounds, 3, 'die Gesamtzahl bleibt');
 });
+
+test('Alter und Altersklasse', async () => {
+  const { ageOf, ageClass, completeProfile } = await import('../src/profile.js');
+  const p = newProfile('Test');
+  assert.equal(ageOf(p), null);
+  assert.equal(ageClass(null), null);
+  p.birthYear = 2017;
+  assert.equal(ageOf(p, 2026), 9);
+  assert.equal(ageOf(p, 2027), 10, 'zählt jedes Jahr von selbst weiter');
+  assert.deepEqual([4, 5, 6, 7, 9, 10, 13, 14, 17, 18, 45].map(ageClass),
+    ['U6', 'U6', 'U8', 'U8', 'U10', 'U12', 'U14', 'U16', 'U18', 'Erwachsene', 'Erwachsene']);
+  assert.equal(completeProfile({ name: 'Alt' }).birthYear, null, 'alte Spielstände ohne Alter bleiben gültig');
+});

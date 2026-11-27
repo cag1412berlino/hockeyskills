@@ -10,7 +10,7 @@ import { Fx, randomSpot, drawCollectible, drawPickup, PICKUP_SECONDS } from './c
 const LEVELS = {
   1: { count: 2, speed: 95 },
   2: { count: 3, speed: 125 },
-  3: { count: 4, speed: 155 },
+  3: { count: 4, speed: 195 },
 };
 
 // Die vier Fänger-Typen in der Reihenfolge, in der sie dazukommen.
@@ -165,8 +165,8 @@ export default {
   name: 'Fangen',
   duration: 60,
   lives: 3,
-  scale: 0.9,
-  medals: [[220, 500, 1020], [220, 520, 950], [240, 600, 1110]],
+  scale: 0.95,
+  medals: [[230, 580, 1090], [240, 590, 1070], [260, 640, 1180]],
   icon(ctx, r) {
     // Ball vorneweg, zwei Fänger hinterher
     ctx.fillStyle = '#fff';

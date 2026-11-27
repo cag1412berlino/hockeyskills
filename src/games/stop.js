@@ -9,7 +9,7 @@ const LEVELS = {
   //   Vorwarnung, Dauer Los-Phase, Dauer Stopp-Phase, erlaubte Bewegung im Stopp
   1: { warn: 1.2, go: [4, 6], stop: [2, 2.8], move: 60 },
   2: { warn: 0.7, go: [3, 5], stop: [1.8, 2.6], move: 48 },
-  3: { warn: 0.35, go: [2.5, 4.5], stop: [1.5, 2.4], move: 38 },
+  3: { warn: 0.15, go: [1.5, 3.5], stop: [1.2, 2.8], move: 26 },
 };
 const GRACE = 0.45; // Sekunden zum Abbremsen, nachdem "Stopp!" erscheint
 
@@ -148,7 +148,7 @@ export default {
   duration: 60,
   lives: 3,
   scale: 0.25,
-  medals: [[230, 570, 920], [240, 570, 910], [260, 600, 950]],
+  medals: [[220, 560, 920], [240, 580, 920], [220, 580, 890]],
   icon(ctx, r) {
     // Hand-Stopp-Zeichen: Achteck
     ctx.strokeStyle = '#fff';

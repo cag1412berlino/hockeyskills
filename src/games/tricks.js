@@ -34,7 +34,7 @@ const LEVELS = {
   //   Anzahl Tricks, erlaubte Abweichung, Zeit im Verhältnis zum Geisterball
   1: { moves: 2, tol: 95, time: 3.2 },
   2: { moves: 4, tol: 78, time: 2.5 },
-  3: { moves: 6, tol: 62, time: 2.0 },
+  3: { moves: 6, tol: 50, time: 1.6 },
 };
 const GHOST_SPEED = 300; // Feld-Einheiten pro Sekunde
 const REACH = 62;        // so weit reicht der Verteidiger
@@ -221,7 +221,7 @@ export default {
   name: 'Tricks',
   duration: 75,
   scale: 0.75,
-  medals: [[150, 660, 1050], [70, 550, 940], [20, 550, 880]],
+  medals: [[120, 640, 1050], [70, 580, 940], [20, 490, 860]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

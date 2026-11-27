@@ -9,7 +9,7 @@ const LEVELS = {
   //   Abstand der Marke von der Linie, "schnell" heißt unter so vielen Sekunden
   1: { gap: 70, fast: 0.9 },
   2: { gap: 55, fast: 0.7 },
-  3: { gap: 42, fast: 0.55 },
+  3: { gap: 32, fast: 0.45 },
 };
 const REACH = 330;      // so weit von der Linienmitte zählt ein Wechsel noch
 const MOVE_EVERY = 12;  // nach so vielen Wechseln zieht die Linie um
@@ -103,7 +103,7 @@ export default {
   name: 'Tippen',
   duration: 60,
   scale: 0.45,
-  medals: [[170, 530, 950], [180, 530, 960], [200, 590, 970]],
+  medals: [[160, 530, 950], [180, 530, 960], [200, 740, 1040]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

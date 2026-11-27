@@ -49,7 +49,7 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 
 - In der Einrichtung lassen sich mehrere **Spieler** anlegen. Jeder hat eigene Bestwerte, einen Rang und ein Album.
 - Alle Punkte aus allen Übungen zählen für den **Rang**: Anfänger, Dribbler, Trickser, Techniker, Spielmacher, Kapitän, Profi, Legende. Höhere Ränge schalten Funken und Sternchen im Ballschweif frei.
-- Es gibt 24 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
+- Es gibt 40 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
 - Der Kreis oben rechts im Menü führt zum Profil mit Rang und Album; dort lässt sich auch der Spieler wechseln. Liegt der Ball auf einem Abzeichen, steht unten, wie man es bekommt, bei zählbaren mit Fortschritt („7 von 10“); mit Sprachansagen wird es auch vorgelesen.
 - Die Einrichtung zeigt unter „Verlauf“ je Übung Runden, Bestwert, den Schnitt der letzten fünf Runden und die Tendenz.
 
@@ -96,6 +96,8 @@ Im Profil (Knopf mit der Krone) gibt es vier Ranglisten aller Spieler auf diesem
 | **Spiele** | Meiste Spiele insgesamt |
 | **Punkte** | Meiste Punkte insgesamt |
 | **Rekorde** | Wer in welcher Übung den Rekord hält |
+
+**Alter und Altersklasse:** In der Einrichtung wird bei jedem Spieler das Alter eingetragen (es zählt jedes Jahr von selbst weiter). In den Listen steht die Altersklasse (U6, U8, U10 … U18, Erwachsene) beim Namen, und mit dem Knopf oben rechts lässt sich auf die eigene Altersklasse umschalten, damit Jüngere nicht gegen Ältere antreten müssen.
 
 Bei Gleichstand teilen sich die Spieler den Platz. Die Listen liegen wie die Spielstände nur im Browser dieses Geräts.
 

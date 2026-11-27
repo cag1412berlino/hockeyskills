@@ -8,7 +8,7 @@ import { Fx } from './common.js';
 const LEVELS = {
   1: { width: 250, gates: 4, posts: false, move: 0 },
   2: { width: 190, gates: 5, posts: true, move: 0 },
-  3: { width: 155, gates: 5, posts: true, move: 70 },
+  3: { width: 132, gates: 6, posts: true, move: 115 },
 };
 const POST = 20;
 
@@ -192,8 +192,8 @@ export default {
   hint: 'Führe den Ball der Reihe nach durch die Tore!',
   name: 'Slalom',
   duration: 60,
-  scale: 0.7,
-  medals: [[910, 2300, 4020], [150, 450, 910], [110, 410, 870]],
+  scale: 0.75,
+  medals: [[960, 2460, 4290], [180, 540, 1060], [90, 360, 850]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

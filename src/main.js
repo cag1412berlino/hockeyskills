@@ -10,7 +10,7 @@ import { autoCalibrate, manualCalibrate, toGray, calibOk, findBrightSpot } from 
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
 import { games, categories } from './games/index.js';
-import { newProfile, completeProfile, rankOf, summarize } from './profile.js';
+import { newProfile, completeProfile, rankOf, summarize, ageOf } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
 import { startHowTo } from './howto.js';
@@ -333,6 +333,15 @@ function renderPlayers() {
     const name = Object.assign(document.createElement('input'), { type: 'text', value: p.name, maxLength: 14 });
     name.setAttribute('aria-label', 'Name');
     name.onchange = () => { p.name = name.value.trim() || p.name; saveConfig(); refreshSetup(); app.menu(); };
+    const age = Object.assign(document.createElement('input'), { type: 'number', min: 3, max: 99, placeholder: 'Alter', value: ageOf(p) ?? '' });
+    age.className = 'age';
+    age.setAttribute('aria-label', `Alter von ${p.name}`);
+    age.onchange = () => {
+      const years = Math.round(Number(age.value));
+      p.birthYear = age.value && years >= 3 && years <= 99 ? new Date().getFullYear() - years : null;
+      saveConfig();
+      refreshSetup();
+    };
     const rank = Object.assign(document.createElement('span'), { className: 'rank', textContent: `${rankOf(p.xp).name} · ${p.xp} Punkte` });
     const del = Object.assign(document.createElement('button'), { textContent: 'Löschen', disabled: config.profiles.length < 2 });
     del.onclick = () => {
@@ -343,7 +352,7 @@ function renderPlayers() {
       refreshSetup();
       app.menu();
     };
-    row.append(pick, name, rank, del);
+    row.append(pick, name, age, rank, del);
     return row;
   }));
 }
@@ -571,9 +580,12 @@ function buildSetup() {
     const name = $('#new-player').value.trim();
     if (!name) return;
     const p = newProfile(name);
+    const years = Math.round(Number($('#new-age').value));
+    if (years >= 3 && years <= 99) p.birthYear = new Date().getFullYear() - years;
     config.profiles.push(p);
     config.current = p.id;
     $('#new-player').value = '';
+    $('#new-age').value = '';
     saveConfig();
     refreshSetup();
     app.menu();

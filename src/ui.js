@@ -26,6 +26,72 @@ const stroke = (ctx, r) => {
 
 /** Symbole, jeweils um den Nullpunkt gezeichnet, r = Radius des Buttons. */
 export const icons = {
+  /** Pokal: Punkte-Rangliste */
+  trophy(ctx, r) {
+    stroke(ctx, r);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.3, -r * 0.42); ctx.lineTo(r * 0.3, -r * 0.42);
+    ctx.quadraticCurveTo(r * 0.3, r * 0.12, 0, r * 0.14);
+    ctx.quadraticCurveTo(-r * 0.3, r * 0.12, -r * 0.3, -r * 0.42);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    // Henkel
+    ctx.moveTo(-r * 0.3, -r * 0.32); ctx.quadraticCurveTo(-r * 0.56, -r * 0.3, -r * 0.24, -r * 0.02);
+    ctx.moveTo(r * 0.3, -r * 0.32); ctx.quadraticCurveTo(r * 0.56, -r * 0.3, r * 0.24, -r * 0.02);
+    // Fuß
+    ctx.moveTo(0, r * 0.14); ctx.lineTo(0, r * 0.36);
+    ctx.moveTo(-r * 0.24, r * 0.42); ctx.lineTo(r * 0.24, r * 0.42);
+    ctx.stroke();
+  },
+  /** Kalenderblatt: Rangliste der Woche */
+  calendar(ctx, r) {
+    stroke(ctx, r);
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.4, -r * 0.34, r * 0.8, r * 0.76, r * 0.1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, -r * 0.1); ctx.lineTo(r * 0.4, -r * 0.1);
+    ctx.moveTo(-r * 0.2, -r * 0.46); ctx.lineTo(-r * 0.2, -r * 0.24);
+    ctx.moveTo(r * 0.2, -r * 0.46); ctx.lineTo(r * 0.2, -r * 0.24);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(-r * 0.22 + (i % 3) * r * 0.22, r * 0.06 + Math.floor(i / 3) * r * 0.2, r * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  },
+  /** Schläger und Ball: Rangliste der meisten Spiele */
+  stick(ctx, r) {
+    stroke(ctx, r);
+    ctx.lineWidth = r * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.28, -r * 0.46); ctx.lineTo(-r * 0.14, r * 0.26);
+    ctx.quadraticCurveTo(-r * 0.24, r * 0.44, -r * 0.42, r * 0.3);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(r * 0.2, r * 0.3, r * 0.13, 0, Math.PI * 2); ctx.fill();
+  },
+  /** Medaille am Band: Rekorde */
+  medal(ctx, r) {
+    stroke(ctx, r);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.24, -r * 0.48); ctx.lineTo(-r * 0.06, -r * 0.08);
+    ctx.moveTo(r * 0.24, -r * 0.48); ctx.lineTo(r * 0.06, -r * 0.08);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, r * 0.16, r * 0.27, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill(); ctx.stroke();
+    star(ctx, 0, r * 0.16, r * 0.15, '#fff');
+  },
+  /** Zwei Figuren: Spieler wechseln oder alle Altersklassen */
+  people(ctx, r) {
+    stroke(ctx, r);
+    for (const [x, k] of [[-r * 0.18, 1], [r * 0.22, 0.8]]) {
+      ctx.beginPath(); ctx.arc(x, -r * 0.2 * k, r * 0.15 * k, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, r * 0.36, r * 0.3 * k, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    }
+  },
   back(ctx, r) {
     stroke(ctx, r);
     ctx.beginPath();

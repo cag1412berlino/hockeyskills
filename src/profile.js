@@ -30,6 +30,7 @@ export function newProfile(name) {
   return {
     id: Math.random().toString(36).slice(2, 10),
     name,
+    birthYear: null,   // Geburtsjahr (aus dem eingetragenen Alter), für faire Ranglisten nach Altersklasse
     xp: 0,
     highscores: {},
     badges: {},        // Abzeichen-id -> Datum
@@ -54,6 +55,7 @@ export function completeProfile(saved) {
   for (const key of ['played', 'best', 'sessions', 'hardPlayed']) if (!p.stats[key] || typeof p.stats[key] !== 'object') p.stats[key] = {};
   if (!Array.isArray(p.history)) p.history = [];
   if (!Number.isFinite(p.xp)) p.xp = 0;
+  if (!Number.isFinite(p.birthYear)) p.birthYear = null;
   // Ältere Spielstände kannten den Rundenrekord noch nicht: aus dem Verlauf nachtragen.
   if (!p.stats.maxScore) p.stats.maxScore = Math.max(0, ...p.history.map((h) => h.s || 0));
   return p;
@@ -68,6 +70,18 @@ export function dateString(date = new Date()) {
 function dayBefore(day) {
   const [y, m, d] = day.split('-').map(Number);
   return dateString(new Date(y, m - 1, d - 1));
+}
+
+/** Alter eines Spielers in Jahren oder null, wenn keins eingetragen ist. */
+export function ageOf(p, year = new Date().getFullYear()) {
+  return Number.isFinite(p.birthYear) ? Math.max(0, year - p.birthYear) : null;
+}
+
+/** Altersklasse wie im Hockey: U6, U8, … U18, danach „Erwachsene“. Ohne Alter null. */
+export function ageClass(age) {
+  if (age == null) return null;
+  for (const limit of [6, 8, 10, 12, 14, 16, 18]) if (age < limit) return `U${limit}`;
+  return 'Erwachsene';
 }
 
 /** Der Montag der Woche, in der day liegt (als Datum 'JJJJ-MM-TT'). */

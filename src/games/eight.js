@@ -9,7 +9,7 @@ const LEVELS = {
   //   halber Abstand der Hütchen, Radius der Schleifen, Größe der Wegpunkte
   1: { d: 230, R: 160, zone: 95 },
   2: { d: 205, R: 140, zone: 80 },
-  3: { d: 180, R: 120, zone: 68 },
+  3: { d: 165, R: 108, zone: 54 },
 };
 const POST = 24;
 
@@ -134,7 +134,7 @@ export default {
   name: 'Achter',
   duration: 60,
   scale: 0.35,
-  medals: [[190, 530, 900], [150, 570, 940], [100, 580, 1050]],
+  medals: [[190, 530, 900], [160, 560, 940], [60, 490, 1030]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

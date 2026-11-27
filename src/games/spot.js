@@ -88,8 +88,8 @@ export default {
   hint: 'Leg den Ball genau in die Mitte und lass ihn ruhig liegen!',
   name: 'Punktlandung',
   duration: 60,
-  scale: 1.05,
-  medals: [[100, 950, 3840], [60, 570, 3740], [20, 300, 3500]],
+  scale: 1.1,
+  medals: [[130, 1000, 4050], [70, 550, 3880], [20, 340, 3770]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

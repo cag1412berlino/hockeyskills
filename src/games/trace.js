@@ -4,7 +4,7 @@
 import { glow, noGlow, text, tone } from '../ui.js';
 import { Fx, resample, nearestOnPath, penalty } from './common.js';
 
-const LEVELS = { 1: { tol: 95 }, 2: { tol: 72 }, 3: { tol: 55 } };
+const LEVELS = { 1: { tol: 95 }, 2: { tol: 72 }, 3: { tol: 42 } };
 
 const ring = (n, f) => Array.from({ length: n + 1 }, (_, i) => f((i / n) * Math.PI * 2, i));
 const polygon = (n, rot = -Math.PI / 2) => ring(n, (a) => ({ x: Math.cos(a + rot), y: Math.sin(a + rot) }));
@@ -150,7 +150,7 @@ export default {
   name: 'Zeichnen',
   duration: 60,
   scale: 1.25,
-  medals: [[110, 590, 1100], [60, 540, 1070], [30, 460, 1020]],
+  medals: [[110, 600, 1100], [70, 550, 1060], [20, 270, 950]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;
