@@ -3,7 +3,7 @@
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, hazard, star, tone, text } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, Rest } from './common.js';
 
 const LEVELS = {
   1: { tol: 95, points: 4, obstacles: 0, period: 3.5 },
@@ -67,7 +67,7 @@ class Line {
     this.tol = p.tol * (1 - 0.07 * env.stage); // mit jeder Stufe muss man genauer führen
     // Stopp-Punkt ungefähr in der Mitte
     this.stopAt = Math.round((this.path.length - 1) * (0.4 + Math.random() * 0.2));
-    this.hold = 0;
+    this.rest = new Rest(HOLD, 24);
     this.stopDone = false;
     this.obstacles = [];
     const count = p.obstacles + (env.stage >= 3 ? 1 : 0);
@@ -121,9 +121,10 @@ class Line {
 
     if (!this.stopDone && this.idx >= this.stopAt) {
       const s = path[this.stopAt];
-      const still = Math.hypot(ball.vx, ball.vy) < 120 && dist(ball, s) < this.tol;
-      this.hold = still ? this.hold + dt : Math.max(0, this.hold - dt * 2);
-      if (this.hold >= HOLD) {
+      // "Ruhig" heißt: bleibt in einem kleinen Umkreis. Die Geschwindigkeit taugt dafür nicht,
+      // weil das Kamerabild immer leicht zittert und ein liegender Ball dann scheinbar rast.
+      if (dist(ball, s) >= this.tol) this.rest.reset();
+      else if (this.rest.update(dt, ball)) {
         this.stopDone = true;
         const points = env.combo(15, 3);
         env.sound.power();
@@ -207,9 +208,9 @@ class Line {
       ctx.strokeStyle = c1;
       glow(ctx, c1, 20);
       ctx.stroke();
-      if (this.hold > 0) {
+      if (this.rest.progress > 0) {
         ctx.beginPath();
-        ctx.arc(s.x, s.y, 46, -Math.PI / 2, -Math.PI / 2 + (this.hold / HOLD) * Math.PI * 2);
+        ctx.arc(s.x, s.y, 46, -Math.PI / 2, -Math.PI / 2 + this.rest.progress * Math.PI * 2);
         ctx.lineWidth = 10;
         ctx.strokeStyle = '#fff';
         ctx.stroke();
@@ -241,7 +242,8 @@ export default {
   hint: 'Führe den Ball an der Linie entlang!',
   name: 'Linie',
   duration: 60,
-  medals: [150, 320, 520],
+  scale: 0.4,
+  medals: [[330, 1330, 2770], [20, 390, 940], [20, 50, 310]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;

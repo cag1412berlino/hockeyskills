@@ -133,7 +133,8 @@ export default {
   hint: 'Führe den Ball in einer Acht um die Hütchen!',
   name: 'Achter',
   duration: 60,
-  medals: [120, 280, 480],
+  scale: 0.35,
+  medals: [[180, 530, 900], [140, 570, 940], [90, 580, 1050]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

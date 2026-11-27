@@ -135,7 +135,8 @@ export default {
   hint: 'Zieh den Ball im Takt hin und her!',
   name: 'Pendel',
   duration: 60,
-  medals: [150, 350, 600],
+  scale: 0.65,
+  medals: [[180, 780, 1370], [130, 600, 1420], [70, 420, 1340]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

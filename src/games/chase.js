@@ -165,7 +165,8 @@ export default {
   name: 'Fangen',
   duration: 60,
   lives: 3,
-  medals: [140, 280, 440],
+  scale: 0.95,
+  medals: [[230, 570, 1100], [250, 550, 1060], [260, 640, 1200]],
   icon(ctx, r) {
     // Ball vorneweg, zwei Fänger hinterher
     ctx.fillStyle = '#fff';

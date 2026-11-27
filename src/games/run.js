@@ -220,7 +220,8 @@ export default {
   hint: 'Bleib mit dem Ball auf der Bahn!',
   name: 'Rennen',
   duration: 60,
-  medals: [150, 300, 480],
+  scale: 3,
+  medals: [[470, 780, 1090], [320, 660, 920], [250, 460, 650]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

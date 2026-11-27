@@ -1,5 +1,6 @@
 // Einstellungen, Kalibrierung und Bestwerte – im Browser gespeichert.
 import { BALL_PRESETS } from './tracker.js';
+import { newProfile } from './profile.js';
 
 const KEY = 'hockeyskills.v1';
 
@@ -11,7 +12,13 @@ const defaults = () => ({
   rotation: 0,          // Bild drehen: 0, 90, 180 oder 270 Grad
   muted: false,
   calib: null,          // { H, aspect, error }
-  highscores: {},       // 'spiel:level' -> Punkte
+  profiles: [],         // Spielerprofile mit Bestwerten, Rang und Abzeichen
+  current: null,        // id des aktiven Profils
+  voice: true,          // Sprachansagen
+  music: true,          // Hintergrundmusik
+  theme: 'auto',        // Themenwelt: 'auto' wechselt je Runde
+  demos: true,          // neue Übungen kurz vormachen
+  custom: null,         // eigenes Training: { ids: [...], seconds }
 });
 
 function load() {
@@ -23,6 +30,20 @@ function load() {
 }
 
 export const config = load();
+
+// Mindestens ein Profil muss es geben. Bestwerte aus älteren Fassungen wandern ins erste Profil.
+if (!config.profiles.length) {
+  const first = newProfile('Spieler 1');
+  if (config.highscores) first.highscores = config.highscores;
+  config.profiles.push(first);
+}
+delete config.highscores;
+if (!config.profiles.some((p) => p.id === config.current)) config.current = config.profiles[0].id;
+
+/** Das aktive Spielerprofil. */
+export function currentProfile() {
+  return config.profiles.find((p) => p.id === config.current) ?? config.profiles[0];
+}
 
 export function saveConfig() {
   try {

@@ -34,6 +34,7 @@ class Trace {
   load() {
     const { field } = this.env;
     this.shape = SHAPES[this.n % SHAPES.length];
+    this.env.say(this.shape.name);
     this.path = resample(this.shape.pts.map((q) => ({ x: field.w / 2 + q.x * SIZE, y: 585 + q.y * SIZE })));
     this.idx = 0;
     this.running = false;
@@ -134,7 +135,8 @@ export default {
   hint: 'Fahre die Form mit dem Ball genau nach!',
   name: 'Zeichnen',
   duration: 60,
-  medals: [60, 150, 280],
+  scale: 1.3,
+  medals: [[140, 620, 1150], [120, 580, 1110], [110, 500, 1060]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

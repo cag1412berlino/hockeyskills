@@ -68,10 +68,47 @@
       </section>
 
       <p id="message" class="error"></p>
-      <section class="row">
-        <label><input type="checkbox" id="sound-on"> Ton</label>
-        <button id="btn-reset-scores">Bestwerte löschen</button>
-      </section>
+      <details open>
+        <summary>Spieler</summary>
+        <div id="players"></div>
+        <div class="row">
+          <input type="text" id="new-player" placeholder="Name" maxlength="14" aria-label="Name des neuen Spielers">
+          <button id="btn-add-player">Spieler hinzufügen</button>
+        </div>
+        <p class="hint">Jeder Spieler hat eigene Bestwerte, einen Rang und ein Abzeichen-Album. Gewechselt wird hier oder im Spiel über den Kreis oben rechts.</p>
+      </details>
+
+      <details>
+        <summary>Ton, Stimme und Aussehen</summary>
+        <div class="row">
+          <label><input type="checkbox" id="sound-on"> Ton</label>
+          <label><input type="checkbox" id="voice-on"> Sprachansagen</label>
+          <label><input type="checkbox" id="music-on"> Musik</label>
+          <label><input type="checkbox" id="demos-on"> Neue Übungen vormachen</label>
+        </div>
+        <div class="row">
+          <label>Themenwelt <select id="theme"></select></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Eigenes Training</summary>
+        <p class="hint">Übungen ankreuzen, die im Training „Eigenes“ der Reihe nach gespielt werden sollen.</p>
+        <div id="custom-games"></div>
+        <div class="row">
+          <label>Dauer je Übung
+            <select id="custom-seconds"><option value="30">30 Sekunden</option><option value="40">40 Sekunden</option><option value="60">60 Sekunden</option></select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Verlauf</summary>
+        <p class="hint" id="history-title"></p>
+        <table id="history"></table>
+        <div class="row"><button id="btn-reset-scores">Bestwerte dieses Spielers löschen</button></div>
+      </details>
+
       <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>R</b> Bild drehen · <b>Leertaste</b> Pause · <b>M</b> Ton · <b>D</b> Kamerabild einblenden · <b>Esc</b> zurück / Einrichtung</p>
     </div>
   </div>

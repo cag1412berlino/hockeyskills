@@ -272,3 +272,92 @@ export function clickButtons(buttons, x, y) {
   if (b) b.onActivate();
   return !!b;
 }
+
+/**
+ * Skilli, das Maskottchen: eine blaue Kugel mit weißem Stirnband.
+ * mood: 'happy' = lächelt, 'cheer' = jubelt und hüpft, 'sad' = schaut betrübt.
+ */
+export function mascot(ctx, x, y, r, mood = 'happy', time = 0, look = null) {
+  const hop = mood === 'cheer' ? -Math.abs(Math.sin(time * 7)) * r * 0.35 : Math.sin(time * 2) * r * 0.05;
+  const cy = y + hop;
+  // Schatten am Boden
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 1.02, r * (0.75 + hop / r * 0.5), r * 0.14, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fill();
+  orb(ctx, x, cy, r, 'hsl(212 90% 55%)');
+  // Stirnband
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, cy, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x - r, cy - r * 0.62, r * 2, r * 0.24);
+  ctx.restore();
+  eyes(ctx, x, cy + r * 0.08, r, look?.x ?? x, look?.y ?? cy + (mood === 'sad' ? 10 : -10));
+  // Mund
+  ctx.strokeStyle = '#0a0a18';
+  ctx.lineWidth = r * 0.08;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (mood === 'cheer') {
+    ctx.ellipse(x, cy + r * 0.5, r * 0.2, r * 0.17, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#0a0a18';
+    ctx.fill();
+  } else if (mood === 'sad') {
+    ctx.arc(x, cy + r * 0.68, r * 0.24, Math.PI * 1.2, Math.PI * 1.8);
+    ctx.stroke();
+  } else {
+    ctx.arc(x, cy + r * 0.34, r * 0.28, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+  }
+}
+
+/** Sprechblase mit Text, die Spitze zeigt nach links unten (zum Maskottchen). */
+export function bubble(ctx, str, x, y, size = 30) {
+  ctx.font = `600 ${size}px ${theme.family}`;
+  const w = ctx.measureText(str).width + size * 1.4, h = size * 1.9;
+  ctx.beginPath();
+  ctx.roundRect(x, y - h / 2, w, h, h / 2);
+  ctx.moveTo(x + 22, y + h / 2 - 2);
+  ctx.lineTo(x - 6, y + h / 2 + 18);
+  ctx.lineTo(x + 50, y + h / 2 - 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.94)';
+  ctx.fill();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#0b1d4a';
+  ctx.fillText(str, x + size * 0.7, y + 2);
+}
+
+/** Konfetti-Regen in den Vereinsfarben. */
+export class Confetti {
+  constructor(width, colors, n = 110) {
+    this.bits = Array.from({ length: n }, () => ({
+      x: Math.random() * width, y: -40 - Math.random() * 500,
+      vx: (Math.random() - 0.5) * 120, vy: 220 + Math.random() * 260,
+      rot: Math.random() * 6, spin: (Math.random() - 0.5) * 12,
+      size: 10 + Math.random() * 12, color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+  }
+
+  update(dt) {
+    for (const b of this.bits) {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.rot += b.spin * dt;
+    }
+  }
+
+  draw(ctx) {
+    for (const b of this.bits) {
+      if (b.y > 1040) continue;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rot);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(-b.size / 2, -b.size / 4, b.size, b.size / 2 * Math.abs(Math.cos(b.rot * 1.3)) + 2);
+      ctx.restore();
+    }
+  }
+}

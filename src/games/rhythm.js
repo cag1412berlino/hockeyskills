@@ -92,7 +92,8 @@ export default {
   hint: 'Leg den Ball in den Kreis, wenn die Kugel ankommt!',
   name: 'Rhythmus',
   duration: 60,
-  medals: [200, 500, 900],
+  scale: 0.4,
+  medals: [[260, 860, 1200], [130, 540, 1180], [110, 390, 1120]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

@@ -34,3 +34,19 @@ label { display: inline-flex; gap: 6px; align-items: center; }
 .hint { color: #a9b4c4; font-size: 14px; margin: 6px 0; }
 .status { font-size: 14px; margin: 6px 0; }
 .error { color: #ff8f8f; min-height: 1.2em; }
+details { margin-bottom: 14px; border: 1px solid #1d3a80; border-radius: 10px; padding: 10px 14px; background: rgba(10, 22, 52, 0.6); }
+summary { cursor: pointer; font: 600 19px "Fredoka", system-ui, sans-serif; color: #9cc4ff; }
+details[open] summary { margin-bottom: 10px; }
+details .row { margin-bottom: 8px; }
+input[type=text] { font: inherit; padding: 9px 12px; border-radius: 8px; border: 2px solid #2a62d9; background: #0a1634; color: #fff; min-width: 0; }
+.player { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.player input[type=text] { flex: 1; }
+.player .rank { color: #a9b4c4; font-size: 14px; white-space: nowrap; }
+#custom-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; margin-bottom: 10px; }
+#custom-games b { grid-column: 1 / -1; color: #9cc4ff; margin-top: 6px; font-weight: 600; }
+#history { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px; }
+#history th, #history td { padding: 4px 6px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+#history th:first-child, #history td:first-child { text-align: left; }
+#history th { color: #9cc4ff; font-weight: 600; }
+#history .up { color: #7dffb0; }
+#history .down { color: #ffb38a; }

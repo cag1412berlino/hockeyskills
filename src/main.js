@@ -1,17 +1,17 @@
 // Verbindet alles: Einrichtung, Kamera, Ballerkennung, Kalibrierung und Spiele.
-import { config, saveConfig, paletteFor, BRAND } from './config.js';
+import { config, saveConfig, paletteFor, currentProfile, BRAND } from './config.js';
 import { Engine } from './engine.js';
 import { BallTracker, BALL_PRESETS } from './tracker.js';
 import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
-import { Sound } from './sound.js';
+import { Sound, Voice, Music } from './sound.js';
 import { applyHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
-import {
-  MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene,
-  SessionSetupScene, IntermissionScene, SessionResultScene, bestLabel,
-} from './scenes.js';
+import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileScene, PlayerPickScene, bestLabel } from './scenes.js';
+import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
+import { newProfile, rankOf, recordRound, recordEvent, dailyGame, dateString, summarize } from './profile.js';
+import { THEMES, randomTheme } from './themes.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -23,6 +23,8 @@ const preview = $('#preview');
 const debugEl = $('#debug');
 
 const sound = new Sound();
+const voice = new Voice();
+const music = new Music(sound);
 const engine = new Engine(stage, config);
 const tracker = new BallTracker();
 const camera = new Camera(video);
@@ -39,18 +41,37 @@ const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera
 
 // ---------- Navigation zwischen den Bildschirmen ----------
 
+/** Drei zufällige, verschiedene Einträge einer Liste. */
+function pick3(list) {
+  const pool = [...list];
+  const out = [];
+  while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return out;
+}
+
 const app = {
-  engine, config, sound, games, categories, sessionPlan,
+  engine, config, sound, voice, music, games, categories,
   logo: null,    // Vereinslogo, sobald geladen
-  session: null, // laufendes Training
+  session: null, // laufendes Training oder Duell
+  get profile() { return currentProfile(); },
   save: saveConfig,
   palette: () => paletteFor(),
+  today: () => dateString(),
+  daily: () => dailyGame(games),
+
+  /** Wechselt den Bildschirm. Im Menü gilt die gewählte Themenwelt, bei "auto" der Weltraum. */
+  show(scene) {
+    if (!(scene instanceof PlayScene)) engine.theme = config.theme === 'auto' ? 'space' : config.theme;
+    engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
+    engine.setScene(scene);
+  },
   menu: () => {
     app.session = null;
-    engine.setScene(new MenuScene(app));
+    music.stop();
+    app.show(new MenuScene(app));
   },
-  category: (cat) => (cat.games.length > 1 ? engine.setScene(new CategoryScene(app, cat)) : app.levels(cat.games[0])),
-  levelsFor: (opts) => engine.setScene(new LevelScene(app, opts)),
+  category: (cat) => (cat.games.length > 1 ? app.show(new CategoryScene(app, cat)) : app.levels(cat.games[0])),
+  levelsFor: (opts) => app.show(new LevelScene(app, opts)),
   levels: (game) => {
     const cat = categories.find((c) => c.games.includes(game));
     app.levelsFor({
@@ -60,43 +81,102 @@ const app = {
       onBack: () => (cat.games.length > 1 ? app.category(cat) : app.menu()),
     });
   },
-  play: (game, level) => engine.setScene(new PlayScene(app, game, level)),
-  result: (game, level, score, best, record) => {
-    if (record) sound.win(); else sound.end();
-    engine.setScene(new ResultScene(app, game, level, score, best, record));
+  /** Startet eine Übung; bei "auto" bekommt jede Runde eine zufällige Themenwelt. */
+  playScene: (scene) => {
+    if (config.theme === 'auto') engine.theme = randomTheme();
+    engine.setScene(scene);
+  },
+  play: (game, level) => app.playScene(new PlayScene(app, game, level)),
+  result: (r) => {
+    if (r.record) sound.win(); else sound.end();
+    app.show(new ResultScene(app, r));
+  },
+  /**
+   * Verbucht eine gespielte Runde auf ein Profil (null = Gast, dann wird nichts verbucht).
+   * Liefert, was es dafür gab: Punkte, Rangaufstieg, neue Abzeichen.
+   */
+  record: (r, profile) => {
+    if (!profile) return { xp: 0, badges: [] };
+    const rewards = recordRound(profile, {
+      gameId: r.game.id, level: r.level, score: r.score, stars: r.stars, maxMult: r.maxMult,
+      lives: r.lives, livesLeft: r.livesLeft,
+      daily: r.game === app.daily(), counts: !r.game.finale,
+    }, categories);
+    saveConfig();
+    return rewards;
   },
 
-  // ----- Training: mehrere Übungen hintereinander -----
-  sessionSetup: () => engine.setScene(new SessionSetupScene(app)),
-  startSession: (kind, level) => {
-    app.session = { kind, level, plan: sessionPlan(kind), i: 0, results: [], seconds: SESSIONS[kind].seconds };
-    engine.setScene(new IntermissionScene(app, app.session));
+  // ----- Profil -----
+  profileScene: () => app.show(new ProfileScene(app)),
+  playerPick: () => app.show(new PlayerPickScene(app)),
+  setPlayer: (id) => {
+    config.current = id;
+    saveConfig();
+    refreshSetup();
+    app.menu();
   },
+
+  // ----- Training: mehrere Übungen hintereinander, zum Schluss ein Finale -----
+  sessionDef: (kind) => (kind === 'custom' ? { name: 'Eigenes', seconds: config.custom.seconds } : SESSIONS[kind]),
+  sessionGames: (kind) => (kind === 'custom'
+    ? config.custom.ids.map((id) => games.find((g) => g.id === id)).filter(Boolean)
+    : sessionPlan(kind)),
+  sessionSetup: () => app.show(new SessionSetupScene(app)),
+  startSession: (kind, level) => {
+    const list = app.sessionGames(kind);
+    const plan = list.map((game) => ({ game }));
+    plan.push({ game: makeFinale(pick3(list)) });
+    app.session = { kind, level, plan, i: 0, results: [], seconds: app.sessionDef(kind).seconds, names: [] };
+    app.show(new IntermissionScene(app, app.session));
+  },
+
+  // ----- Duell: zwei Spieler, drei Übungen, jeder spielt jede -----
+  duelSetup: () => app.show(new DuelSetupScene(app)),
+  startDuel: (level, opponent) => {
+    const players = [app.profile, opponent];
+    // je eine Übung aus drei verschiedenen Schwerpunkten
+    const picks = pick3(categories).map((c) => c.games[Math.floor(Math.random() * c.games.length)]);
+    app.session = {
+      kind: 'duel', level, i: 0, results: [], seconds: 40, players,
+      names: players.map((p) => (p ? p.name : 'Gast')),
+      plan: picks.flatMap((game) => [{ game, who: 0 }, { game, who: 1 }]),
+    };
+    app.show(new IntermissionScene(app, app.session));
+  },
+
   playExercise: () => {
     const s = app.session;
-    const game = s.plan[s.i];
-    engine.setScene(new PlayScene(app, game, s.level, {
+    const { game, who } = s.plan[s.i];
+    const duel = s.kind === 'duel';
+    app.playScene(new PlayScene(app, game, s.level, {
       seconds: s.seconds,
-      label: `Übung ${s.i + 1} von ${s.plan.length}`,
-      onFinish: (score, stars) => {
-        s.results.push({ game, score, stars });
+      label: duel ? `${s.names[who]} · Runde ${Math.floor(s.i / 2) + 1} von 3` : `Übung ${s.i + 1} von ${s.plan.length}`,
+      onFinish: (score, stars, rewards) => {
+        s.results.push({ game, who, score, stars, rewards });
         s.i++;
         if (s.i < s.plan.length) {
           sound.end();
-          engine.setScene(new IntermissionScene(app, s));
+          app.show(new IntermissionScene(app, s));
+          return;
+        }
+        sound.win();
+        if (duel) {
+          const totals = [0, 1].map((w) => s.results.filter((r) => r.who === w).reduce((sum, r) => sum + r.score, 0));
+          const winner = totals[0] === totals[1] ? null : s.players[totals[0] > totals[1] ? 0 : 1];
+          if (winner) recordEvent(winner, 'duel', categories);
+          saveConfig();
+          app.show(new DuelResultScene(app, s));
           return;
         }
         const total = s.results.reduce((sum, r) => sum + r.score, 0);
         const key = `session:${s.kind}:${s.level}:${config.speed}`;
-        const best = config.highscores[key] || 0;
-        if (total > best) {
-          config.highscores[key] = total;
-          saveConfig();
-        }
-        sound.win();
-        engine.setScene(new SessionResultScene(app, s, Math.max(best, total), total > best));
+        const best = app.profile.highscores[key] || 0;
+        if (total > best) app.profile.highscores[key] = total;
+        const badges = recordEvent(app.profile, s.kind, categories);
+        saveConfig();
+        app.show(new SessionResultScene(app, s, Math.max(best, total), total > best, badges));
       },
-    }));
+    }, duel ? { player: s.players[who] } : {}));
   },
 };
 window.hockey = app; // zum Ausprobieren in der Browser-Konsole
@@ -154,6 +234,13 @@ function refreshSetup() {
   $('#tolerance-value').textContent = `±${config.ball.hTol}°`;
   $('#rotation').value = String(config.rotation);
   $('#sound-on').checked = !config.muted;
+  $('#voice-on').checked = config.voice;
+  $('#music-on').checked = config.music;
+  $('#demos-on').checked = config.demos;
+  $('#theme').value = config.theme;
+  renderPlayers();
+  renderCustom();
+  renderHistory();
   const c = config.calib;
   $('#calib-status').textContent = !c
     ? 'Noch nicht kalibriert.'
@@ -178,6 +265,72 @@ function countFps() {
 }
 
 /** Zeichnet das Kamerabild mit türkis markierter Ballfarbe in die Einrichtung oder die Einblendung. */
+/** Liste der Spieler: aktiven wählen, umbenennen, löschen. */
+function renderPlayers() {
+  $('#players').replaceChildren(...config.profiles.map((p) => {
+    const row = document.createElement('div');
+    row.className = 'player';
+    const pick = Object.assign(document.createElement('input'), { type: 'radio', name: 'player', checked: p.id === config.current });
+    pick.setAttribute('aria-label', `${p.name} auswählen`);
+    pick.onchange = () => { config.current = p.id; saveConfig(); refreshSetup(); app.menu(); };
+    const name = Object.assign(document.createElement('input'), { type: 'text', value: p.name, maxLength: 14 });
+    name.setAttribute('aria-label', 'Name');
+    name.onchange = () => { p.name = name.value.trim() || p.name; saveConfig(); refreshSetup(); app.menu(); };
+    const rank = Object.assign(document.createElement('span'), { className: 'rank', textContent: `${rankOf(p.xp).name} · ${p.xp} Punkte` });
+    const del = Object.assign(document.createElement('button'), { textContent: 'Löschen', disabled: config.profiles.length < 2 });
+    del.onclick = () => {
+      if (!confirm(`${p.name} mit allen Bestwerten und Abzeichen löschen?`)) return;
+      config.profiles = config.profiles.filter((x) => x !== p);
+      if (config.current === p.id) config.current = config.profiles[0].id;
+      saveConfig();
+      refreshSetup();
+      app.menu();
+    };
+    row.append(pick, name, rank, del);
+    return row;
+  }));
+}
+
+/** Ankreuzliste für das eigene Training, nach Schwerpunkten gruppiert. */
+function renderCustom() {
+  const chosen = new Set(config.custom?.ids ?? []);
+  $('#custom-seconds').value = String(config.custom?.seconds ?? 40);
+  $('#custom-games').replaceChildren(...categories.flatMap((cat) => [
+    Object.assign(document.createElement('b'), { textContent: cat.name }),
+    ...cat.games.map((game) => {
+      const label = document.createElement('label');
+      const box = Object.assign(document.createElement('input'), { type: 'checkbox', checked: chosen.has(game.id) });
+      box.onchange = () => {
+        if (box.checked) chosen.add(game.id); else chosen.delete(game.id);
+        // Reihenfolge wie im Menü
+        config.custom = { ids: games.filter((g) => chosen.has(g.id)).map((g) => g.id), seconds: Number($('#custom-seconds').value) };
+        saveConfig();
+      };
+      label.append(box, ` ${game.name}`);
+      return label;
+    }),
+  ]));
+}
+
+/** Verlaufstabelle des aktiven Spielers: Runden, Bestwert, Schnitt der letzten fünf, Tendenz. */
+function renderHistory() {
+  const p = app.profile;
+  $('#history-title').textContent = `${p.name}: ${rankOf(p.xp).name}, ${p.xp} Punkte, ${p.stats.rounds} Übungen gespielt`;
+  const rows = summarize(p, games).filter((r) => r.rounds);
+  const cell = (tag, textContent, className = '') => Object.assign(document.createElement(tag), { textContent, className });
+  const head = document.createElement('tr');
+  head.append(...['Übung', 'Runden', 'Bestwert', 'Schnitt letzte 5', 'Tendenz'].map((t) => cell('th', t)));
+  $('#history').replaceChildren(head, ...rows.map((r) => {
+    const tr = document.createElement('tr');
+    tr.append(
+      cell('td', r.game.name), cell('td', r.rounds), cell('td', r.best), cell('td', r.recent),
+      cell('td', r.trend > 0 ? '↑ besser' : r.trend < 0 ? '↓ schwächer' : '→ gleich', r.trend > 0 ? 'up' : r.trend < 0 ? 'down' : ''),
+    );
+    return tr;
+  }));
+  if (!rows.length) $('#history').append(Object.assign(document.createElement('tr'), { innerHTML: '<td colspan="5">Noch keine Übung gespielt.</td>' }));
+}
+
 function drawPreview(target) {
   const frame = tracker.frame;
   if (!frame) return;
@@ -285,8 +438,45 @@ function buildSetup() {
     }
   };
   $('#btn-reset-scores').onclick = () => {
-    if (!confirm('Alle Bestwerte löschen?')) return;
-    config.highscores = {};
+    if (!confirm(`Alle Bestwerte von ${app.profile.name} löschen? Rang und Abzeichen bleiben.`)) return;
+    app.profile.highscores = {};
+    saveConfig();
+  };
+
+  // Ton, Stimme, Musik, Vormachen, Themenwelt
+  const toggle = (id, key, apply) => {
+    $(id).onchange = (e) => {
+      config[key] = e.target.checked;
+      apply?.(e.target.checked);
+      saveConfig();
+    };
+  };
+  toggle('#voice-on', 'voice', (on) => { voice.enabled = on; });
+  toggle('#music-on', 'music', (on) => { music.enabled = on; if (!on) music.stop(); });
+  toggle('#demos-on', 'demos');
+  $('#theme').replaceChildren(new Option('Automatisch (wechselt)', 'auto'), ...Object.entries(THEMES).map(([id, t]) => new Option(t.name, id)));
+  $('#theme').onchange = (e) => {
+    config.theme = e.target.value;
+    saveConfig();
+    engine.theme = config.theme === 'auto' ? 'space' : config.theme;
+  };
+
+  // Spieler
+  $('#btn-add-player').onclick = () => {
+    const name = $('#new-player').value.trim();
+    if (!name) return;
+    const p = newProfile(name);
+    config.profiles.push(p);
+    config.current = p.id;
+    $('#new-player').value = '';
+    saveConfig();
+    refreshSetup();
+    app.menu();
+  };
+
+  // Eigenes Training
+  $('#custom-seconds').onchange = (e) => {
+    config.custom = { ids: config.custom?.ids ?? [], seconds: Number(e.target.value) };
     saveConfig();
   };
 
@@ -416,6 +606,7 @@ async function calibrate(kind) {
 
 window.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLSelectElement) return;
+  if (e.target instanceof HTMLInputElement && e.target.type === 'text') return;
   const key = e.key.toLowerCase();
   if (e.target instanceof HTMLInputElement && e.target.type !== 'checkbox' && e.target.type !== 'radio') return;
   if (key === 'f') toggleFullscreen();
@@ -453,6 +644,8 @@ $('#brand').textContent = BRAND.name;
 document.fonts?.load('600 20px "Fredoka"').catch(() => {});
 
 sound.muted = config.muted;
+voice.enabled = config.voice;
+music.enabled = config.music;
 buildSetup();
 app.menu();
 showSetup(true);

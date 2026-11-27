@@ -57,6 +57,7 @@ class Stop {
         } else {
           this.enter('stop', between(p.stop));
           env.sound.stage();
+          env.say('Stopp!');
         }
       }
       return;
@@ -85,6 +86,7 @@ class Stop {
       }
       this.enter('go', between(p.go) / env.ramp);
       env.sound.go();
+      env.say('Weiter!');
     }
   }
 
@@ -145,7 +147,8 @@ export default {
   name: 'Stopp',
   duration: 60,
   lives: 3,
-  medals: [120, 260, 420],
+  scale: 0.25,
+  medals: [[220, 570, 920], [230, 580, 920], [270, 600, 950]],
   icon(ctx, r) {
     // Hand-Stopp-Zeichen: Achteck
     ctx.strokeStyle = '#fff';

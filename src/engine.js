@@ -2,7 +2,8 @@
 //
 // Spiele rechnen in "Feld-Einheiten": Das Spielfeld ist immer 1000 hoch und
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
-import { theme, glow, noGlow } from './ui.js';
+import { theme, glow, noGlow, star } from './ui.js';
+import { THEMES } from './themes.js';
 
 export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
 const MAX_HEIGHT = 1440;       // höchste Bildhöhe in Pixeln, mit der gerechnet wird
@@ -26,7 +27,11 @@ export class Engine {
     this.lastTime = 0;
     this.time = 0;
     this.shakeAmt = 0;
-    // Hintergrund-Sterne: Position 0..1, Größe, Helligkeit, Fallgeschwindigkeit
+    this.fade = 0;             // Überblendung beim Szenenwechsel
+    this.theme = 'space';      // Themenwelt des Hintergrunds
+    this.trailStyle = 0;       // Ballschweif: 0 = schlicht, 1 = Funken, 2 = Sternchen (per Rang freigeschaltet)
+    this.sparks = [];
+    // Schwebende Teilchen des Hintergrunds: Position 0..1, Größe, Helligkeit, Tempo, Flackern
     this.stars = Array.from({ length: 60 }, () => ({
       x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.2,
       a: 0.12 + Math.random() * 0.3, v: 4 + Math.random() * 14, tw: 1 + Math.random() * 3,
@@ -79,6 +84,7 @@ export class Engine {
 
   setScene(scene) {
     this.scene = scene;
+    this.fade = 1;
     scene.layout?.();
   }
 
@@ -142,21 +148,17 @@ export class Engine {
     requestAnimationFrame(loop);
   }
 
-  /** Dunkler Farbverlauf mit langsam treibenden Sternen. Bewusst schwach, damit er den Ball nicht überstrahlt. */
+  /** Dunkler Farbverlauf mit schwebenden Teilchen der Themenwelt. Bewusst schwach, damit er den Ball nicht überstrahlt. */
   drawBackground(ctx) {
     const f = this.field;
+    const world = THEMES[this.theme] ?? THEMES.space;
     const g = ctx.createRadialGradient(f.w / 2, f.h * 0.45, 60, f.w / 2, f.h / 2, f.h * 0.85);
-    g.addColorStop(0, 'hsl(216 80% 12%)');
-    g.addColorStop(1, 'hsl(224 85% 3%)');
+    g.addColorStop(0, world.inner);
+    g.addColorStop(1, world.outer);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, f.w, f.h);
-    ctx.fillStyle = '#fff';
-    for (const s of this.stars) {
-      ctx.globalAlpha = s.a * (0.6 + 0.4 * Math.sin(this.time * s.tw + s.x * 50));
-      ctx.beginPath();
-      ctx.arc(s.x * f.w, (s.y * f.h + this.time * s.v) % f.h, s.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillStyle = ctx.strokeStyle = '#fff';
+    for (const p of this.stars) world.draw(ctx, p, f, this.time);
     ctx.globalAlpha = 1;
   }
 
@@ -176,6 +178,18 @@ export class Engine {
       ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
       ctx.lineTo(trail[i].x, trail[i].y);
       ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // Freigeschaltete Schweife: Funken oder Sternchen, die hinter dem Ball zurückbleiben
+    if (this.trailStyle && Math.hypot(ball.vx, ball.vy) > 120 && Math.random() < 0.5) {
+      this.sparks.push({ x: ball.x + (Math.random() - 0.5) * 50, y: ball.y + (Math.random() - 0.5) * 50, age: 0 });
+    }
+    this.sparks = this.sparks.filter((q) => (q.age += 1 / 60) < 0.6);
+    for (const q of this.sparks) {
+      if (Math.hypot(q.x - ball.x, q.y - ball.y) < BALL_RADIUS * 2) continue;
+      ctx.globalAlpha = 1 - q.age / 0.6;
+      if (this.trailStyle >= 2) star(ctx, q.x, q.y, 9 * (1 - q.age), '#fff');
+      else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(q.x, q.y, 4 * (1 - q.age) + 1, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.globalAlpha = 1;
     const r = BALL_RADIUS + 13;
@@ -232,6 +246,12 @@ export class Engine {
       glow(ctx, edge, 26);
       ctx.strokeRect(2, 2, f.w - 4, f.h - 4);
       noGlow(ctx);
+      if (this.fade > 0) {
+        // weiche Überblendung nach einem Szenenwechsel
+        ctx.fillStyle = `rgba(2,4,14,${this.fade})`;
+        ctx.fillRect(0, 0, f.w, f.h);
+        this.fade = Math.max(0, this.fade - dt * 4);
+      }
       ctx.restore();
     }
 

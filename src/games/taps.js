@@ -102,7 +102,8 @@ export default {
   hint: 'Zieh den Ball so oft du kannst über die Linie!',
   name: 'Tippen',
   duration: 60,
-  medals: [120, 300, 520],
+  scale: 0.45,
+  medals: [[160, 530, 950], [180, 530, 960], [190, 590, 960]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

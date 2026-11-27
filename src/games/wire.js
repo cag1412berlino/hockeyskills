@@ -6,7 +6,7 @@ import { glow, noGlow, star, text, tone } from '../ui.js';
 import { Fx } from './common.js';
 import { spline } from './line.js';
 
-const LEVELS = { 1: { width: 200 }, 2: { width: 160 }, 3: { width: 128 } };
+const LEVELS = { 1: { width: 205 }, 2: { width: 172 }, 3: { width: 142 } };
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -164,7 +164,8 @@ export default {
   hint: 'Führe den Ball durch den Gang, ohne die Wand zu berühren!',
   name: 'Draht',
   duration: 60,
-  medals: [100, 250, 450],
+  scale: 0.65,
+  medals: [[30, 870, 1380], [20, 580, 1370], [20, 260, 1380]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

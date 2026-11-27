@@ -111,7 +111,8 @@ export default {
   hint: 'Bleib mit dem Ball im Licht!',
   name: 'Lichtkegel',
   duration: 60,
-  medals: [150, 320, 520],
+  scale: 0.45,
+  medals: [[250, 670, 940], [100, 560, 830], [40, 250, 650]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

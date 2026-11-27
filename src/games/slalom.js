@@ -192,7 +192,8 @@ export default {
   hint: 'Führe den Ball der Reihe nach durch die Tore!',
   name: 'Slalom',
   duration: 60,
-  medals: [150, 320, 520],
+  scale: 0.7,
+  medals: [[910, 2300, 4020], [150, 460, 900], [110, 410, 860]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

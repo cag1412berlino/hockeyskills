@@ -32,11 +32,11 @@ const MOVES = [
 
 const LEVELS = {
   //   Anzahl Tricks, erlaubte Abweichung, Zeit im Verhältnis zum Geisterball
-  1: { moves: 2, tol: 95, time: 2.6 },
-  2: { moves: 4, tol: 75, time: 2.0 },
-  3: { moves: 6, tol: 58, time: 1.5 },
+  1: { moves: 2, tol: 95, time: 3.2 },
+  2: { moves: 4, tol: 78, time: 2.5 },
+  3: { moves: 6, tol: 62, time: 2.0 },
 };
-const GHOST_SPEED = 420; // Feld-Einheiten pro Sekunde
+const GHOST_SPEED = 300; // Feld-Einheiten pro Sekunde
 const REACH = 62;        // so weit reicht der Verteidiger
 
 class Tricks {
@@ -58,6 +58,7 @@ class Tricks {
     this.name = `${move.name} ${mirror > 0 ? '→' : '←'}`;
     this.path = resample(move.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
     this.ghostTime = (this.path.length * 10) / GHOST_SPEED;
+    this.env.say(`${move.name} nach ${mirror > 0 ? 'rechts' : 'links'}`);
     this.state = 'show'; // 'show' = vormachen, 'ready' = Ball zum Start, 'do' = nachmachen
     this.t = 0;
     this.idx = 0;
@@ -122,7 +123,7 @@ class Tricks {
 
     if (this.idx >= path.length - 3) {
       const accuracy = Math.max(0, 1 - this.devSum / this.devN / (p.tol * 0.8));
-      const quick = this.t < this.ghostTime * 1.4; // fast so flott wie der Geisterball
+      const quick = this.t < this.ghostTime * 1.5; // fast so flott wie der Geisterball
       const points = env.combo(10 + Math.round(10 * accuracy) + (quick ? 10 : 0), 20);
       env.sound.win();
       fx.text(ball.x, ball.y - 50, `${quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
@@ -217,7 +218,8 @@ export default {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  medals: [80, 200, 360],
+  scale: 0.75,
+  medals: [[130, 650, 1050], [80, 560, 940], [40, 520, 870]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

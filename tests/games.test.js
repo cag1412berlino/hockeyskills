@@ -5,6 +5,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PlayScene } from '../src/scenes.js';
 import { games } from '../src/games/index.js';
+import { newProfile } from '../src/profile.js';
+import { makeFinale } from '../src/session.js';
+import { Bot, SKILLS, goals } from '../src/bots.js';
+import { playRound } from '../tools/balance.js';
 
 /** Zeichenfläche, die jeden Aufruf schluckt. */
 const fakeCtx = new Proxy({}, {
@@ -15,17 +19,25 @@ const fakeCtx = new Proxy({}, {
 });
 const silent = new Proxy({}, { get: () => () => {} });
 
-function play(game, level, speed) {
-  let result = null;
-  const app = {
+/** Minimal-App, wie sie der Spielbildschirm braucht. */
+function fakeApp(config = {}) {
+  return {
     engine: { field: { w: 1000, h: 1000, scale: 1 }, shake() {} },
-    config: { speed, highscores: {} },
-    sound: silent,
+    config: { speed: 1, demos: true, ...config },
+    profile: newProfile('Test'),
+    sound: silent, voice: silent, music: silent,
     palette: () => ['hsl(212 90% 55%)', 'hsl(196 90% 55%)', 'hsl(226 90% 62%)', 'hsl(204 90% 72%)'],
     save() {},
     menu() {},
-    result: (g, l, score) => { result = { score }; },
+    record: () => ({ xp: 0, badges: [] }),
+    result() {},
   };
+}
+
+function play(game, level, speed) {
+  let result = null;
+  const app = fakeApp({ speed });
+  app.result = (r) => { result = r; };
   const scene = new PlayScene(app, game, level);
   scene.layout();
   const ball = { x: 500, y: 500, vx: 0, vy: 0, visible: true };
@@ -64,8 +76,8 @@ test('jedes Spiel hat Name, Hinweis, Symbol und Sterne-Schwellen', () => {
     assert.ok(game.id && !ids.has(game.id), 'eindeutige id');
     ids.add(game.id);
     assert.ok(game.name && game.hint && typeof game.icon === 'function');
-    assert.equal(game.medals.length, 3);
-    assert.ok(game.medals[0] < game.medals[1] && game.medals[1] < game.medals[2]);
+    assert.equal(game.medals.length, 3, 'Schwellen für jede der drei Stufen');
+    for (const m of game.medals) assert.ok(m.length === 3 && m[0] > 0 && m[0] < m[1] && m[1] < m[2], `${game.name}: ${m}`);
   }
 });
 
@@ -83,16 +95,10 @@ test('Training: Kurz nimmt eine Übung je Kategorie, Komplett alle', async () =>
 test('Übung im Training: endet nach der Trainingszeit und meldet Punkte und Sterne', () => {
   for (const game of games) {
     let done = null;
-    const app = {
-      engine: { field: { w: 1000, h: 1000, scale: 1 }, shake() {} },
-      config: { speed: 1, highscores: {} },
-      sound: silent,
-      palette: () => ['hsl(212 90% 55%)', 'hsl(196 90% 55%)', 'hsl(226 90% 62%)', 'hsl(204 90% 72%)'],
-      save() { assert.fail('im Training werden keine Einzelrekorde gespeichert'); },
-      menu() {},
-      result() { assert.fail('im Training gibt es keinen Einzel-Ergebnisbildschirm'); },
-    };
+    const app = fakeApp({ demos: false });
+    app.result = () => assert.fail('im Training gibt es keinen Einzel-Ergebnisbildschirm');
     const scene = new PlayScene(app, game, 2, { seconds: 20, label: 'Übung 1 von 1', onFinish: (score, stars) => { done = { score, stars }; } });
+    assert.equal(Object.keys(app.profile.highscores).length, 0);
     scene.layout();
     scene.countdown = 0;
     const ball = { x: 500, y: 500, vx: 0, vy: 0, visible: true };
@@ -122,4 +128,103 @@ test('Tippen zählt jeden Wechsel über die Linie', async () => {
   }
   assert.equal(game.count, 9, 'zehn Seitenwechsel, der erste setzt nur die Startseite');
   assert.ok(score > 0);
+});
+
+test('Vormachen: beim ersten Mal spielt ein Geisterball, danach nicht mehr', () => {
+  for (const game of games) {
+    const app = fakeApp();
+    const scene = new PlayScene(app, game, 1);
+    scene.layout();
+    assert.ok(scene.demo, `${game.name} wird vorgemacht`);
+    const ball = { x: 0, y: 0, vx: 0, vy: 0, visible: false };
+    for (let i = 0; i < 60 * 6; i++) {
+      scene.update(1 / 60, ball);
+      if (i % 10 === 0) scene.draw(fakeCtx);
+    }
+    assert.equal(scene.demo, null, 'Vormachen ist nach wenigen Sekunden vorbei');
+    assert.equal(scene.score, 0, 'Vormachen bringt keine Punkte');
+    assert.ok(app.profile.seen[game.id]);
+    assert.equal(new PlayScene(app, game, 1).demo, null);
+  }
+});
+
+test('Simulierte Spieler: Ein starker Spieler holt in jeder Übung Punkte', () => {
+  for (const game of games) {
+    let result = null;
+    const app = fakeApp({ demos: false });
+    app.result = (r) => { result = r; };
+    const scene = new PlayScene(app, game, 1, null, { events: false });
+    scene.layout();
+    scene.countdown = 0;
+    const bot = new Bot(SKILLS.strong);
+    for (let i = 0; i < 30 * 120 && !result; i++) {
+      scene.update(1 / 30, bot.ball);
+      bot.step(1 / 30, goals[game.id](scene.instance, bot.ball));
+    }
+    assert.ok(result, `${game.name} endet`);
+    assert.ok(result.score > 0, `${game.name}: ${result.score} Punkte`);
+  }
+});
+
+test('Zufallsereignisse: Doppelte Punkte, Zeitlupe und Glücksstern', () => {
+  const app = fakeApp({ demos: false });
+  const scene = new PlayScene(app, games[0], 1, null, { scale: 1 });
+  scene.layout();
+  scene.countdown = 0;
+  scene.trigger('double');
+  assert.equal(scene.combo(10, 2), 20);
+  scene.env.addScore(5);
+  assert.equal(scene.score, 30);
+  scene.env.addScore(-5);
+  assert.equal(scene.score, 25, 'Abzüge werden nicht verdoppelt');
+  scene.trigger('lucky');
+  const ball = { x: scene.lucky.x, y: scene.lucky.y, vx: 0, vy: 0, visible: true };
+  scene.update(1 / 60, ball);
+  assert.equal(scene.lucky, null);
+  assert.ok(scene.score >= 75, 'Glücksstern bringt 25, hier verdoppelt');
+  scene.trigger('slow');
+  assert.ok(scene.slow > 0);
+});
+
+test('Anpassende Schwierigkeit: Fehler bremsen, Serien beschleunigen – in Grenzen', () => {
+  const scene = new PlayScene(fakeApp({ demos: false }), games[0], 1);
+  for (let i = 0; i < 20; i++) scene.miss();
+  assert.equal(scene.assist, 0.75);
+  for (let i = 0; i < 200; i++) { scene.streakLeft = 1; scene.streak = 5; scene.combo(1, 2); scene.streak = 0; }
+  assert.ok(scene.assist <= 1.15);
+});
+
+test('Finale: wechselt durch drei Übungen und endet', () => {
+  let done = null;
+  const app = fakeApp({ demos: false });
+  const finale = makeFinale([games[0], games[5], games[11]]);
+  assert.ok(finale.medals.every((m) => m.length === 3));
+  const scene = new PlayScene(app, finale, 2, { seconds: 30, label: 'Finale', onFinish: (score) => { done = score; } });
+  scene.layout();
+  scene.countdown = 0;
+  const seen = new Set();
+  const ball = { x: 500, y: 500, vx: 0, vy: 0, visible: true };
+  for (let i = 0; i < 60 * 35 && done == null; i++) {
+    ball.x = 500 + 350 * Math.sin(i / 40);
+    ball.y = 560 + 300 * Math.sin(i / 27);
+    scene.update(1 / 60, ball);
+    seen.add(scene.instance.i);
+    if (i % 10 === 0) scene.draw(fakeCtx);
+  }
+  assert.ok(done != null);
+  assert.deepEqual([...seen].sort(), [0, 1, 2]);
+});
+
+test('Kamera-Störungen: Auch mit Zittern, Verzögerung und Aussetzern bleibt jede Übung spielbar', () => {
+  // Ein mittlerer simulierter Spieler muss mit gestörtem Kamerabild noch mindestens
+  // ein Viertel dessen schaffen, was er mit perfektem Bild erreicht.
+  const avg = (game, noise) => {
+    let sum = 0;
+    for (let i = 0; i < 6; i++) sum += playRound(game, 1, SKILLS.medium, noise);
+    return sum / 6;
+  };
+  for (const game of games) {
+    const clean = avg(game, false), noisy = avg(game, true);
+    assert.ok(noisy > clean * 0.25, `${game.name}: ${Math.round(noisy)} statt ${Math.round(clean)} Punkte`);
+  }
 });

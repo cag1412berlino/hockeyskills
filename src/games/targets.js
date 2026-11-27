@@ -192,7 +192,8 @@ export default {
   hint: 'Triff die Kugeln – je schneller, desto besser!',
   name: 'Ziele',
   duration: 60,
-  medals: [150, 320, 520],
+  scale: 0.2,
+  medals: [[180, 510, 810], [210, 540, 860], [60, 240, 400]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

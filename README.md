@@ -33,11 +33,37 @@ Das Menü zeigt fünf Schwerpunkte und das Training. Insgesamt gibt es 18 Übung
 
 „Training“ spielt Übungen aus allen Schwerpunkten hintereinander, wie ein Zirkel:
 
-- **Kurz:** eine zufällige Übung je Schwerpunkt (5 Übungen, etwa 4 Minuten)
-- **Mittel:** zwei je Schwerpunkt (9 Übungen, etwa 8 Minuten)
-- **Komplett:** alle 18 Übungen (etwa 14 Minuten)
+- **Kurz:** eine zufällige Übung je Schwerpunkt
+- **Mittel:** zwei je Schwerpunkt
+- **Komplett:** alle 18 Übungen
+- **Eigenes:** die Übungen, die in der Einrichtung unter „Eigenes Training“ angekreuzt sind
 
-Jede Übung dauert 35 bis 40 Sekunden. Dazwischen liegen 7 Sekunden Pause, in der die nächste Übung angekündigt wird; wer den Ball auf „Los“ legt, überspringt die Pause. Am Ende gibt es Gesamtpunkte, Sterne und eine Liste aller Übungen. Rekorde werden je Länge, Stufe und Tempo gespeichert.
+Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in der die nächste Übung angekündigt wird; wer den Ball auf „Los“ legt, überspringt die Pause. Zum Schluss kommt ein **Finale**, das drei Übungen des Trainings in einer Runde mischt. Am Ende gibt es Gesamtpunkte, Sterne und eine Liste aller Übungen.
+
+### Heute und Duell
+
+- **Heute:** Jeden Tag ist eine andere Übung die Übung des Tages. Die erste Runde darin bringt doppelte Punkte fürs Profil.
+- **Duell:** Zwei Spieler (zwei Profile oder ein Profil gegen einen Gast) spielen abwechselnd drei Übungen. Wer insgesamt mehr Punkte holt, gewinnt.
+
+### Spieler, Rang und Abzeichen
+
+- In der Einrichtung lassen sich mehrere **Spieler** anlegen. Jeder hat eigene Bestwerte, einen Rang und ein Album.
+- Alle Punkte aus allen Übungen zählen für den **Rang**: Anfänger, Dribbler, Trickser, Techniker, Spielmacher, Kapitän, Profi, Legende. Höhere Ränge schalten Funken und Sternchen im Ballschweif frei.
+- Es gibt 24 **Abzeichen**, zum Beispiel für die erste Übung, drei Sterne, eine Serie x4, ein komplettes Training oder sieben Tage in Folge.
+- Der Kreis oben rechts im Menü führt zum Profil mit Rang und Album; dort lässt sich auch der Spieler wechseln.
+- Die Einrichtung zeigt unter „Verlauf“ je Übung Runden, Bestwert, den Schnitt der letzten fünf Runden und die Tendenz.
+
+### Was das Spielen auflockert
+
+- **Vormachen:** Beim ersten Mal zeigt ein Geisterball fünf Sekunden lang, wie die Übung geht.
+- **Sprachansagen:** Erklärung, „Stopp!“, Ergebnis und neue Abzeichen werden vorgelesen, für Kinder, die noch nicht lesen.
+- **Zufallsereignisse:** In einer Runde kann es zehn Sekunden doppelte Punkte, fünf Sekunden Zeitlupe oder einen Glücksstern geben.
+- **Anpassende Schwierigkeit:** Nach Fehlern wird die Übung unauffällig etwas langsamer (bis 25 %), bei langen Serien etwas schneller (bis 15 %).
+- **Themenwelten:** Weltraum, Unterwasser, Eis und Nachtwald, zufällig je Runde oder fest gewählt. Alle bleiben dunkel und bläulich.
+- **Musik:** Eine leise, im Browser erzeugte Begleitung, die mit der Serie schneller und voller wird.
+- **Skilli:** Das Maskottchen begrüßt im Menü und freut sich im Ergebnis mit.
+
+Sprachansagen, Musik, Vormachen und Themenwelt lassen sich in der Einrichtung unter „Ton, Stimme und Aussehen“ abschalten oder einstellen.
 
 Die Tricks sind in `src/games/tricks.js` als einfache Punktlisten beschrieben und lassen sich dort anpassen oder ergänzen.
 
@@ -47,7 +73,7 @@ Für alle Spiele gilt:
 - **Serie:** Drei schnelle Treffer hintereinander verdoppeln die Punkte (x2), sechs geben x3, zehn x4. Ein Ring neben dem Punktestand zeigt, wie lange die Serie noch hält. Ein Fehler beendet sie.
 - **Es wird schwieriger:** Jede Runde hat vier Abschnitte (Striche im Zeitbalken). Mit jedem Abschnitt wird das Spiel etwas schneller, enger oder bekommt ein neues Element.
 - **Stoppzone:** In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit hinaus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
-- **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne.
+- **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne. Die Schwellen sind je Übung und Stufe mit simulierten Spielern ermittelt (siehe „Austarieren“).
 - **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
 
 ## Vereinslogo
@@ -122,7 +148,8 @@ export default {
   hint: 'Ein Satz, worum es geht',
   duration: 60,             // Rundenlänge in Sekunden
   lives: 3,                 // optional: Leben, die App zeigt dann Herzen an
-  medals: [150, 300, 450],  // optional: Punkte für einen, zwei und drei Sterne
+  scale: 1,                 // Ausgleichsfaktor für die Punkte, setzt tools/balance.js
+  medals: [[100, 300, 500], [100, 300, 500], [100, 300, 500]], // Punkte für 1, 2, 3 Sterne je Stufe, setzt tools/balance.js
   icon(ctx, r) { /* Symbol fürs Menü um den Punkt (0, 0) zeichnen */ },
   create(env) {
     return {
@@ -137,7 +164,9 @@ export default {
 - Das Spielfeld ist immer 1000 Einheiten hoch und `env.field.w` breit.
 - `env.combo(n)` vergibt Punkte für eine gelungene Aktion und zählt für die Serie; es gibt die tatsächlich vergebenen Punkte zurück. `env.miss()` beendet die Serie.
 - `env.addScore(n)` vergibt Punkte ohne Serie, `env.loseLife()` zieht ein Leben ab, `env.addTime(s)` schenkt Zeit, `env.end()` beendet die Runde vorzeitig.
-- `env.stage` (0 bis 3) und `env.ramp` (1 bis 1,6) sagen, wie weit die Runde fortgeschritten ist. Damit wird ein Spiel nach und nach schwieriger.
+- `env.stage` (0 bis 3) sagt, wie weit die Runde fortgeschritten ist; `env.ramp` ist der passende Tempo-Faktor und berücksichtigt auch, wie gut es gerade läuft. Damit wird ein Spiel nach und nach schwieriger.
+- `env.say('Text')` liest etwas vor, `env.banner('Text')` blendet es groß ein.
+- Damit die Übung vorgemacht und austariert werden kann, braucht sie in `src/bots.js` einen Eintrag in `goals`: eine Funktion, die sagt, wo ein Spieler den Ball gerade hinhaben möchte.
 - Das Tempo muss ein Spiel nicht beachten: Die App lässt `dt` entsprechend schneller oder langsamer laufen.
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
 - `env.palette` liefert die vier Blautöne des Vereinsstils. Nur diese (und Weiß/Grau) für große Flächen verwenden: Orange, Gelb, Grün oder Pink könnte die Kamera für den Ball halten.
@@ -146,18 +175,39 @@ Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbi
 
 Die Schrift „Fredoka“ liegt unter `assets/fonts/` (SIL Open Font License).
 
+## Austarieren
+
+`tools/balance.js` lässt drei simulierte Spieler (Anfänger, mittel, stark) jede Übung auf jeder Stufe viele Male spielen.
+
+```bash
+node tools/balance.js
+```
+
+```bash
+node tools/balance.js --noise
+```
+
+```bash
+node tools/balance.js --write
+```
+
+Ohne Zusatz zeigt es die mittleren Punktzahlen. Mit `--noise` kommen Störungen dazu, wie sie eine echte Kamera liefert (Zittern, Verzögerung, kurze Aussetzer). Mit `--write` schreibt es für jede Übung den Ausgleichsfaktor `scale` (ein mittlerer Spieler landet auf „Mittel“ bei rund 1000 Punkten) und die Sterne-Schwellen `medals` in die Spieldateien. Nach Änderungen an einer Übung einmal mit `--write` laufen lassen.
+
+Die simulierten Spieler ermüden nicht und zögern nie. Die Schwellen liegen deshalb bewusst deutlich unter ihren Ergebnissen, bleiben aber eine Schätzung, bis echte Kinder gespielt haben.
+
 ## Tests
 
 ```bash
 npm test
 ```
 
-Die Tests prüfen die Rechenkerne (Kalibrierung, Ballerkennung) und spielen jedes Spiel auf jeder Stufe und in jedem Tempo einmal mit einem simulierten Ball durch.
+Die Tests prüfen die Rechenkerne (Kalibrierung, Ballerkennung, Profile und Abzeichen), spielen jedes Spiel auf jeder Stufe und in jedem Tempo durch und stellen sicher, dass jede Übung auch mit gestörtem Kamerabild spielbar bleibt.
 
 ## Bekannte Grenzen des Prototyps
 
 - Mit echter Hardware ist die Erkennung noch nicht erprobt. Farbiges Beamerlicht auf dem Ball kann dessen Farbe verfälschen; siehe „Wenn der Ball nicht zuverlässig erkannt wird“.
 - Die Anzeige läuft dem Ball um die Verzögerung von Kamera und Beamer hinterher (geschätzt etwa eine Zehntelsekunde). Bei schnellen Bewegungen sitzt der Ring deshalb etwas hinter dem Ball.
-- Punkte, Sterne-Schwellen und Geschwindigkeiten sind geschätzt und noch nicht mit Kindern erprobt.
+- Punkte, Sterne-Schwellen und Geschwindigkeiten beruhen auf simulierten Spielern und sind noch nicht mit Kindern erprobt.
+- Sprachansagen nutzen die Vorlesestimme des Browsers; wie sie klingt, hängt von Gerät und Browser ab.
 - Verzerrungen von Weitwinkel-Objektiven werden nicht korrigiert. Die Einrichtung zeigt nach der automatischen Kalibrierung die gemessene Abweichung an.
 - Steht der Beamer schräg, ist das Bild auf dem Boden ein Trapez. Die Ballposition stimmt trotzdem; für ein gerades Bild die Trapezkorrektur des Beamers nutzen.
