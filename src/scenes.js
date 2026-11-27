@@ -101,7 +101,7 @@ export class MenuScene extends ButtonScene {
     }));
   }
 
-  /** Was Skilli gerade sagt: wechselt alle paar Sekunden. */
+  /** Was der Trainer gerade sagt: wechselt alle paar Sekunden. */
   line() {
     const { app } = this;
     const p = app.profile;
@@ -135,8 +135,8 @@ export class MenuScene extends ButtonScene {
       b.draw(ctx);
       ctx.restore();
     });
-    mascot(ctx, 70, 945, 36, 'happy', this.time, this.look);
-    bubble(ctx, this.line(), 125, 925, 26);
+    mascot(ctx, 76, 918, 62, 'happy', this.time, this.look);
+    bubble(ctx, this.line(), 150, 900, 26);
   }
 }
 

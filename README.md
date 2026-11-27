@@ -67,7 +67,7 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 - **Die Welt blüht auf:** Mit steigender Serie wird der Hintergrund farbiger und lebendiger, nach einem Fehler verblasst er wieder.
 - **Farben nach Schwerpunkt:** Treffen ist Pink, Führen Grün, Wechsel Violett, Stoppen Türkis, Tricks Zitronengelb. Menü, Rahmen und Maskottchen bleiben blau-weiß.
 - **Musik:** Eine leise, im Browser erzeugte Begleitung, die mit der Serie schneller und voller wird.
-- **Skilli:** Das Maskottchen begrüßt im Menü und freut sich im Ergebnis mit.
+- **Der Trainer:** Die Comic-Figur unten links (graue Haare, Brille, weiße Vereinsjacke) begrüßt im Menü, blinzelt, winkt, schaut dem Ball nach und jubelt im Ergebnis mit. Sie ist in `src/characters.js` gezeichnet.
 
 Sprachansagen, Musik, Vormachen und Themenwelt lassen sich in der Einrichtung unter „Ton, Stimme und Aussehen“ abschalten oder einstellen.
 

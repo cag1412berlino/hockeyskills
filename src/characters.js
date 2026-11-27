@@ -1,5 +1,5 @@
 // Alle Figuren: freundliche Wesen und Sammelstücke der Themenwelten, die Bösewichte
-// und das Maskottchen Skilli.
+// und der Trainer als Maskottchen.
 import { theme, glow, noGlow, tone, star } from './draw.js';
 
 /** Zwei Augen, die in Richtung (lookX, lookY) schauen. */
@@ -389,41 +389,211 @@ export function villain(ctx, kind, x, y, r, time = 0, look = null, dir = 0) {
 }
 
 /**
- * Skilli, das Maskottchen: eine blaue Kugel mit weißem Stirnband.
- * mood: 'happy' = lächelt, 'cheer' = jubelt und hüpft, 'sad' = schaut betrübt.
+ * Der Trainer, das Maskottchen: eine Comic-Figur mit grauen Haaren, Brille und weißer
+ * Vereins-Trainingsjacke. Er atmet, blinzelt, schaut dem Ball nach und winkt ab und zu.
+ * mood: 'happy' = lächelt und winkt, 'cheer' = springt mit hochgerissenen Armen, 'sad' = lässt den Kopf hängen.
+ * (x, y) ist die Mitte der Figur, r ihre halbe Höhe.
  */
 export function mascot(ctx, x, y, r, mood = 'happy', time = 0, look = null) {
-  const hop = mood === 'cheer' ? -Math.abs(Math.sin(time * 7)) * r * 0.35 : Math.sin(time * 2) * r * 0.05;
-  const cy = y + hop;
-  // Schatten am Boden
+  const INK = '#141a33', SKIN = '#f4b892', SKIN_DARK = '#e39b76', HAIR = '#cfd4dc', HAIR_DARK = '#9aa2ae';
+  const JACKET = '#f7f9fd', JACKET_SHADE = '#dbe3f1', NAVY = '#1f2f6e', SHIRT = '#a8cdf0';
+  const cheer = mood === 'cheer', sad = mood === 'sad';
+  const jump = cheer ? Math.abs(Math.sin(time * 6)) : 0;                 // 0..1 in der Luft
+  const breathe = Math.sin(time * 2.4);
+  const lift = jump * r * 0.34;
+  const wave = !cheer && !sad && time % 6 < 1.6 ? Math.sin(time * 14) : null; // winkt alle sechs Sekunden kurz
+  const blink = (time + 0.3) % 3.7 < 0.13;
+
+  // Schatten am Boden (wird im Sprung kleiner)
   ctx.beginPath();
-  ctx.ellipse(x, y + r * 1.02, r * (0.75 + hop / r * 0.5), r * 0.14, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.ellipse(x, y + r * 1.02, r * (0.62 - jump * 0.2), r * 0.11, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.38)';
   ctx.fill();
-  orb(ctx, x, cy, r, 'hsl(212 90% 55%)');
-  // Stirnband
+
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, cy, r, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(x - r, cy - r * 0.62, r * 2, r * 0.24);
-  ctx.restore();
-  eyes(ctx, x, cy + r * 0.08, r, look?.x ?? x, look?.y ?? cy + (mood === 'sad' ? 10 : -10));
-  // Mund
-  ctx.strokeStyle = '#0a0a18';
-  ctx.lineWidth = r * 0.08;
+  ctx.translate(x, y + r * 0.94 - lift);
+  ctx.scale(r / 100, r / 100);       // ab hier: Figur 200 hoch, Füße bei y = 0
+  ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  const outline = (w = 6) => { ctx.lineWidth = w; ctx.strokeStyle = INK; ctx.stroke(); };
+  const fill = (color, w = 6) => { ctx.fillStyle = color; ctx.fill(); if (w) outline(w); };
+
+  // --- Beine (dunkelblaue Hose) und weiße Schuhe ---
+  for (const side of [-1, 1]) {
+    const kick = cheer ? side * 10 * jump : 0;
+    ctx.beginPath();
+    ctx.moveTo(side * 17, -52);
+    ctx.lineTo(side * 19 + kick, -12);
+    ctx.lineWidth = 27; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.lineWidth = 17; ctx.strokeStyle = NAVY; ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(side * 25 + kick, -6, 21, 11, 0, 0, Math.PI * 2);
+    fill('#ffffff', 5.5);
+  }
+
+  const top = -116 + breathe * 1.2 + (sad ? 4 : 0);   // Schulterhöhe
+  // Arm: Ärmel der Jacke mit blauem Streifen, hautfarbene Hand
+  const arm = (side, hx, hy) => {
+    const sx = side * 40, sy = top + 10;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo((sx + hx) / 2 + side * 12, (sy + hy) / 2, hx, hy);
+    ctx.lineWidth = 27; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.lineWidth = 17; ctx.strokeStyle = JACKET; ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = NAVY; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx, hy, 10.5, 0, Math.PI * 2);
+    fill(SKIN, 5);
+  };
+  // linker Arm (hinter dem Körper gezeichnet, wenn er hängt)
+  if (cheer) arm(-1, -72, top - 54 + Math.sin(time * 12) * 4);
+  else arm(-1, -52, top + (sad ? 58 : 52));
+
+  // --- Jacke ---
   ctx.beginPath();
-  if (mood === 'cheer') {
-    ctx.ellipse(x, cy + r * 0.5, r * 0.2, r * 0.17, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#0a0a18';
-    ctx.fill();
-  } else if (mood === 'sad') {
-    ctx.arc(x, cy + r * 0.68, r * 0.24, Math.PI * 1.2, Math.PI * 1.8);
-    ctx.stroke();
+  ctx.moveTo(-40, top + 4);
+  ctx.quadraticCurveTo(0, top - 12, 40, top + 4);
+  ctx.quadraticCurveTo(52, top + 40, 46, -46);
+  ctx.quadraticCurveTo(0, -38, -46, -46);
+  ctx.quadraticCurveTo(-52, top + 40, -40, top + 4);
+  ctx.closePath();
+  fill(JACKET);
+  ctx.save();
+  ctx.clip();
+  // Schatten rechts und blaue Schulterstreifen
+  ctx.fillStyle = JACKET_SHADE;
+  ctx.beginPath(); ctx.ellipse(54, -70, 26, 60, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = NAVY; ctx.lineWidth = 4.5;
+  for (const side of [-1, 1]) {
+    for (const k of [0, 8]) {
+      ctx.beginPath(); ctx.moveTo(side * (16 + k), top - 6); ctx.lineTo(side * (44 + k), top + 12); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // hellblaues Hemd im offenen Kragen
+  ctx.beginPath();
+  ctx.moveTo(-13, top - 2); ctx.lineTo(0, top + 30); ctx.lineTo(13, top - 2); ctx.closePath();
+  fill(SHIRT, 4.5);
+  // Reißverschluss und Kragen der Jacke
+  ctx.beginPath(); ctx.moveTo(0, top + 30); ctx.lineTo(0, -44);
+  ctx.lineWidth = 3; ctx.strokeStyle = HAIR_DARK; ctx.stroke();
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(side * 22, top - 6); ctx.lineTo(side * 2, top + 30); ctx.lineTo(side * 20, top + 20); ctx.closePath();
+    fill(JACKET, 4.5);
+  }
+  // Vereinswappen auf der Brust
+  ctx.save();
+  ctx.translate(24, top + 46);
+  ctx.beginPath(); ctx.arc(0, 0, 11.5, 0, Math.PI * 2); fill('#1e7fe0', 3.5);
+  ctx.beginPath(); ctx.arc(0, 0, 6.5, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 6.5, Math.PI * 0.75, Math.PI * 1.75); ctx.closePath(); ctx.fillStyle = '#8fb8ee'; ctx.fill();
+  ctx.restore();
+
+  // --- Kopf ---
+  const headY = top - 40 + (sad ? 5 : 0) + (cheer ? -2 : 0);
+  ctx.save();
+  ctx.translate(0, headY);
+  ctx.rotate(sad ? 0.08 : wave !== null ? wave * 0.03 : Math.sin(time * 1.3) * 0.025);
+  // Ohren
+  for (const side of [-1, 1]) {
+    ctx.beginPath(); ctx.ellipse(side * 43, 4, 8, 11, 0, 0, Math.PI * 2); fill(SKIN, 5);
+  }
+  // Graue Haare an den Seiten und hinten
+  ctx.beginPath();
+  ctx.moveTo(-45, 4);
+  ctx.bezierCurveTo(-54, -34, -30, -56, 0, -54);
+  ctx.bezierCurveTo(30, -56, 54, -34, 45, 4);
+  ctx.bezierCurveTo(40, -18, 26, -30, 0, -30);
+  ctx.bezierCurveTo(-26, -30, -40, -18, -45, 4);
+  ctx.closePath();
+  fill(HAIR, 5.5);
+  // Gesicht
+  ctx.beginPath();
+  ctx.moveTo(-40, -8);
+  ctx.bezierCurveTo(-40, -48, 40, -48, 40, -8);
+  ctx.bezierCurveTo(42, 22, 24, 44, 0, 44);
+  ctx.bezierCurveTo(-24, 44, -42, 22, -40, -8);
+  ctx.closePath();
+  fill(SKIN);
+  // Hohe Stirn mit lichtem grauem Haar oben, dazu zwei Stirnfalten
+  ctx.beginPath();
+  ctx.moveTo(-22, -39);
+  ctx.bezierCurveTo(-10, -47, 12, -47, 24, -38);
+  ctx.bezierCurveTo(10, -41, -8, -41, -22, -39);
+  ctx.closePath();
+  fill(HAIR, 3.5);
+  ctx.lineWidth = 2.5; ctx.strokeStyle = SKIN_DARK;
+  ctx.beginPath(); ctx.moveTo(-14, -30); ctx.quadraticCurveTo(0, -33, 14, -30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-10, -24); ctx.quadraticCurveTo(0, -26, 10, -24); ctx.stroke();
+  // Bäckchen
+  for (const side of [-1, 1]) {
+    ctx.beginPath(); ctx.ellipse(side * 25, 15, 9, 6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(232,110,90,0.4)'; ctx.fill();
+  }
+  // Augen hinter der Brille
+  const lx = look ? Math.max(-1, Math.min(1, (look.x - x) / (r * 4))) : 0;
+  const ly = look ? Math.max(-1, Math.min(1, (look.y - (y - lift)) / (r * 4))) : sad ? 0.8 : 0;
+  for (const side of [-1, 1]) {
+    const ex = side * 18, ey = -1;
+    if (blink || (cheer && jump > 0.5)) {
+      ctx.beginPath(); ctx.arc(ex, ey + 4, 8, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.lineWidth = 4.5; ctx.strokeStyle = INK; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.ellipse(ex, ey, 9, 8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.beginPath(); ctx.arc(ex + lx * 3.5, ey + ly * 2.5, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#4a3222'; ctx.fill();
+      ctx.beginPath(); ctx.arc(ex + lx * 3.5 - 1.6, ey + ly * 2.5 - 1.8, 1.7, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff'; ctx.fill();
+    }
+    // Augenbrauen (grau, kräftig)
+    const tilt = sad ? side * 5 : cheer ? -side * 2 : -side * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ex - 11, -18 - tilt - (cheer ? 3 : 0)); ctx.lineTo(ex + 11, -18 + tilt - (cheer ? 3 : 0));
+    ctx.lineWidth = 5; ctx.strokeStyle = '#6d7480'; ctx.stroke();
+  }
+  // Brille: zwei eckige Gläser mit Steg und Bügeln
+  ctx.lineWidth = 5; ctx.strokeStyle = INK;
+  for (const side of [-1, 1]) {
+    ctx.beginPath(); ctx.roundRect(side * 18 - 14.5, -12, 29, 21, 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(side * 32.5, -5); ctx.lineTo(side * 42, -3); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(-3.5, -4); ctx.lineTo(3.5, -4); ctx.stroke();
+  // Nase
+  ctx.beginPath(); ctx.moveTo(-3, 6); ctx.quadraticCurveTo(-9, 18, 2, 19);
+  ctx.lineWidth = 4; ctx.strokeStyle = SKIN_DARK; ctx.stroke();
+  // Mund
+  ctx.beginPath();
+  if (cheer) {
+    ctx.moveTo(-15, 25); ctx.quadraticCurveTo(0, 46, 15, 25); ctx.closePath();
+    fill('#7a2a2a', 4.5);
+    ctx.beginPath(); ctx.moveTo(-11, 27); ctx.lineTo(11, 27);
+    ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+  } else if (sad) {
+    ctx.arc(0, 38, 11, Math.PI * 1.2, Math.PI * 1.8);
+    ctx.lineWidth = 4.5; ctx.strokeStyle = INK; ctx.stroke();
   } else {
-    ctx.arc(x, cy + r * 0.34, r * 0.28, Math.PI * 0.15, Math.PI * 0.85);
-    ctx.stroke();
+    // breites Lächeln mit Zähnen
+    ctx.moveTo(-15, 25); ctx.quadraticCurveTo(0, 30, 15, 25); ctx.quadraticCurveTo(0, 41, -15, 25); ctx.closePath();
+    fill('#ffffff', 4);
+  }
+  ctx.restore();
+
+  // --- rechter Arm: winkt, jubelt oder hängt ---
+  if (cheer) arm(1, 72, top - 54 - Math.sin(time * 12) * 4);
+  else if (wave !== null) arm(1, 70 + wave * 8, top - 32);
+  else arm(1, 52, top + (sad ? 58 : 52));
+
+  ctx.restore();
+
+  // Funkeln beim Jubeln
+  if (cheer) {
+    for (let i = 0; i < 3; i++) {
+      const a = time * 3 + i * 2.1, d = r * (1.15 + 0.15 * Math.sin(time * 5 + i));
+      const sx = x + Math.cos(a) * d, sy = y - r * 0.3 - lift * 0.5 + Math.sin(a) * d * 0.6, k = r * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(sx - k, sy); ctx.lineTo(sx + k, sy); ctx.moveTo(sx, sy - k); ctx.lineTo(sx, sy + k);
+      ctx.lineWidth = Math.max(1.5, r * 0.04); ctx.lineCap = 'round'; ctx.strokeStyle = '#fff3a0'; ctx.stroke();
+    }
   }
 }
