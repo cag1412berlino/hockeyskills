@@ -14,7 +14,8 @@ const LEVELS = {
   2: { speed: 300, every: 1.45, walls: 0.3, gap: 300 },
   3: { speed: 380, every: 1.1, walls: 0.45, gap: 230 },
 };
-export const ZONE = { top: 740, bottom: 960 };     // hier unten muss der Ball bleiben
+// hier unten muss der Ball bleiben – mit Abstand zum Feldrand, damit er nicht aus dem Bild der Kamera rollt
+export const ZONE = { top: 680, bottom: 900 };
 const MATS = ['stone', 'brick', 'ice', 'fire', 'wood'];
 
 class Rain {
@@ -78,7 +79,7 @@ class Rain {
     fx.update(dt);
     show.update(dt);
     // Raus aus der Zone (nach oben) kostet: rot blinken und steigender Abzug
-    this.guard.update(dt, ball.visible && ball.y < ZONE.top - BALL_RADIUS, env, fx, ball);
+    this.guard.update(dt, ball.visible && (ball.y < ZONE.top - BALL_RADIUS || ball.y > ZONE.bottom + BALL_RADIUS * 1.5), env, fx, ball);
 
     this.next -= dt;
     if (this.next <= 0) {
@@ -144,7 +145,7 @@ class Rain {
     ctx.lineWidth = 4;
     ctx.setLineDash([24, 18]);
     ctx.lineDashOffset = -this.time * 40;
-    ctx.beginPath(); ctx.moveTo(0, ZONE.top); ctx.lineTo(field.w, ZONE.top); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, ZONE.top); ctx.lineTo(field.w, ZONE.top); ctx.moveTo(0, ZONE.bottom); ctx.lineTo(field.w, ZONE.bottom); ctx.stroke();
     ctx.setLineDash([]);
     // Schatten auf der Zone: wo gleich etwas einschlägt (hilft beim Ausweichen)
     for (const it of this.items) {

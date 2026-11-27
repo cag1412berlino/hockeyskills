@@ -323,7 +323,7 @@ export class BallTracker {
   /** Ausschnitt um das Spielfeld (mit Rand), auf ganze Kamerabild-Grenzen beschnitten. */
   fieldCrop() {
     const xs = this.regionPoints.map((p) => p.x), ys = this.regionPoints.map((p) => p.y);
-    const m = 0.03;
+    const m = 0.05;
     const x0 = Math.max(0, Math.min(...xs) - m), y0 = Math.max(0, Math.min(...ys) - m);
     const x1 = Math.min(1, Math.max(...xs) + m), y1 = Math.min(1, Math.max(...ys) + m);
     // auf feste Schritte runden, damit der Ausschnitt nicht bei jedem Bild minimal anders ist

@@ -80,7 +80,8 @@ function updateRegion() {
   if (!back) return tracker.setRegion(null);
   const c = engine.fieldCorners();
   const mx = (c[0].x + c[2].x) / 2, my = (c[0].y + c[2].y) / 2;
-  tracker.setRegion(c.map((p) => applyHomography(back, mx + (p.x - mx) * 1.1, my + (p.y - my) * 1.1)));
+  // mit gut 15 % Rand: Ein Ball knapp außerhalb des Felds wird weiter verfolgt
+  tracker.setRegion(c.map((p) => applyHomography(back, mx + (p.x - mx) * 1.16, my + (p.y - my) * 1.16)));
 }
 
 /** Der Test-Ball wird etwas dunkler gemalt als die reine Ballfarbe, damit die Kamera ihn nicht überbelichtet. */

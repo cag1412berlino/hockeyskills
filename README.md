@@ -129,7 +129,7 @@ Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geh
 
 ## Steinschlag
 
-Neue Übung im Schwerpunkt **Wechsel**: Der Ball bleibt unten in der markierten Zone, von oben fallen Felsbrocken, Mauern, Eisblöcke, Holzkisten und Feuer – mal klein (ein kurzer Schritt reicht), mal riesig (quer über das halbe Feld ziehen). Ab „Mittel“ kommen Mauern über die ganze Breite mit einer Lücke, abwechselnd links und rechts vom Ball – so wechselt man ständig zwischen Vor- und Rückhand. Ein Schatten auf der Zone zeigt, wo gleich etwas einschlägt. Ausweichen gibt Punkte (knapp vorbei mehr), Treffer kosten ein Herz, wer die Zone nach oben verlässt, bekommt die rote Warnung mit steigendem Abzug. Als einzelne Übung läuft Steinschlag endlos mit drei Herzen und wird immer schneller.
+Neue Übung im Schwerpunkt **Wechsel**: Der Ball bleibt unten in der markierten Zone (mit etwas Abstand zum Feldrand, damit er nicht aus dem Kamerabild rollt), von oben fallen Felsbrocken, Mauern, Eisblöcke, Holzkisten und Feuer – mal klein (ein kurzer Schritt reicht), mal riesig (quer über das halbe Feld ziehen). Ab „Mittel“ kommen Mauern über die ganze Breite mit einer Lücke, abwechselnd links und rechts vom Ball – so wechselt man ständig zwischen Vor- und Rückhand. Ein Schatten auf der Zone zeigt, wo gleich etwas einschlägt. Ausweichen gibt Punkte (knapp vorbei mehr), Treffer kosten ein Herz, wer die Zone nach oben verlässt, bekommt die rote Warnung mit steigendem Abzug. Als einzelne Übung läuft Steinschlag endlos mit drei Herzen und wird immer schneller.
 
 ## Tricktrainer: Themen und Dauertraining
 
