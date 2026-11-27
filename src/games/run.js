@@ -1,190 +1,217 @@
-// Spiel "Rennen": Die Strecke läuft ununterbrochen von oben nach unten durchs Feld.
-// Der Ball muss auf der Bahn bleiben, die weit nach links und rechts ausschwenkt.
-// Sterne bringen Punkte, ab "Mittel" liegen Stachelbälle auf der Bahn.
+// Spiel "Rennen": Die Bahn läuft ununterbrochen von oben nach unten durchs Feld.
+// Sie besteht aus Kurven, harten Schnitten nach links und rechts und Rückziehern,
+// bei denen es ein Stück zurückgeht – wie die Richtungswechsel beim Hockey.
+// Auf der Bahn bleiben bringt Punkte, Sterne an den Ecken bringen Serien.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow, hazard, star } from '../ui.js';
+import { glow, noGlow, hazard, star, tone } from '../ui.js';
+import { Fx } from './common.js';
 
 const LEVELS = {
-  1: { width: 250, speed: 130, seg: 460, swing: 0.6, hazards: 0 },
-  2: { width: 195, speed: 190, seg: 380, swing: 0.85, hazards: 3 }, // Stachelball in jedem 3. Abschnitt
-  3: { width: 155, speed: 250, seg: 320, swing: 1, hazards: 2 },
+  //            Bahnbreite, Tempo, Anteil harter Schnitte, Anteil Rückzieher, Stachelbälle
+  1: { width: 240, speed: 120, cut: 0.25, back: 0.0, hazards: 0 },
+  2: { width: 190, speed: 165, cut: 0.35, back: 0.15, hazards: 0.3 },
+  3: { width: 155, speed: 210, cut: 0.4, back: 0.25, hazards: 0.45 },
 };
+
+/** Abstand von Punkt p zur Strecke a-b. */
+function segDist(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
 
 class Run {
   constructor(env) {
     this.env = env;
     this.p = LEVELS[env.level];
-    this.scroll = 0;     // bisher zurückgelegte Strecke
+    this.scroll = 0;   // bisher zurückgelegte Strecke
     this.time = 0;
-    this.points = [];    // Mitte der Bahn an den Stützstellen
-    this.items = new Map();
+    // Die Bahn als Punktfolge. d = Position in Laufrichtung (wächst nach vorn), x = seitlich.
+    this.pts = [{ x: env.field.w / 2, d: -1100 }, { x: env.field.w / 2, d: 500 }];
+    this.items = [];   // Sterne, Stachelbälle und Pfeile an der Bahn
     this.onTrack = false;
-    this.streak = 0;     // Sekunden ohne Unterbrechung auf der Bahn
-    this.acc = 0;
     this.offFor = 0;
+    this.acc = 0;
     this.hurt = 0;
-    this.flash = 0;
-    this.side = Math.random() < 0.5 ? 1 : -1;
-    this.floaters = [];
+    this.fx = new Fx();
   }
 
-  /** Mitte der Bahn an Stützstelle i. Am Anfang gerade, danach abwechselnd weit nach links und rechts. */
-  point(i) {
+  get end() { return this.pts[this.pts.length - 1]; }
+
+  /** Seitliches Ziel für das nächste Stück: bevorzugt zur anderen Feldseite. */
+  sideways(min, max) {
     const { field } = this.env;
-    if (i <= 1) return field.w / 2;
-    while (this.points.length <= i) {
-      const room = field.w / 2 - this.p.width / 2 - 30;
-      this.side *= Math.random() < 0.8 ? -1 : 1;
-      this.points.push(field.w / 2 + this.side * room * this.p.swing * (0.45 + Math.random() * 0.55));
-    }
-    return this.points[i];
+    const room = this.p.width / 2 + 40;
+    const { x } = this.end;
+    let dir = x > field.w / 2 ? -1 : 1;
+    if (Math.random() < 0.2) dir *= -1;
+    let nx = x + dir * (min + Math.random() * (max - min));
+    if (nx < room || nx > field.w - room) nx = x - dir * (min + Math.random() * (max - min));
+    return Math.max(room, Math.min(field.w - room, nx));
   }
 
-  /** Mitte der Bahn bei Streckenposition d. */
-  center(d) {
-    const i = Math.floor(d / this.p.seg);
-    const t = d / this.p.seg - i;
-    const a = this.point(i), b = this.point(i + 1);
-    return a + (b - a) * t * t * (3 - 2 * t);
-  }
-
-  /** Stern und eventuell Stachelball im Abschnitt i. */
-  item(i) {
-    if (i < 2) return null;
-    if (!this.items.has(i)) {
-      const s = Math.random() < 0.5 ? 1 : -1;
-      this.items.set(i, {
-        d: i * this.p.seg, // am Wendepunkt, dort verläuft die Bahn gerade
-        starOff: s * this.p.width * 0.24,
-        hazOff: this.p.hazards && i % this.p.hazards === 0 ? -s * this.p.width * 0.27 : null,
-        taken: false,
-      });
+  /** Hängt das nächste Stück Bahn an. */
+  extend() {
+    const { env, p } = this;
+    const { x, d } = this.end;
+    const roll = Math.random();
+    const harder = 0.04 * env.stage; // mit jeder Stufe mehr harte Wechsel
+    if (roll < p.back + harder) {
+      // Rückzieher: schräg ein Stück zurück, dann geht es weiter nach vorn
+      const nx = this.sideways(p.width * 1.5, p.width * 2);
+      const back = 110 + Math.random() * 70;
+      this.pts.push({ x: nx, d: d - back }, { x: nx, d: d + p.width + 120 });
+      this.items.push({ kind: 'arrow', x: (x + nx) / 2, d: d - back / 2, a: Math.atan2(back, nx - x) });
+      this.items.push({ kind: 'star', x: nx, d: d - back });
+    } else if (roll < p.back + p.cut + harder * 2) {
+      // Harter Schnitt: genau quer, dann geradeaus weiter
+      const nx = this.sideways(p.width * 1.6, 420 + 60 * env.level);
+      this.pts.push({ x: nx, d }, { x: nx, d: d + p.width + 160 });
+      this.items.push({ kind: 'arrow', x: (x + nx) / 2, d, a: nx > x ? 0 : Math.PI });
+      this.items.push({ kind: 'star', x: nx, d });
+    } else {
+      // Weiche Kurve
+      const nx = this.sideways(150, 420);
+      const len = 300 + Math.random() * 160;
+      for (let i = 1; i <= 10; i++) {
+        const t = i / 10;
+        this.pts.push({ x: x + (nx - x) * t * t * (3 - 2 * t), d: d + len * t });
+      }
+      if (Math.random() < 0.5) this.items.push({ kind: 'star', x: nx, d: d + len });
     }
-    return this.items.get(i);
-  }
-
-  visibleItems() {
-    const { field } = this.env;
-    const out = [];
-    const first = Math.floor((this.scroll - field.h) / this.p.seg) - 1;
-    const last = Math.floor(this.scroll / this.p.seg) + 1;
-    for (let i = first; i <= last; i++) {
-      const it = this.item(i);
-      if (it) out.push({ it, y: this.scroll - it.d, cx: this.center(it.d) });
+    // Gerades Zwischenstück, darauf manchmal ein Stachelball am Rand
+    const e = this.end;
+    this.pts.push({ x: e.x, d: e.d + p.width + 60 });
+    if (Math.random() < p.hazards) {
+      const side = Math.random() < 0.5 ? 1 : -1;
+      this.items.push({ kind: 'hazard', x: e.x + side * p.width * 0.27, d: e.d + p.width / 2 + 30 });
     }
-    return out;
   }
 
   update(dt, ball) {
-    const { env, p } = this;
+    const { env, p, fx } = this;
+    const { field } = env;
     this.time += dt;
     this.hurt = Math.max(0, this.hurt - dt);
-    this.flash = Math.max(0, this.flash - dt);
-    for (const f of this.floaters) f.age += dt;
-    this.floaters = this.floaters.filter((f) => f.age < 1);
+    this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
+    fx.update(dt);
 
-    this.scroll += p.speed * (1 + 0.35 * Math.min(1, this.time / 60)) * dt;
+    this.scroll += p.speed * env.ramp * dt;
+    while (this.end.d < this.scroll + 300) this.extend();
+    // Was unten aus dem Bild gelaufen ist, wird vergessen.
+    while (this.pts.length > 2 && this.pts[1].d < this.scroll - field.h - 400) this.pts.shift();
+    this.items = this.items.filter((it) => !it.gone && it.d > this.scroll - field.h - 100);
+
+    // Bildschirm-Koordinaten der Bahn (y wächst nach unten, die Bahn läuft auf den Spieler zu)
+    this.screen = this.pts.map((q) => ({ x: q.x, y: this.scroll - q.d }));
 
     const was = this.onTrack;
-    this.onTrack = ball.visible && Math.abs(ball.x - this.center(this.scroll - ball.y)) < p.width / 2;
+    this.onTrack = false;
+    if (ball.visible) {
+      for (let i = 1; i < this.screen.length; i++) {
+        if (segDist(ball, this.screen[i - 1], this.screen[i]) < p.width / 2) { this.onTrack = true; break; }
+      }
+    }
     if (this.onTrack) {
       this.offFor = 0;
-      this.streak += dt;
-      // Je länger ohne Unterbrechung auf der Bahn, desto höher der Multiplikator.
-      this.acc += dt * 3 * this.multiplier();
-      while (this.acc >= 1) { this.acc -= 1; env.addScore(1); }
+      this.acc += dt * 3;
+      while (this.acc >= 1) { this.acc -= 1; env.addScore(env.mult); }
     } else {
       this.offFor += dt;
-      if (this.offFor > 0.4) this.streak = 0;
+      // Kurz daneben ist verziehen, länger daneben kostet die Serie.
+      if (this.offFor > 0.5 && ball.visible) env.miss();
       if (was && ball.visible) env.sound.tick();
     }
     if (!ball.visible) return;
 
-    for (const { it, y, cx } of this.visibleItems()) {
-      if (!it.taken && Math.hypot(ball.x - (cx + it.starOff), ball.y - y) < 42 + BALL_RADIUS) {
-        it.taken = true;
-        env.addScore(10);
-        env.sound.pop(this.multiplier());
-        this.floaters.push({ x: ball.x, y: ball.y, age: 0, str: '+10', color: env.palette[1] });
-      }
-      if (it.hazOff != null && this.hurt <= 0 && Math.hypot(ball.x - (cx + it.hazOff), ball.y - y) < 24 + BALL_RADIUS * 0.5) {
+    for (const it of this.items) {
+      const y = this.scroll - it.d;
+      const dist = Math.hypot(ball.x - it.x, ball.y - y);
+      if (it.kind === 'star' && dist < 44 + BALL_RADIUS) {
+        it.gone = true;
+        const points = env.combo(10, 5);
+        env.sound.pop(env.mult);
+        fx.text(it.x, y, `+${points}`, env.palette[1], 50 + env.mult * 8);
+        fx.burst(it.x, y, env.palette[1], 14);
+      } else if (it.kind === 'hazard' && this.hurt <= 0 && dist < 26 + BALL_RADIUS * 0.5) {
         env.addScore(-15);
+        env.miss();
         env.sound.bad();
+        env.shake(18);
         this.hurt = 1.2;
-        this.flash = 0.4;
-        this.streak = 0;
-        this.floaters.push({ x: ball.x, y: ball.y, age: 0, str: '-15' });
+        fx.flash(0.35);
+        fx.text(ball.x, ball.y, '-15');
       }
     }
   }
 
-  multiplier() {
-    return Math.min(5, 1 + Math.floor(this.streak / 4));
+  trace(ctx) {
+    ctx.beginPath();
+    for (const q of this.screen) ctx.lineTo(q.x, q.y);
   }
 
   draw(ctx) {
     const { env, p } = this;
     const { field } = env;
     const [c0, c1, c2] = env.palette;
-    const half = p.width / 2;
+    if (!this.screen) return;
 
     // Querstreifen, die mitlaufen: so sieht man, dass es ständig vorangeht.
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let y = this.scroll % 125; y < field.h; y += 125) { ctx.moveTo(0, y); ctx.lineTo(field.w, y); }
     ctx.stroke();
 
-    // Bahn als Fläche mit leuchtenden Rändern
-    const ys = [];
-    for (let y = -20; y <= field.h + 20; y += 20) ys.push(y);
-    const cx = ys.map((y) => this.center(this.scroll - y));
-    ctx.beginPath();
-    ys.forEach((y, i) => ctx.lineTo(cx[i] - half, y));
-    for (let i = ys.length - 1; i >= 0; i--) ctx.lineTo(cx[i] + half, ys[i]);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,0.09)';
-    ctx.fill();
-
+    // Bahn: erst breit in Leuchtfarbe, dann etwas schmaler dunkel darüber – übrig bleiben die Ränder.
     const off = !this.onTrack && Math.floor(this.time * 6) % 2 === 0;
     const edge = this.onTrack ? c0 : off ? '#fff' : c2;
-    ctx.lineWidth = 6;
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    this.trace(ctx);
+    ctx.lineWidth = p.width + 10;
     ctx.strokeStyle = edge;
-    glow(ctx, edge, 22);
-    for (const s of [-1, 1]) {
-      ctx.beginPath();
-      ys.forEach((y, i) => ctx.lineTo(cx[i] + s * half, y));
-      ctx.stroke();
-    }
+    glow(ctx, edge, 26);
+    ctx.stroke();
     noGlow(ctx);
-
+    ctx.lineWidth = p.width;
+    ctx.strokeStyle = tone(c2, 9, 60);
+    ctx.stroke();
     // Mittelstreifen
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    for (let d = Math.ceil((this.scroll - field.h) / 80) * 80; d < this.scroll; d += 80) {
-      ctx.fillRect(this.center(d) - 3, this.scroll - d - 14, 6, 28);
-    }
+    ctx.setLineDash([26, 40]);
+    ctx.lineDashOffset = 0;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-    for (const { it, y, cx: x } of this.visibleItems()) {
-      if (!it.taken) {
+    for (const it of this.items) {
+      const y = this.scroll - it.d;
+      if (y < -80 || y > field.h + 80) continue;
+      if (it.kind === 'star') {
         glow(ctx, c1, 20);
-        star(ctx, x + it.starOff, y, 40, c1, this.time * 2);
+        star(ctx, it.x, y, 34 + 4 * Math.sin(this.time * 6 + it.d), tone(c1, 68), this.time * 2);
         noGlow(ctx);
+      } else if (it.kind === 'hazard') {
+        hazard(ctx, it.x, y, 32, this.time * 2, this.look);
+      } else {
+        // Pfeile zeigen die Richtung bei harten Wechseln
+        ctx.save();
+        ctx.translate(it.x, y);
+        ctx.rotate(it.a);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 7;
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(this.time * 8);
+        for (const o of [-22, 8]) {
+          ctx.beginPath();
+          ctx.moveTo(o, -20); ctx.lineTo(o + 20, 0); ctx.lineTo(o, 20);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
-      if (it.hazOff != null) hazard(ctx, x + it.hazOff, y, 30, this.time * 2);
     }
-
-    const m = this.multiplier();
-    if (m > 1) text(ctx, `x${m}`, 30, 175, 60, c1, 'left');
-    for (const f of this.floaters) {
-      ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 60 - f.age * 100, 60, f.color ?? '#fff');
-    }
-    ctx.globalAlpha = 1;
-    if (this.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${this.flash})`;
-      ctx.fillRect(0, 0, field.w, field.h);
-    }
+    this.fx.draw(ctx, field);
   }
 }
 
@@ -192,6 +219,7 @@ export default {
   id: 'run',
   name: 'Rennen',
   duration: 60,
+  medals: [150, 300, 480],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

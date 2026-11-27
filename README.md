@@ -2,24 +2,27 @@
 
 Interaktive Hockey-Übungen als Videospiel auf dem Fußboden: Ein Beamer projiziert das Spielfeld auf den Boden, eine Webcam filmt es, und die App erkennt den Hockeyball. Kinder steuern die Spiele mit Schläger und Ball.
 
-Stand: Prototyp mit Kalibrierung, Ballerkennung und sechs Spielen im Arcade-Look.
+Stand: Prototyp mit Kalibrierung, Ballerkennung und sechs Spielen.
 
 ## Spiele
 
-| Spiel | Worum es geht |
-| --- | --- |
-| **Ziele** | Leuchtende Ziele treffen. Je schneller nach dem Auftauchen, desto mehr Punkte (10 bis 20). |
-| **Wolke** | Ein Ziel treffen, aber um die Gewitterwolke herumdribbeln. Die Wolke pendelt (Mittel) oder stellt sich in den Weg (Schwer). |
-| **Rennen** | Die Bahn läuft ununterbrochen durchs Feld und schwenkt weit nach links und rechts. Auf der Bahn bleiben, Sterne sammeln; wer lange ohne Fehler bleibt, bekommt einen Multiplikator bis x5. |
-| **Linie** | Den Ball an einer geschwungenen Linie entlangführen. Ab Mittel pendeln Stachelbälle über die Linie. |
-| **Slalom** | Der Reihe nach durch die Tore. Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. |
-| **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. |
+| Spiel | Worum es geht | Besonderheiten |
+| --- | --- | --- |
+| **Ziele** | Leuchtende Kugeln treffen. Je schneller nach dem Auftauchen, desto mehr Punkte (10 bis 20). | Doppel-Kugeln zerfallen in zwei kleine, die Uhr schenkt 5 Sekunden, Stachelbälle kosten Punkte. |
+| **Wolke** | Ein Ziel treffen, aber um die Gewitterwolke herumdribbeln. | Die Wolke verändert ständig ihre Form und Größe. Sie pendelt (Mittel) oder stellt sich in den Weg (Schwer). Später wandert das Ziel und eine zweite kleine Wolke kreist. |
+| **Rennen** | Die Bahn läuft ununterbrochen durchs Feld. Auf der Bahn bleiben und Sterne an den Ecken sammeln. | Kurven, harte Schnitte nach links und rechts und Rückzieher, bei denen es ein Stück zurückgeht. |
+| **Linie** | Den Ball an einer geschwungenen Linie entlangführen. | Am Stopp-Punkt muss der Ball kurz ruhig liegen. Ab Mittel pendeln Stachelbälle über die Linie. |
+| **Slalom** | Der Reihe nach durch die Tore. | Ab Mittel kosten berührte Pfosten Punkte, auf Schwer bewegen sich die Tore. Später gibt es ein schmales Bonus-Tor. |
+| **Ausweichen** | Sterne sammeln und Stachelbällen ausweichen. Drei Leben. | Der Schild fängt einen Treffer ab, die Schneeflocke bremst alles. Später fliegen Stachelbälle im Zickzack. |
 
 Für alle Spiele gilt:
 
-- Weiße Stachelbälle und Wolken bedeuten Gefahr und kosten Punkte oder Leben.
-- In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit aus dem Kreis heraus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
-- Im Bildschirm „Stufe wählen“ schaltet der Button unten rechts das **Tempo** um: Langsam, Normal, Schnell. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
+- **Gefahr** ist immer weißgrau mit bösem Blick (Stachelbälle, Wolken) und kostet Punkte oder Leben.
+- **Serie:** Drei schnelle Treffer hintereinander verdoppeln die Punkte (x2), sechs geben x3, zehn x4. Ein Ring neben dem Punktestand zeigt, wie lange die Serie noch hält. Ein Fehler beendet sie.
+- **Es wird schwieriger:** Jede Runde hat vier Abschnitte (Striche im Zeitbalken). Mit jedem Abschnitt wird das Spiel etwas schneller, enger oder bekommt ein neues Element.
+- **Stoppzone:** In „Ziele“ und „Wolke“ erscheint nach jedem Treffer kurz ein gestrichelter Kreis. Rollt der Ball in dieser Zeit hinaus, gibt es 5 Minuspunkte („Zu weit“). Das belohnt Ballkontrolle.
+- **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne.
+- **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
 
 ## Starten
 
@@ -61,7 +64,7 @@ Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Tas
 
 ## Ein neues Spiel hinzufügen
 
-Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` eingetragen. `src/games/targets.js` dient als Vorlage, `src/games/common.js` enthält Bausteine für mehrere Spiele (Stoppzone, Explosion).
+Jedes Spiel ist eine Datei in `src/games/` und wird in `src/games/index.js` eingetragen. `src/games/targets.js` dient als Vorlage, `src/games/common.js` enthält Bausteine für mehrere Spiele (Effekte, Stoppzone).
 
 ```js
 export default {
@@ -69,6 +72,7 @@ export default {
   name: 'Mein Spiel',       // Anzeige im Menü
   duration: 60,             // Rundenlänge in Sekunden
   lives: 3,                 // optional: Leben, die App zeigt dann Herzen an
+  medals: [150, 300, 450],  // optional: Punkte für einen, zwei und drei Sterne
   icon(ctx, r) { /* Symbol fürs Menü um den Punkt (0, 0) zeichnen */ },
   create(env) {
     return {
@@ -81,14 +85,16 @@ export default {
 
 - `ball` enthält `x`, `y`, `vx`, `vy` und `visible`.
 - Das Spielfeld ist immer 1000 Einheiten hoch und `env.field.w` breit.
-- `env.addScore(n)` vergibt Punkte, `env.loseLife()` zieht ein Leben ab, `env.end()` beendet die Runde vorzeitig.
+- `env.combo(n)` vergibt Punkte für eine gelungene Aktion und zählt für die Serie; es gibt die tatsächlich vergebenen Punkte zurück. `env.miss()` beendet die Serie.
+- `env.addScore(n)` vergibt Punkte ohne Serie, `env.loseLife()` zieht ein Leben ab, `env.addTime(s)` schenkt Zeit, `env.end()` beendet die Runde vorzeitig.
+- `env.stage` (0 bis 3) und `env.ramp` (1 bis 1,6) sagen, wie weit die Runde fortgeschritten ist. Damit wird ein Spiel nach und nach schwieriger.
 - Das Tempo muss ein Spiel nicht beachten: Die App lässt `dt` entsprechend schneller oder langsamer laufen.
 - `env.level` ist 1 bis 3, `env.sound` spielt Töne.
 - `env.palette` liefert Farben, die sich deutlich von der Ballfarbe unterscheiden. Nur diese (und Weiß/Grau) für große Flächen verwenden, sonst hält die Kamera Spielgrafik für den Ball.
 
-Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `glow`, `hazard` und `star`.
+Countdown, Punkteanzeige, Zeitbalken, Abbrechen-Button, Bestwerte und Ergebnisbildschirm übernimmt die App. Für den einheitlichen Look gibt es in `src/ui.js` Helfer wie `text`, `glow`, `orb`, `hazard` und `star`, für Funken und Punktetexte die Klasse `Fx` in `src/games/common.js`.
 
-Die Pixel-Schrift „Press Start 2P“ liegt unter `assets/fonts/` (SIL Open Font License).
+Die Schrift „Fredoka“ liegt unter `assets/fonts/` (SIL Open Font License).
 
 ## Tests
 

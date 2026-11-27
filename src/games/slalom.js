@@ -1,14 +1,16 @@
 // Spiel "Slalom": Den Ball der Reihe nach durch die leuchtenden Tore führen.
-// Ab "Mittel" kosten berührte Torpfosten Punkte, auf "Schwer" bewegen sich die Tore.
+// Schnell hintereinander geschaffte Tore bauen eine Serie auf. Ab "Mittel" kosten berührte
+// Pfosten Punkte, auf "Schwer" bewegen sich die Tore. Ab Stufe 1 gibt es ein schmales Bonus-Tor.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow } from '../ui.js';
+import { text, glow, noGlow, star, tone } from '../ui.js';
+import { Fx } from './common.js';
 
 const LEVELS = {
   1: { width: 250, gates: 4, posts: false, move: 0 },
-  2: { width: 185, gates: 5, posts: true, move: 0 },
-  3: { width: 150, gates: 5, posts: true, move: 70 },
+  2: { width: 190, gates: 5, posts: true, move: 0 },
+  3: { width: 155, gates: 5, posts: true, move: 70 },
 };
-const POST = 22;
+const POST = 20;
 
 /** Schneiden sich die Strecken p1-p2 und p3-p4? */
 function crosses(p1, p2, p3, p4) {
@@ -24,23 +26,33 @@ class Slalom {
     this.hurt = 0;
     this.down = true;
     this.prev = null;
-    this.floaters = [];
+    this.fx = new Fx();
     this.newCourse();
   }
 
   newCourse() {
-    const { field } = this.env;
-    const n = this.p.gates;
+    const { env, p } = this;
+    const { field } = env;
+    const n = p.gates;
     const side = Math.random() < 0.5 ? 1 : -1;
+    // Mit jeder Stufe werden die Tore enger und geraten stärker in Bewegung.
+    this.width = p.width * (1 - 0.07 * env.stage);
+    this.move = p.move + (env.stage >= 2 ? 35 : 0);
     this.gates = [];
     for (let i = 0; i < n; i++) {
       const row = this.down ? i : n - 1 - i;
       this.gates.push({
         cx: field.w / 2 + side * (i % 2 ? -1 : 1) * field.w * (0.17 + Math.random() * 0.08),
-        y: 250 + (row * 640) / (n - 1),
+        y: 260 + (row * 630) / (n - 1),
         phase: Math.random() * Math.PI * 2,
         passed: 0,
       });
+    }
+    // Bonus-Tor: schmal, abseits der Strecke, wer mag holt es sich nebenbei.
+    this.bonus = null;
+    if (env.stage >= 1) {
+      const g = this.gates[1 + Math.floor(Math.random() * (n - 2))];
+      this.bonus = { x: field.w - g.cx + (g.cx > field.w / 2 ? -40 : 40), y: g.y, half: 62 };
     }
     this.next = 0;
     this.down = !this.down;
@@ -48,18 +60,16 @@ class Slalom {
 
   /** Die beiden Pfosten eines Tors zum aktuellen Zeitpunkt. */
   posts(g) {
-    const x = g.cx + this.p.move * Math.sin(this.time * 1.3 + g.phase);
-    const half = this.p.width / 2;
-    return [{ x: x - half, y: g.y }, { x: x + half, y: g.y }];
+    const x = g.cx + this.move * Math.sin(this.time * 1.3 + g.phase);
+    return [{ x: x - this.width / 2, y: g.y }, { x: x + this.width / 2, y: g.y }];
   }
 
   update(dt, ball) {
-    const { env } = this;
+    const { env, fx } = this;
     this.time += dt;
     this.hurt = Math.max(0, this.hurt - dt);
     for (const g of this.gates) if (g.passed) g.passed += dt;
-    for (const f of this.floaters) f.age += dt;
-    this.floaters = this.floaters.filter((f) => f.age < 1);
+    fx.update(dt);
 
     if (!ball.visible) { this.prev = null; return; }
     const cur = { x: ball.x, y: ball.y };
@@ -70,24 +80,39 @@ class Slalom {
       for (const g of this.gates) {
         if (this.posts(g).some((q) => Math.hypot(q.x - cur.x, q.y - cur.y) < POST + BALL_RADIUS * 0.6)) {
           env.addScore(-5);
+          env.miss();
           env.sound.bad();
+          env.shake(10);
           this.hurt = 1;
-          this.floaters.push({ x: cur.x, y: cur.y, age: 0, str: '-5' });
+          fx.text(cur.x, cur.y, '-5');
           break;
         }
       }
     }
 
+    if (this.prev && this.bonus) {
+      const { x, y, half } = this.bonus;
+      if (crosses(this.prev, cur, { x: x - half, y }, { x: x + half, y })) {
+        const points = env.combo(25, 4);
+        env.sound.power();
+        fx.text(x, y, `Bonus +${points}`, env.palette[1]);
+        fx.burst(x, y, env.palette[1]);
+        this.bonus = null;
+      }
+    }
+
     if (this.prev && crosses(this.prev, cur, a, b)) {
       gate.passed = 0.001;
-      env.addScore(10);
+      const mid = (a.x + b.x) / 2;
+      const points = env.combo(10, 3.5);
       env.sound.pop(this.next);
-      this.floaters.push({ x: (a.x + b.x) / 2, y: a.y, age: 0, str: '+10', color: env.palette[0] });
+      fx.text(mid, a.y, `+${points}`, env.palette[0], 50 + env.mult * 8);
+      fx.ring(mid, a.y, env.palette[0], this.width * 0.7);
       this.next++;
       if (this.next >= this.gates.length) {
         env.addScore(30);
         env.sound.win();
-        this.floaters.push({ x: env.field.w / 2, y: 520, age: 0, str: 'Bonus +30', color: env.palette[1] });
+        fx.text(env.field.w / 2, 520, 'Runde geschafft! +30', env.palette[1], 64);
         this.newCourse();
       }
     }
@@ -97,42 +122,68 @@ class Slalom {
   draw(ctx) {
     const { env } = this;
     const [c0, c1, c2] = env.palette;
+
+    // Führungslinie vom Ball bzw. letzten Tor zum nächsten
+    const target = this.posts(this.gates[this.next]);
+    const tx = (target[0].x + target[1].x) / 2, ty = target[0].y;
+    if (this.prev) {
+      ctx.beginPath();
+      ctx.moveTo(this.prev.x, this.prev.y);
+      ctx.lineTo(tx, ty);
+      ctx.setLineDash([4, 22]);
+      ctx.lineDashOffset = -this.time * 60;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     this.gates.forEach((g, i) => {
       const [a, b] = this.posts(g);
       const active = i === this.next;
       const color = g.passed ? c0 : active ? c1 : c2;
-      ctx.globalAlpha = g.passed ? Math.max(0.25, 1 - g.passed) : active ? 1 : 0.65;
+      ctx.globalAlpha = g.passed ? Math.max(0.2, 1 - g.passed) : active ? 1 : 0.6;
 
       // Lichtschranke zwischen den Pfosten
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.lineWidth = active ? 7 : 3;
-      ctx.setLineDash(active ? [16, 12] : [6, 14]);
-      ctx.lineDashOffset = -this.time * 60;
+      ctx.lineWidth = active ? 6 + 2 * Math.sin(this.time * 8) : 3;
+      ctx.lineCap = 'round';
       ctx.strokeStyle = color;
-      if (active) glow(ctx, color, 24);
+      if (active) glow(ctx, color, 26);
       ctx.stroke();
-      ctx.setLineDash([]);
 
       for (const q of [a, b]) {
+        const g2 = ctx.createRadialGradient(q.x - 6, q.y - 8, 2, q.x, q.y, POST);
+        g2.addColorStop(0, tone(color, 85));
+        g2.addColorStop(1, tone(color, 40));
         ctx.beginPath();
-        ctx.moveTo(q.x, q.y - POST * 1.3);
-        ctx.lineTo(q.x + POST, q.y + POST * 0.8);
-        ctx.lineTo(q.x - POST, q.y + POST * 0.8);
-        ctx.closePath();
-        ctx.fillStyle = color;
+        ctx.arc(q.x, q.y, POST, 0, Math.PI * 2);
+        ctx.fillStyle = g2;
         ctx.fill();
       }
       noGlow(ctx);
-      if (!g.passed) text(ctx, i + 1, (a.x + b.x) / 2, a.y - 56, active ? 64 : 44, color, 'center', active ? 16 : 0);
+      if (!g.passed) text(ctx, i + 1, (a.x + b.x) / 2, a.y - 54, active ? 60 : 40, tone(color, 75), 'center', active ? 12 : 0);
       ctx.globalAlpha = 1;
     });
-    for (const f of this.floaters) {
-      ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
+
+    if (this.bonus) {
+      const { x, y, half } = this.bonus;
+      ctx.beginPath();
+      ctx.moveTo(x - half, y);
+      ctx.lineTo(x + half, y);
+      ctx.lineWidth = 4;
+      ctx.setLineDash([8, 10]);
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      glow(ctx, c1, 16);
+      for (const s of [-1, 1]) star(ctx, x + s * half, y, 18, tone(c1, 72), this.time * 2 * s);
+      noGlow(ctx);
     }
-    ctx.globalAlpha = 1;
+    this.fx.draw(ctx, env.field);
   }
 }
 
@@ -140,18 +191,18 @@ export default {
   id: 'slalom',
   name: 'Slalom',
   duration: 60,
+  medals: [150, 320, 520],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {
       ctx.beginPath();
-      ctx.moveTo(r * x, r * y - r * 0.16);
-      ctx.lineTo(r * x + r * 0.13, r * y + r * 0.1);
-      ctx.lineTo(r * x - r * 0.13, r * y + r * 0.1);
+      ctx.arc(r * x, r * y, r * 0.09, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(-r * 0.05, -r * 0.5); ctx.lineTo(-r * 0.05, -r * 0.3);
     ctx.lineTo(r * 0.05, 0); ctx.lineTo(-r * 0.05, r * 0.3); ctx.lineTo(-r * 0.05, r * 0.5);

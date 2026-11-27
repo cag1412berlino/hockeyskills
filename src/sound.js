@@ -36,6 +36,12 @@ export class Sound {
   go() { this.tone(880, 0.4, { type: 'square', vol: 0.15 }); }
   /** Treffer; step erhöht den Ton bei Serien. */
   pop(step = 0) { this.tone(500 + step * 70, 0.16, { type: 'triangle', vol: 0.3, slideTo: 1200 + step * 100 }); }
+  /** Streak erreicht: aufsteigende Töne, je höher die Stufe, desto höher. */
+  streak(level = 2) { [0, 4, 7, 12].forEach((n, i) => this.tone(440 * 2 ** ((n + level * 2) / 12), 0.14, { type: 'square', vol: 0.12, delay: i * 0.06 })); }
+  /** Das Spiel wird schwieriger. */
+  stage() { this.tone(330, 0.12, { type: 'sawtooth', vol: 0.12 }); this.tone(660, 0.25, { type: 'sawtooth', vol: 0.12, delay: 0.1 }); }
+  /** Extra eingesammelt. */
+  power() { this.tone(520, 0.3, { type: 'sine', vol: 0.25, slideTo: 1560 }); }
   bad() { this.tone(180, 0.35, { type: 'sawtooth', vol: 0.2, slideTo: 70 }); }
   win() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.25, { type: 'triangle', vol: 0.25, delay: i * 0.13 })); }
   end() { this.tone(440, 0.2, { type: 'triangle' }); this.tone(330, 0.35, { type: 'triangle', delay: 0.18 }); }

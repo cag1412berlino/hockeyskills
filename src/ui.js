@@ -1,16 +1,10 @@
-// Bausteine für die projizierte Oberfläche im Arcade-Stil: Leuchtschrift, Symbole
+// Bausteine für die projizierte Oberfläche: Leuchtschrift, Figuren, Symbole
 // und Buttons, die man auslöst, indem man den Ball kurz darauf liegen lässt.
 
 export const theme = {
-  family: 'ui-monospace, Menlo, Consolas, monospace',
-  scale: 0.9, // Korrekturfaktor, damit Texte in beiden Schriften etwa gleich breit sind
-  px: 1,      // Bildschirm-Pixel pro Feld-Einheit (für den Leuchteffekt)
+  family: '"Fredoka", system-ui, sans-serif',
+  px: 1, // Bildschirm-Pixel pro Feld-Einheit (für den Leuchteffekt)
 };
-
-export function usePixelFont() {
-  theme.family = '"Press Start 2P", monospace';
-  theme.scale = 0.55;
-}
 
 /** Neon-Leuchten für alles, was danach gezeichnet wird. Mit noGlow wieder ausschalten. */
 export function glow(ctx, color, blur = 22) {
@@ -22,77 +16,129 @@ export function noGlow(ctx) {
   ctx.shadowBlur = 0;
 }
 
-export function text(ctx, str, x, y, size, color = '#fff', align = 'center', blur = size * 0.25) {
-  ctx.font = `${size * theme.scale}px ${theme.family}`;
+/** Hellere oder dunklere Variante einer Spielfarbe (hsl-Farben aus der Palette). */
+export function tone(color, lightness, saturation = 90) {
+  const m = /hsl\((\d+(?:\.\d+)?)/.exec(color);
+  return m ? `hsl(${m[1]} ${saturation}% ${lightness}%)` : color;
+}
+
+export function text(ctx, str, x, y, size, color = '#fff', align = 'center', blur = size * 0.3) {
+  ctx.font = `600 ${size}px ${theme.family}`;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;
   if (blur) glow(ctx, color, blur);
-  ctx.fillText(String(str).toUpperCase(), x, y);
+  ctx.fillText(String(str), x, y);
   noGlow(ctx);
 }
 
-/** Überschrift mit versetztem Farbschatten, wie auf alten Spielautomaten. */
-export function title(ctx, str, x, y, size, color, shadow) {
-  text(ctx, str, x + size * 0.06, y + size * 0.06, size, shadow, 'center', 0);
-  text(ctx, str, x, y, size, color);
+/** Überschrift wie eine Leuchtreklame: heller Kern, farbiger Schein. */
+export function title(ctx, str, x, y, size, color) {
+  text(ctx, str, x, y, size, color, 'center', size * 0.5);
+  text(ctx, str, x, y, size, tone(color, 92), 'center', size * 0.12);
 }
 
 export function star(ctx, x, y, r, color = '#fff', rot = 0) {
   ctx.beginPath();
   for (let i = 0; i < 10; i++) {
     const a = rot - Math.PI / 2 + (i * Math.PI) / 5;
-    const rr = i % 2 ? r * 0.45 : r;
+    const rr = i % 2 ? r * 0.5 : r;
     ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
   }
   ctx.closePath();
   ctx.fillStyle = color;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = r * 0.18;
+  ctx.strokeStyle = color;
+  ctx.stroke();
   ctx.fill();
 }
 
-/** Gefahr sieht in allen Spielen gleich aus: ein weißer, sich drehender Stachelball. */
-export function hazard(ctx, x, y, r, rot = 0) {
+/** Zwei Augen, die in Richtung (lookX, lookY) schauen. */
+export function eyes(ctx, x, y, r, lookX, lookY, angry = false) {
+  const d = Math.hypot(lookX - x, lookY - y) || 1;
+  const px = ((lookX - x) / d) * r * 0.07, py = ((lookY - y) / d) * r * 0.07;
+  for (const s of [-1, 1]) {
+    const ex = x + s * r * 0.3, ey = y - r * 0.08;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(ex, ey, r * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0a0a18';
+    ctx.beginPath();
+    ctx.arc(ex + px, ey + py, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    if (angry) {
+      // schräge Augenbraue
+      ctx.strokeStyle = '#0a0a18';
+      ctx.lineWidth = r * 0.09;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(ex - s * r * 0.22, ey - r * 0.14);
+      ctx.lineTo(ex + s * r * 0.22, ey - r * 0.32);
+      ctx.stroke();
+    }
+  }
+}
+
+/** Leuchtende Kugel mit Glanzlicht; mit look = {x, y} bekommt sie Augen, die dorthin schauen. */
+export function orb(ctx, x, y, r, color, look = null) {
+  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r);
+  g.addColorStop(0, tone(color, 78));
+  g.addColorStop(0.55, color);
+  g.addColorStop(1, tone(color, 28));
   ctx.beginPath();
-  for (let i = 0; i < 16; i++) {
-    const a = rot + (i * Math.PI) / 8;
-    const rr = i % 2 ? r * 0.62 : r;
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  glow(ctx, color, 28);
+  ctx.fill();
+  noGlow(ctx);
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.32, y - r * 0.5, r * 0.26, r * 0.13, -0.6, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fill();
+  if (look) eyes(ctx, x, y + r * 0.05, r, look.x, look.y);
+}
+
+/** Gefahr sieht in allen Spielen gleich aus: ein weißgrauer Stachelball mit bösem Blick. */
+export function hazard(ctx, x, y, r, rot = 0, look = null) {
+  ctx.beginPath();
+  for (let i = 0; i < 20; i++) {
+    const a = rot + (i * Math.PI) / 10;
+    const rr = i % 2 ? r * 0.7 : r;
     ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
   }
   ctx.closePath();
-  ctx.fillStyle = '#3a3a44';
-  ctx.fill();
+  const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.3, r * 0.1, x, y, r);
+  g.addColorStop(0, '#e9e9f2');
+  g.addColorStop(1, '#6c6c7e');
+  ctx.fillStyle = g;
+  ctx.lineJoin = 'round';
   ctx.lineWidth = r * 0.07;
-  ctx.lineJoin = 'miter';
   ctx.strokeStyle = '#fff';
-  glow(ctx, '#fff', 14);
+  glow(ctx, '#fff', 16);
+  ctx.fill();
   ctx.stroke();
   noGlow(ctx);
-  ctx.lineWidth = r * 0.09;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(x - r * 0.22, y - r * 0.22); ctx.lineTo(x + r * 0.22, y + r * 0.22);
-  ctx.moveTo(x + r * 0.22, y - r * 0.22); ctx.lineTo(x - r * 0.22, y + r * 0.22);
-  ctx.stroke();
+  eyes(ctx, x, y + r * 0.05, r * 0.85, look?.x ?? x, look?.y ?? y + 1, true);
 }
 
-const HEART = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
-
-/** Pixel-Herz für die Lebensanzeige; x, y ist die Mitte. */
+/** Herz für die Lebensanzeige; x, y ist die Mitte. */
 export function heart(ctx, x, y, size, color) {
-  const s = size / 7;
+  const s = size / 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y + s * 0.85);
+  ctx.bezierCurveTo(x - s * 1.5, y - s * 0.1, x - s * 0.75, y - s * 1.15, x, y - s * 0.35);
+  ctx.bezierCurveTo(x + s * 0.75, y - s * 1.15, x + s * 1.5, y - s * 0.1, x, y + s * 0.85);
   ctx.fillStyle = color;
-  HEART.forEach((row, j) => {
-    for (let i = 0; i < 7; i++) {
-      if (row[i] === 'X') ctx.fillRect(x - size / 2 + i * s, y - s * 3 + j * s, s + 0.5, s + 0.5);
-    }
-  });
+  ctx.fill();
 }
 
 const stroke = (ctx, r) => {
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = r * 0.085;
-  ctx.lineCap = 'square';
-  ctx.lineJoin = 'miter';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 };
 
 /** Symbole, jeweils um den Nullpunkt gezeichnet, r = Radius des Buttons. */
@@ -142,12 +188,12 @@ export const icons = {
     }
   },
   stars: (n) => (ctx, r) => {
-    const s = r * 0.24;
-    for (let i = 0; i < n; i++) star(ctx, (i - (n - 1) / 2) * s * 2.2, 0, s);
+    const s = r * 0.2;
+    for (let i = 0; i < n; i++) star(ctx, (i - (n - 1) / 2) * s * 2.6, 0, s);
   },
 };
 
-/** Runder Neon-Button. Löst aus, wenn der Ball `dwell` Sekunden darauf liegt (oder per Mausklick). */
+/** Runder Leucht-Button. Löst aus, wenn der Ball `dwell` Sekunden darauf liegt (oder per Mausklick). */
 export class DwellButton {
   constructor({ x, y, r, dwell = 1, color = '#fff', icon = null, label = '', sub = '', onActivate }) {
     Object.assign(this, { x, y, r, dwell, color, icon, label, sub, onActivate });
@@ -180,29 +226,27 @@ export class DwellButton {
   }
 
   draw(ctx) {
-    const { x, y, r } = this;
+    const { x, y } = this;
+    const r = this.r * (1 + 0.06 * this.progress);
+    const g = ctx.createRadialGradient(x, y - r * 0.3, r * 0.1, x, y, r);
+    g.addColorStop(0, tone(this.color, 24, 70));
+    g.addColorStop(1, tone(this.color, 7, 70));
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle = this.color === '#fff' ? 'rgba(30,30,48,0.9)' : g;
     ctx.fill();
-    ctx.lineWidth = r * 0.045;
+    ctx.lineWidth = r * 0.05;
     ctx.strokeStyle = this.color;
-    glow(ctx, this.color, 22);
+    glow(ctx, this.color, 24);
     ctx.stroke();
     noGlow(ctx);
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.86, 0, Math.PI * 2);
-    ctx.lineWidth = r * 0.015;
-    ctx.globalAlpha = 0.5;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
     if (this.progress > 0) {
       ctx.beginPath();
-      ctx.arc(x, y, r * 0.93, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
+      ctx.arc(x, y, r * 0.9, -Math.PI / 2, -Math.PI / 2 + this.progress * Math.PI * 2);
       ctx.lineWidth = r * 0.09;
-      ctx.lineCap = 'butt';
+      ctx.lineCap = 'round';
       ctx.strokeStyle = '#fff';
-      glow(ctx, '#fff', 20);
+      glow(ctx, '#fff', 18);
       ctx.stroke();
       noGlow(ctx);
     }
@@ -212,8 +256,8 @@ export class DwellButton {
       this.icon(ctx, r);
       ctx.restore();
     }
-    if (this.label) text(ctx, this.label, x, y + r + 44, 38, this.color);
-    if (this.sub) text(ctx, this.sub, x, y + r + 90, 28, '#fff', 'center', 0);
+    if (this.label) text(ctx, this.label, x, y + this.r + 46, 44, tone(this.color, 70), 'center', 8);
+    if (this.sub) text(ctx, this.sub, x, y + this.r + 92, 30, '#fff', 'center', 0);
   }
 }
 

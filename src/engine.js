@@ -2,7 +2,6 @@
 //
 // Spiele rechnen in "Feld-Einheiten": Das Spielfeld ist immer 1000 hoch und
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
-
 import { theme, glow, noGlow } from './ui.js';
 
 export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
@@ -15,6 +14,7 @@ export class Engine {
     this.field = { x: 0, y: 0, scale: 1, w: 1000, h: 1000 };
     this.ball = { x: 0, y: 0, vx: 0, vy: 0, visible: false };
     this.lostFor = Infinity;
+    this.trail = [];            // letzte Ballpositionen für den Schweif
     this.scene = null;
     this.paused = false;        // true, solange die Einrichtung offen ist
     this.override = null;       // eigene Zeichenfunktion (Kalibrierung)
@@ -23,6 +23,13 @@ export class Engine {
     this.onFrame = null;
     this.toast = null;
     this.lastTime = 0;
+    this.time = 0;
+    this.shakeAmt = 0;
+    // Hintergrund-Sterne: Position 0..1, Größe, Helligkeit, Fallgeschwindigkeit
+    this.stars = Array.from({ length: 60 }, () => ({
+      x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.2,
+      a: 0.12 + Math.random() * 0.3, v: 4 + Math.random() * 14, tw: 1 + Math.random() * 3,
+    }));
 
     window.addEventListener('resize', () => this.resize());
     canvas.addEventListener('pointerdown', (e) => this.pointer(e));
@@ -64,6 +71,11 @@ export class Engine {
     this.toast = { msg, until: performance.now() + seconds * 1000 };
   }
 
+  /** Lässt das Bild kurz wackeln (z. B. bei einem Fehler). */
+  shake(amount = 14) {
+    this.shakeAmt = Math.max(this.shakeAmt, amount);
+  }
+
   pointer(e) {
     const r = this.canvas.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * this.canvas.width;
@@ -88,7 +100,7 @@ export class Engine {
     if (!ok) {
       this.lostFor += dt;
       // Kurze Aussetzer (Schläger verdeckt den Ball) überbrücken.
-      if (this.lostFor > 0.3) { b.visible = false; b.vx = b.vy = 0; }
+      if (this.lostFor > 0.3) { b.visible = false; b.vx = b.vy = 0; this.trail.length = 0; }
       return;
     }
     if (!b.visible || dt <= 0) {
@@ -102,6 +114,8 @@ export class Engine {
     }
     b.visible = true;
     this.lostFor = 0;
+    this.trail.push({ x: b.x, y: b.y });
+    if (this.trail.length > 14) this.trail.shift();
   }
 
   start() {
@@ -114,20 +128,63 @@ export class Engine {
     requestAnimationFrame(loop);
   }
 
-  /** Dunkles Raster als Hintergrund. Bewusst schwach, damit es den Ball nicht überstrahlt. */
-  drawGrid(ctx) {
+  /** Dunkler Farbverlauf mit langsam treibenden Sternen. Bewusst schwach, damit er den Ball nicht überstrahlt. */
+  drawBackground(ctx) {
     const f = this.field;
-    ctx.strokeStyle = `hsl(${(this.config.ball.h + 220) % 360} 80% 16%)`;
-    ctx.lineWidth = 1.5;
+    const h = this.config.ball.h;
+    const g = ctx.createRadialGradient(f.w / 2, f.h * 0.45, 60, f.w / 2, f.h / 2, f.h * 0.85);
+    g.addColorStop(0, `hsl(${(h + 215) % 360} 70% 11%)`);
+    g.addColorStop(1, `hsl(${(h + 250) % 360} 80% 3%)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, f.w, f.h);
+    ctx.fillStyle = '#fff';
+    for (const s of this.stars) {
+      ctx.globalAlpha = s.a * (0.6 + 0.4 * Math.sin(this.time * s.tw + s.x * 50));
+      ctx.beginPath();
+      ctx.arc(s.x * f.w, (s.y * f.h + this.time * s.v) % f.h, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Leuchtschweif und Ring um den Ball: zeigt, dass die Kamera ihn sieht. */
+  drawBall(ctx) {
+    const { ball, trail } = this;
+    const color = `hsl(${(this.config.ball.h + 180) % 360} 90% 65%)`;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    for (let i = 1; i < trail.length; i++) {
+      // Nicht auf den Ball selbst leuchten: farbiges Licht würde seine Farbe für die Kamera verfälschen.
+      if (Math.hypot(trail[i].x - ball.x, trail[i].y - ball.y) < BALL_RADIUS * 2) continue;
+      const k = i / trail.length;
+      ctx.globalAlpha = k * 0.5;
+      ctx.lineWidth = 4 + k * BALL_RADIUS;
+      ctx.beginPath();
+      ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+      ctx.lineTo(trail[i].x, trail[i].y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    const r = BALL_RADIUS + 13;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#fff';
+    glow(ctx, color, 18);
     ctx.beginPath();
-    const x0 = (f.w % 50) / 2;
-    for (let x = x0; x <= f.w; x += 50) { ctx.moveTo(x, 0); ctx.lineTo(x, f.h); }
-    for (let y = 0; y <= f.h; y += 50) { ctx.moveTo(0, y); ctx.lineTo(f.w, y); }
+    ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
     ctx.stroke();
+    // zwei kreisende Bögen
+    ctx.lineWidth = 5;
+    for (const o of [0, Math.PI]) {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, r + 10, this.time * 3 + o, this.time * 3 + o + 0.9);
+      ctx.stroke();
+    }
+    noGlow(ctx);
   }
 
   frame(dt, now) {
     const { ctx, canvas, field: f, ball } = this;
+    this.time += dt;
     this.onFrame?.(dt);
     this.updateBall(dt);
 
@@ -139,44 +196,33 @@ export class Engine {
       this.override(ctx, canvas.width, canvas.height);
     } else if (this.scene) {
       if (!this.paused) this.scene.update(dt, ball);
+      this.shakeAmt *= Math.max(0, 1 - 7 * dt);
       ctx.save();
       ctx.translate(f.x, f.y);
       ctx.scale(f.scale, f.scale);
       ctx.beginPath();
       ctx.rect(0, 0, f.w, f.h);
       ctx.clip();
-      this.drawGrid(ctx);
-      this.scene.draw(ctx);
-      if (ball.visible) {
-        // Weißes Fadenkreuz um den Ball: zeigt, dass die Kamera ihn sieht.
-        const r = BALL_RADIUS + 14;
-        ctx.lineWidth = 3.5;
-        ctx.strokeStyle = '#fff';
-        glow(ctx, '#fff', 12);
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
-        for (let i = 0; i < 4; i++) {
-          const c = Math.cos((i * Math.PI) / 2), s = Math.sin((i * Math.PI) / 2);
-          ctx.moveTo(ball.x + c * r, ball.y + s * r);
-          ctx.lineTo(ball.x + c * (r + 16), ball.y + s * (r + 16));
-        }
-        ctx.stroke();
-        noGlow(ctx);
+      this.drawBackground(ctx);
+      ctx.save();
+      if (this.shakeAmt > 0.5) {
+        ctx.translate((Math.random() - 0.5) * this.shakeAmt, (Math.random() - 0.5) * this.shakeAmt);
       }
-      const edge = `hsl(${(this.config.ball.h + 200) % 360} 90% 55%)`;
+      this.scene.draw(ctx);
+      if (ball.visible) this.drawBall(ctx);
+      ctx.restore();
+      const edge = `hsl(${(this.config.ball.h + 200) % 360} 90% 60%)`;
       ctx.lineWidth = 4;
       ctx.strokeStyle = edge;
-      glow(ctx, edge, 24);
+      glow(ctx, edge, 26);
       ctx.strokeRect(2, 2, f.w - 4, f.h - 4);
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(14, 14, f.w - 28, f.h - 28);
       noGlow(ctx);
       ctx.restore();
     }
 
     if (this.toast && now < this.toast.until) {
-      const size = Math.round(canvas.height * 0.035);
-      ctx.font = `${size * theme.scale}px ${theme.family}`;
+      const size = Math.round(canvas.height * 0.032);
+      ctx.font = `600 ${size}px ${theme.family}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const w = ctx.measureText(this.toast.msg).width + size * 2;

@@ -1,46 +1,78 @@
-// Spiel "Wolke": Ein Ziel treffen – aber dazwischen hängt eine Gewitterwolke.
-// Der Ball muss außen herum. Auf "Mittel" pendelt die Wolke, auf "Schwer" stellt sie sich in den Weg.
+// Spiel "Wolke": Ein Ziel treffen – aber dazwischen wabert eine Gewitterwolke.
+// Die Wolke verändert ständig ihre Form und wird größer und kleiner. Der Ball muss außen herum.
+// Auf "Mittel" pendelt sie, auf "Schwer" stellt sie sich in den Weg. In späten Stufen
+// wandert das Ziel und eine zweite kleine Wolke kreist um die große.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow } from '../ui.js';
-import { StopZones, burst } from './common.js';
+import { glow, noGlow, orb, eyes } from '../ui.js';
+import { Fx, StopZones } from './common.js';
 
 const LEVELS = {
-  1: { r: 135, target: 95, sway: 0, chase: 0, stop: 380 },
-  2: { r: 125, target: 75, sway: 130, chase: 0, stop: 300 },
-  3: { r: 115, target: 62, sway: 0, chase: 130, stop: 240 },
+  1: { r: 125, target: 95, sway: 0, chase: 0, stop: 380 },
+  2: { r: 115, target: 78, sway: 130, chase: 0, stop: 300 },
+  3: { r: 105, target: 64, sway: 0, chase: 120, stop: 240 },
 };
 
-// Die Wolke besteht aus überlappenden Kreisen: [x, y, Radius] relativ zur Wolkengröße.
-const PUFFS = [[-0.55, 0.15, 0.5], [0, -0.25, 0.62], [0.55, 0.1, 0.52], [-0.1, 0.3, 0.55], [0.3, 0.32, 0.45]];
-
-function puffs(ctx, x, y, r) {
-  ctx.beginPath();
-  for (const [px, py, pr] of PUFFS) {
-    ctx.moveTo(x + (px + pr) * r, y + py * r);
-    ctx.arc(x + px * r, y + py * r, pr * r, 0, Math.PI * 2);
+/** Eine Wolke als weiche, sich verformende Blase. */
+class Blob {
+  constructor(r) {
+    this.base = r;
+    this.x = 0;
+    this.y = 0;
+    this.seed = Math.random() * 100;
+    this.breathe = 0.2; // wie stark sie größer und kleiner wird
+    this.angry = 0;
   }
-}
 
-export function drawCloud(ctx, x, y, r, angry = false) {
-  puffs(ctx, x, y, r);
-  ctx.lineWidth = r * 0.08;
-  ctx.strokeStyle = '#fff';
-  glow(ctx, '#fff', angry ? 40 : 14);
-  ctx.stroke();
-  noGlow(ctx);
-  ctx.fillStyle = angry ? '#9a9aa8' : '#34343f';
-  ctx.fill();
-  // Blitz
-  ctx.beginPath();
-  ctx.moveTo(x + r * 0.08, y - r * 0.38);
-  ctx.lineTo(x - r * 0.2, y + r * 0.08);
-  ctx.lineTo(x + r * 0.02, y + r * 0.08);
-  ctx.lineTo(x - r * 0.1, y + r * 0.45);
-  ctx.lineTo(x + r * 0.24, y - r * 0.08);
-  ctx.lineTo(x + r * 0.02, y - r * 0.08);
-  ctx.closePath();
-  ctx.fillStyle = '#fff';
-  ctx.fill();
+  /** Abstand des Randes von der Mitte in Richtung a zum Zeitpunkt t. */
+  radius(a, t) {
+    const s = this.seed;
+    const size = 1 + this.breathe * Math.sin(t * 0.9 + s);
+    const wobble = 0.16 * Math.sin(3 * a + t * 1.3 + s) + 0.11 * Math.sin(5 * a - t * 1.7 + s * 2) + 0.07 * Math.sin(2 * a + t * 0.8);
+    return this.base * size * (1 + wobble);
+  }
+
+  touches(ball, t) {
+    const a = Math.atan2(ball.y - this.y, ball.x - this.x);
+    return Math.hypot(ball.x - this.x, ball.y - this.y) < this.radius(a, t) * 0.92 + BALL_RADIUS * 0.4;
+  }
+
+  draw(ctx, t, look) {
+    const { x, y } = this;
+    const n = 56;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const r = this.radius(a, t);
+      ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+    }
+    ctx.closePath();
+    const g = ctx.createRadialGradient(x, y - this.base * 0.3, this.base * 0.1, x, y, this.base * 1.4);
+    g.addColorStop(0, this.angry > 0 ? '#f4f4ff' : '#8f8fa8');
+    g.addColorStop(1, this.angry > 0 ? '#9a9ab8' : '#2c2c40');
+    ctx.fillStyle = g;
+    ctx.lineWidth = 5;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#fff';
+    glow(ctx, '#fff', this.angry > 0 ? 44 : 20);
+    ctx.fill();
+    ctx.stroke();
+    noGlow(ctx);
+    // Gelegentliches Wetterleuchten im Inneren
+    if (Math.sin(t * 2.3 + this.seed) > 0.86) {
+      ctx.beginPath();
+      let bx = x - this.base * 0.1, by = y + this.base * 0.2;
+      ctx.moveTo(bx, by);
+      for (let i = 0; i < 4; i++) {
+        bx += (i % 2 ? -1 : 1) * this.base * 0.22;
+        by += this.base * 0.16;
+        ctx.lineTo(bx, by);
+      }
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#fff';
+      ctx.stroke();
+    }
+    eyes(ctx, x, y - this.base * 0.1, this.base * 0.75, look?.x ?? x, look?.y ?? y + 1, true);
+  }
 }
 
 class Cloud {
@@ -49,12 +81,11 @@ class Cloud {
     this.p = LEVELS[env.level];
     this.time = 0;
     this.hurt = 0;
-    this.flash = 0;
     this.roundTime = 0;
     this.target = null;
-    this.cloud = null;
-    this.particles = [];
-    this.floaters = [];
+    this.cloud = new Blob(this.p.r);
+    this.mini = new Blob(this.p.r * 0.45);
+    this.fx = new Fx();
     this.stops = new StopZones(this.p.stop);
   }
 
@@ -62,7 +93,7 @@ class Cloud {
   newRound(ball) {
     const { field, palette } = this.env;
     const from = ball.visible ? ball : { x: field.w / 2, y: field.h / 2 };
-    const r = this.p.target;
+    const r = this.p.target * (1 - 0.06 * this.env.stage);
     // Von mehreren zufälligen Stellen die nehmen, die am weitesten vom Ball entfernt ist.
     let t = null, far = -1;
     for (let tries = 0; tries < 8; tries++) {
@@ -71,109 +102,104 @@ class Cloud {
       if (d > far) { far = d; t = c; }
     }
     t.color = palette[Math.floor(Math.random() * palette.length)];
+    const a = Math.random() * Math.PI * 2;
+    t.vx = Math.cos(a) * 45;
+    t.vy = Math.sin(a) * 45;
     this.target = t;
     const len = Math.hypot(t.x - from.x, t.y - from.y) || 1;
-    this.cloud = {
-      bx: (from.x + t.x) / 2, by: (from.y + t.y) / 2,       // Grundposition
-      nx: -(t.y - from.y) / len, ny: (t.x - from.x) / len,   // quer zum direkten Weg
-      x: (from.x + t.x) / 2, y: (from.y + t.y) / 2,
-      phase: Math.random() * Math.PI * 2,
-    };
+    const c = this.cloud;
+    c.bx = c.x = (from.x + t.x) / 2;                // Grundposition
+    c.by = c.y = (from.y + t.y) / 2;
+    c.nx = -(t.y - from.y) / len;                   // quer zum direkten Weg
+    c.ny = (t.x - from.x) / len;
     this.roundTime = 0;
   }
 
   update(dt, ball) {
-    const { env, p } = this;
+    const { env, p, fx, cloud: c, mini } = this;
+    const { field } = env;
     this.time += dt;
     this.roundTime += dt;
     this.hurt = Math.max(0, this.hurt - dt);
-    this.flash = Math.max(0, this.flash - dt);
-    for (const q of this.particles) { q.age += dt; q.x += q.vx * dt; q.y += q.vy * dt; }
-    this.particles = this.particles.filter((q) => q.age < 0.6);
-    for (const f of this.floaters) f.age += dt;
-    this.floaters = this.floaters.filter((f) => f.age < 1);
+    this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
+    c.angry = mini.angry = this.hurt > 0.8 ? 1 : 0;
+    c.breathe = 0.18 + 0.06 * env.stage; // atmet mit jeder Stufe stärker
+    fx.update(dt);
 
-    for (const z of this.stops.update(dt, ball)) {
+    if (this.stops.update(dt, ball).length) {
       env.addScore(-5);
+      env.miss();
       env.sound.bad();
-      this.floaters.push({ x: ball.x, y: ball.y, age: 0, str: 'Zu weit -5' });
+      fx.text(ball.x, ball.y, 'Zu weit! -5');
     }
 
     if (!this.target) this.newRound(ball);
-    const { target: t, cloud: c } = this;
+    const t = this.target;
+
+    // Ab Stufe 1 wandert das Ziel langsam.
+    if (env.stage >= 1) {
+      t.x += t.vx * dt;
+      t.y += t.vy * dt;
+      if (t.x < t.r + 30 || t.x > field.w - t.r - 30) t.vx *= -1;
+      if (t.y < t.r + 180 || t.y > field.h - t.r - 30) t.vy *= -1;
+    }
 
     if (p.sway) {
-      const s = Math.sin(this.time * 1.6 + c.phase) * p.sway;
+      const s = Math.sin(this.time * 1.6 * env.ramp) * p.sway;
       c.x = c.bx + c.nx * s;
       c.y = c.by + c.ny * s;
     }
-    if (!ball.visible) return;
-
-    if (p.chase) {
+    if (p.chase && ball.visible) {
       // Die Wolke schiebt sich immer wieder zwischen Ball und Ziel.
       const gx = ball.x + (t.x - ball.x) * 0.55, gy = ball.y + (t.y - ball.y) * 0.55;
       const d = Math.hypot(gx - c.x, gy - c.y);
-      const step = Math.min(d, p.chase * dt);
+      const step = Math.min(d, p.chase * env.ramp * dt);
       if (d > 1) { c.x += ((gx - c.x) / d) * step; c.y += ((gy - c.y) / d) * step; }
-      // Sie darf das Ziel aber nie ganz verdecken.
-      const dt2 = Math.hypot(c.x - t.x, c.y - t.y);
-      const min = p.r + t.r + 40;
-      if (dt2 < min && dt2 > 0) { c.x = t.x + ((c.x - t.x) / dt2) * min; c.y = t.y + ((c.y - t.y) / dt2) * min; }
     }
+    // Die Wolke darf das Ziel nie ganz verdecken.
+    const dc = Math.hypot(c.x - t.x, c.y - t.y);
+    const min = p.r * 1.3 + t.r + 30;
+    if (dc < min && dc > 0) { c.x = t.x + ((c.x - t.x) / dc) * min; c.y = t.y + ((c.y - t.y) / dc) * min; }
 
-    if (this.hurt <= 0 && Math.hypot(ball.x - c.x, ball.y - c.y) < p.r * 0.85 + BALL_RADIUS * 0.5) {
+    // Ab Stufe 2 kreist eine kleine Wolke um die große.
+    this.hasMini = env.stage >= 2;
+    mini.x = c.x + Math.cos(this.time * 1.1) * p.r * 2.3;
+    mini.y = c.y + Math.sin(this.time * 1.1) * p.r * 2.3;
+
+    if (!ball.visible) return;
+
+    if (this.hurt <= 0 && (c.touches(ball, this.time) || (this.hasMini && mini.touches(ball, this.time)))) {
       env.addScore(-10);
+      env.miss();
       env.sound.bad();
+      env.shake(18);
       this.hurt = 1.2;
-      this.flash = 0.45;
-      this.floaters.push({ x: c.x, y: c.y - p.r, age: 0, str: '-10' });
+      fx.flash(0.4);
+      fx.text(ball.x, ball.y, '-10');
     }
 
     if (Math.hypot(ball.x - t.x, ball.y - t.y) < t.r + BALL_RADIUS) {
-      const points = 10 + Math.max(0, Math.round(10 - this.roundTime * 2)); // schnell = mehr Punkte
-      env.addScore(points);
-      env.sound.pop(Math.min(5, points - 10) / 2);
-      this.floaters.push({ x: t.x, y: t.y, age: 0, str: `+${points}`, color: t.color });
-      burst(this.particles, t.x, t.y, t.color);
+      // schnell = mehr Punkte
+      const points = env.combo(10 + Math.max(0, Math.round(10 - this.roundTime * 2)), 4);
+      env.sound.pop(env.mult);
+      fx.text(t.x, t.y, `+${points}`, t.color, 50 + env.mult * 8);
+      fx.burst(t.x, t.y, t.color);
+      fx.ring(t.x, t.y, t.color, t.r * 1.8);
       this.stops.add(t.x, t.y, t.color);
       this.newRound(ball);
     }
   }
 
   draw(ctx) {
-    const { env, p, target: t, cloud: c } = this;
+    const { target: t } = this;
     this.stops.draw(ctx);
     if (t) {
-      const r = t.r * Math.min(1, this.roundTime / 0.25);
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, r * 0.92, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fill();
-      ctx.lineWidth = r * 0.08;
-      ctx.strokeStyle = t.color;
-      glow(ctx, t.color, 24);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(t.x, t.y, r * (0.36 + 0.05 * Math.sin(this.time * 6)), 0, Math.PI * 2);
-      ctx.fillStyle = t.color;
-      ctx.fill();
-      noGlow(ctx);
-      drawCloud(ctx, c.x, c.y, p.r, this.hurt > 0.8);
+      const k = Math.min(1, this.roundTime / 0.3);
+      orb(ctx, t.x, t.y, t.r * k * (1.25 - 0.25 * k), t.color, this.look);
+      this.cloud.draw(ctx, this.time, this.look);
+      if (this.hasMini) this.mini.draw(ctx, this.time, this.look);
     }
-    for (const q of this.particles) {
-      ctx.globalAlpha = 1 - q.age / 0.6;
-      ctx.fillStyle = q.color;
-      ctx.fillRect(q.x - 6, q.y - 6, 12, 12);
-    }
-    for (const f of this.floaters) {
-      ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
-    }
-    ctx.globalAlpha = 1;
-    if (this.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${this.flash})`;
-      ctx.fillRect(0, 0, env.field.w, env.field.h);
-    }
+    this.fx.draw(ctx, this.env.field);
   }
 }
 
@@ -181,12 +207,18 @@ export default {
   id: 'cloud',
   name: 'Wolke',
   duration: 60,
+  medals: [120, 260, 420],
   icon(ctx, r) {
-    puffs(ctx, 0, 0, r * 0.42);
+    const s = r * 0.42;
+    ctx.beginPath();
+    for (const [px, py, pr] of [[-0.55, 0.15, 0.5], [0, -0.25, 0.62], [0.55, 0.1, 0.52], [-0.1, 0.3, 0.55], [0.3, 0.32, 0.45]]) {
+      ctx.moveTo((px + pr) * s, py * s);
+      ctx.arc(px * s, py * s, pr * s, 0, Math.PI * 2);
+    }
     ctx.lineWidth = r * 0.085;
     ctx.strokeStyle = '#fff';
     ctx.stroke();
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = '#101020';
     ctx.fill();
   },
   create: (env) => new Cloud(env),

@@ -1,12 +1,15 @@
 // Spiel "Ausweichen": Stachelbälle fliegen über das Feld. Sterne einsammeln, nicht treffen lassen.
 // Drei Leben; eine Warnung am Rand zeigt, wo der nächste Stachelball hereinkommt.
+// Extras: Der Schild fängt einen Treffer ab, die Schneeflocke bremst alle Stachelbälle.
+// In späten Stufen fliegen manche Stachelbälle im Zickzack.
 import { BALL_RADIUS } from '../engine.js';
-import { text, glow, noGlow, hazard, star } from '../ui.js';
+import { text, glow, noGlow, hazard, star, tone } from '../ui.js';
+import { Fx } from './common.js';
 
 const LEVELS = {
-  1: { speed: 150, every: 2.2, r: 60, max: 3 },
-  2: { speed: 250, every: 1.4, r: 52, max: 5 },
-  3: { speed: 360, every: 1.0, r: 46, max: 7 },
+  1: { speed: 140, every: 2.2, r: 58, max: 3 },
+  2: { speed: 220, every: 1.5, r: 50, max: 5 },
+  3: { speed: 310, every: 1.1, r: 44, max: 7 },
 };
 const WARN = 0.9; // Sekunden Vorwarnung
 
@@ -16,26 +19,31 @@ class Dodge {
     this.p = LEVELS[env.level];
     this.time = 0;
     this.hurt = 0;
-    this.flash = 0;
     this.spawnIn = 1;
     this.survive = 0;
     this.hazards = [];
-    this.floaters = [];
     this.star = null;
+    this.power = null;          // herumliegendes Extra
+    this.powerIn = 9 + Math.random() * 5;
+    this.shield = false;
+    this.slow = 0;              // Sekunden, die die Bremse noch wirkt
+    this.fx = new Fx();
   }
 
-  placeStar(ball) {
+  spot(ball, away = 320) {
     const { field } = this.env;
+    let s = null;
     for (let tries = 0; tries < 20; tries++) {
-      const s = { x: 90 + Math.random() * (field.w - 180), y: 220 + Math.random() * (field.h - 310) };
-      this.star = s;
-      if (!ball.visible || Math.hypot(s.x - ball.x, s.y - ball.y) > 320) return;
+      s = { x: 90 + Math.random() * (field.w - 180), y: 220 + Math.random() * (field.h - 310) };
+      if (!ball.visible || Math.hypot(s.x - ball.x, s.y - ball.y) > away) break;
     }
+    return s;
   }
 
-  spawn(ball, ramp) {
-    const { field } = this.env;
-    const r = this.p.r;
+  spawn(ball) {
+    const { env, p } = this;
+    const { field } = env;
+    const r = p.r;
     const edge = Math.floor(Math.random() * 4);
     const along = 0.15 + Math.random() * 0.7;
     const from = [
@@ -43,40 +51,54 @@ class Dodge {
       { x: along * field.w, y: field.h + r }, { x: -r, y: along * field.h },
     ][edge];
     // Ab "Mittel" zielt jeder zweite Stachelball auf den Ball.
-    const aim = this.env.level > 1 && ball.visible && Math.random() < 0.5
+    const aim = env.level > 1 && ball.visible && Math.random() < 0.5
       ? ball
       : { x: field.w * (0.25 + Math.random() * 0.5), y: field.h * (0.3 + Math.random() * 0.45) };
     const len = Math.hypot(aim.x - from.x, aim.y - from.y);
-    const speed = this.p.speed * ramp;
+    const speed = p.speed * env.ramp;
     this.hazards.push({
       x: from.x, y: from.y, r, wait: WARN, age: 0,
       vx: ((aim.x - from.x) / len) * speed, vy: ((aim.y - from.y) / len) * speed,
+      zigzag: env.stage >= 2 && Math.random() < 0.4,
       wx: Math.min(field.w - 40, Math.max(40, from.x)), wy: Math.min(field.h - 40, Math.max(40, from.y)),
     });
   }
 
   update(dt, ball) {
-    const { env, p } = this;
+    const { env, p, fx } = this;
     const { field } = env;
     this.time += dt;
     this.hurt = Math.max(0, this.hurt - dt);
-    this.flash = Math.max(0, this.flash - dt);
-    const ramp = 1 + 0.4 * Math.min(1, this.time / 60);
-    for (const f of this.floaters) f.age += dt;
-    this.floaters = this.floaters.filter((f) => f.age < 1);
+    this.slow = Math.max(0, this.slow - dt);
+    this.look = ball.visible ? { x: ball.x, y: ball.y } : null;
+    fx.update(dt);
+    const pace = this.slow > 0 ? 0.35 : 1;
 
-    if (!this.star) this.placeStar(ball);
-    this.spawnIn -= dt;
-    if (this.spawnIn <= 0 && this.hazards.length < p.max) {
-      this.spawn(ball, ramp);
-      this.spawnIn = p.every / ramp;
+    if (!this.star) this.star = this.spot(ball);
+    this.spawnIn -= dt * pace;
+    if (this.spawnIn <= 0 && this.hazards.length < p.max + Math.floor(env.stage / 2)) {
+      this.spawn(ball);
+      this.spawnIn = p.every / env.ramp;
     }
+    this.powerIn -= dt;
+    if (this.powerIn <= 0 && !this.power) {
+      this.power = { ...this.spot(ball, 250), kind: this.shield || Math.random() < 0.5 ? 'slow' : 'shield', age: 0 };
+      this.powerIn = 12 + Math.random() * 6;
+    }
+    if (this.power && (this.power.age += dt) > 6) this.power = null;
 
     this.hazards = this.hazards.filter((h) => {
       if (h.wait > 0) { h.wait -= dt; return true; }
-      h.age += dt;
-      h.x += h.vx * dt;
-      h.y += h.vy * dt;
+      h.age += dt * pace;
+      let { vx, vy } = h;
+      if (h.zigzag) {
+        // seitliches Pendeln quer zur Flugrichtung
+        const len = Math.hypot(vx, vy), s = Math.cos(h.age * 5) * len * 0.9;
+        vx += (-h.vy / len) * s;
+        vy += (h.vx / len) * s;
+      }
+      h.x += vx * dt * pace;
+      h.y += vy * dt * pace;
       const out = h.x < -h.r - 20 || h.y < -h.r - 20 || h.x > field.w + h.r + 20 || h.y > field.h + h.r + 20;
       return !(out && h.age > 1);
     });
@@ -88,19 +110,39 @@ class Dodge {
     if (this.survive >= 1) { this.survive -= 1; env.addScore(1); }
 
     if (Math.hypot(this.star.x - ball.x, this.star.y - ball.y) < 50 + BALL_RADIUS) {
-      env.addScore(10);
-      env.sound.pop(2);
-      this.floaters.push({ x: this.star.x, y: this.star.y, age: 0, str: '+10', color: env.palette[0] });
-      this.placeStar(ball);
+      const points = env.combo(10, 4);
+      env.sound.pop(env.mult);
+      fx.text(this.star.x, this.star.y, `+${points}`, env.palette[1], 50 + env.mult * 8);
+      fx.burst(this.star.x, this.star.y, env.palette[1], 16);
+      this.star = this.spot(ball);
+    }
+
+    const pw = this.power;
+    if (pw && Math.hypot(pw.x - ball.x, pw.y - ball.y) < 46 + BALL_RADIUS) {
+      env.sound.power();
+      if (pw.kind === 'shield') { this.shield = true; fx.text(pw.x, pw.y, 'Schild!', env.palette[0]); }
+      else { this.slow = 4; fx.text(pw.x, pw.y, 'Zeitlupe!', env.palette[2]); }
+      fx.ring(pw.x, pw.y, '#fff', 180);
+      this.power = null;
     }
 
     if (this.hurt <= 0) {
       for (const h of this.hazards) {
         if (h.wait <= 0 && Math.hypot(h.x - ball.x, h.y - ball.y) < h.r * 0.75 + BALL_RADIUS) {
-          env.sound.bad();
           this.hurt = 1.5;
-          this.flash = 0.5;
-          env.loseLife();
+          if (this.shield) {
+            // Der Schild fängt den Treffer ab.
+            this.shield = false;
+            env.sound.select();
+            fx.ring(ball.x, ball.y, env.palette[0], 220);
+            fx.text(ball.x, ball.y, 'Abgewehrt!', env.palette[0]);
+          } else {
+            env.sound.bad();
+            env.miss();
+            env.shake(24);
+            fx.flash(0.45);
+            env.loseLife();
+          }
           break;
         }
       }
@@ -109,29 +151,68 @@ class Dodge {
 
   draw(ctx) {
     const { env } = this;
-    const [c0, c1] = env.palette;
+    const [c0, c1, c2] = env.palette;
+    if (this.slow > 0) {
+      // kühler Schleier, solange die Zeitlupe wirkt
+      ctx.fillStyle = tone(c2, 50);
+      ctx.globalAlpha = 0.08;
+      ctx.fillRect(0, 0, env.field.w, env.field.h);
+      ctx.globalAlpha = 1;
+    }
     if (this.star) {
       glow(ctx, c1, 26);
-      star(ctx, this.star.x, this.star.y, 50 + 6 * Math.sin(this.time * 6), c1, this.time * 1.5);
+      star(ctx, this.star.x, this.star.y, 44 + 5 * Math.sin(this.time * 6), tone(c1, 68), this.time * 1.5);
       noGlow(ctx);
+    }
+    const pw = this.power;
+    if (pw) {
+      const color = pw.kind === 'shield' ? c0 : c2;
+      ctx.globalAlpha = pw.age > 4.5 ? 0.5 + 0.5 * Math.sin(this.time * 14) : 1; // blinkt, bevor es verschwindet
+      ctx.beginPath();
+      ctx.arc(pw.x, pw.y, 46, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(10,10,30,0.85)';
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = color;
+      glow(ctx, color, 22);
+      ctx.stroke();
+      ctx.strokeStyle = '#fff';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      if (pw.kind === 'shield') {
+        ctx.moveTo(pw.x - 20, pw.y - 20); ctx.lineTo(pw.x + 20, pw.y - 20);
+        ctx.lineTo(pw.x + 20, pw.y + 2); ctx.lineTo(pw.x, pw.y + 24); ctx.lineTo(pw.x - 20, pw.y + 2);
+        ctx.closePath();
+      } else {
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI) / 3;
+          ctx.moveTo(pw.x - Math.cos(a) * 24, pw.y - Math.sin(a) * 24);
+          ctx.lineTo(pw.x + Math.cos(a) * 24, pw.y + Math.sin(a) * 24);
+        }
+      }
+      ctx.stroke();
+      noGlow(ctx);
+      ctx.globalAlpha = 1;
     }
     for (const h of this.hazards) {
       if (h.wait > 0) {
         // Blinkende Warnung am Rand
-        if (Math.floor(h.wait * 8) % 2 === 0) text(ctx, '!', h.wx, h.wy, 110);
+        if (Math.floor(h.wait * 8) % 2 === 0) text(ctx, '!', h.wx, h.wy, 100);
       } else {
-        hazard(ctx, h.x, h.y, h.r, this.time * 3);
+        hazard(ctx, h.x, h.y, h.r, this.time * 3, this.look);
       }
     }
-    for (const f of this.floaters) {
-      ctx.globalAlpha = 1 - f.age;
-      text(ctx, f.str, f.x, f.y - 40 - f.age * 100, 60, f.color ?? '#fff');
+    if (this.shield && this.look) {
+      ctx.beginPath();
+      ctx.arc(this.look.x, this.look.y, BALL_RADIUS + 36, 0, Math.PI * 2);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = c0;
+      glow(ctx, c0, 24);
+      ctx.stroke();
+      noGlow(ctx);
     }
-    ctx.globalAlpha = 1;
-    if (this.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${this.flash * 0.8})`;
-      ctx.fillRect(0, 0, env.field.w, env.field.h);
-    }
+    this.fx.draw(ctx, env.field);
   }
 }
 
@@ -140,14 +221,15 @@ export default {
   name: 'Ausweichen',
   duration: 60,
   lives: 3,
+  medals: [120, 260, 420],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;
-    ctx.lineJoin = 'miter';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     for (let i = 0; i < 16; i++) {
       const a = (i * Math.PI) / 8;
-      const rr = r * (i % 2 ? 0.26 : 0.46);
+      const rr = r * (i % 2 ? 0.28 : 0.46);
       ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
     }
     ctx.closePath();
