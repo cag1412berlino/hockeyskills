@@ -5,7 +5,7 @@ import { BallTracker, BALL_PRESETS, mergeColors } from './tracker.js';
 import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
 import { Sound, Voice, Music } from './sound.js';
-import { applyHomography } from './homography.js';
+import { applyHomography, invertHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray, calibOk, findBrightSpot } from './calibration.js';
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
@@ -69,6 +69,15 @@ engine.ballProvider = () => {
   return applyHomography(config.calib.H, detection.x, detection.y);
 };
 
+/** Sagt der Ballsuche, wo das Spielfeld im Kamerabild liegt (mit etwas Rand). */
+function updateRegion() {
+  const back = config.calib && invertHomography(config.calib.H);
+  if (!back) return tracker.setRegion(null);
+  const c = engine.fieldCorners();
+  const mx = (c[0].x + c[2].x) / 2, my = (c[0].y + c[2].y) / 2;
+  tracker.setRegion(c.map((p) => applyHomography(back, mx + (p.x - mx) * 1.1, my + (p.y - my) * 1.1)));
+}
+
 const ballCss = () => BALL_PRESETS[config.ball.preset]?.css ?? `hsl(${config.ball.h} 100% 50%)`;
 
 /** Der Test-Ball wird etwas dunkler gemalt als die reine Ballfarbe, damit die Kamera ihn nicht überbelichtet. */
@@ -95,26 +104,34 @@ async function setFakeBall(on) {
     // An fünf Stellen des Felds malen und messen: Je nach Blickwinkel sieht die Kamera die Farbe anders.
     const [tl, tr, br, bl] = engine.fieldCorners();
     const at = (u, v) => ({ x: tl.x + (tr.x - tl.x) * u + (bl.x - tl.x) * v, y: tl.y + (tr.y - tl.y) * u + (bl.y - tl.y) * v });
+    const radius = Math.min(stage.width, stage.height) * 0.035;
     const dot = (p) => (ctx, cw, ch) => {
       if (!p) return;
       ctx.fillStyle = fakeCss();
       ctx.beginPath();
-      ctx.arc(p.x * cw, p.y * ch, Math.min(cw, ch) * 0.035, 0, Math.PI * 2);
+      ctx.arc(p.x * cw, p.y * ch, radius, 0, Math.PI * 2);
       ctx.fill();
     };
-    engine.override = dot(null);
-    await wait(600);
-    const ref = await calibrationIO.grabGray();
+    // Aus der Kalibrierung ist bekannt, wo jeder gemalte Punkt im Kamerabild liegt und wie groß er
+    // dort ist. Genau dort wird die Farbe gemessen, nur im Inneren des Punkts.
+    const back = config.calib && invertHomography(config.calib.H);
     const samples = [];
-    for (const [u, v] of [[0.5, 0.5], [0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]]) {
-      engine.override = dot(at(u, v));
-      await wait(450);
-      const img = await calibrationIO.grabGray();
-      const spot = ref && img && findBrightSpot(ref.data, img.data, img.w, img.h);
-      const c = spot && tracker.sampleColor((spot.x + 0.5) / img.w, (spot.y + 0.5) / img.h, 0.2);
-      if (c) samples.push(c);
+    for (const [u, v] of back ? [[0.5, 0.5], [0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]] : []) {
+      const p = at(u, v);
+      engine.override = dot(p);
+      await wait(500);
+      if (!(await calibrationIO.grabGray())) break;
+      const c = applyHomography(back, p.x, p.y);
+      const edge = applyHomography(back, p.x + radius / stage.width, p.y);
+      const w = tracker.frame.width;
+      const r = Math.max(1, Math.floor(Math.hypot(edge.x - c.x, (edge.y - c.y) * (tracker.frame.height / w)) * w * 0.5));
+      const color = tracker.sampleColor(c.x, c.y, 0.2, Math.min(6, r));
+      // Nur übernehmen, wenn es nach der gemalten Farbe aussieht (sonst lag etwas im Weg).
+      const off = color && Math.abs(((color.h - config.ball.h + 540) % 360) - 180);
+      if (color && off <= 50 && color.sMin > 0.2) samples.push(color);
     }
     const learned = mergeColors(samples);
+    if (learned) learned.hTol = Math.min(30, learned.hTol);
     if (learned) fakeColor = { preset: 'fake', ...learned };
     engine.showToast(learned ? 'Test-Ball an: Maus bewegen' : 'Test-Ball an (Farbe nicht gelernt, es gilt die Ballfarbe)', 2.5);
   } finally {
@@ -152,6 +169,7 @@ engine.onFrame = () => {
     if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
     lastVideoTime = video.currentTime;
   }
+  tracker.useRegion = setupEl.hidden && !recognition; // im Spiel nur im Feld suchen, in der Einrichtung überall
   detection = tracker.process(source, searchColor());
   fps.tracked++;
   recent.push(detection ? 1 : 0);
@@ -388,6 +406,15 @@ function drawPreview(target) {
   }
   const ctx = target.getContext('2d');
   ctx.putImageData(out, 0, 0);
+  if (tracker.regionPoints) {
+    // Spielfeld, wie es die Kalibrierung im Kamerabild gefunden hat
+    ctx.strokeStyle = '#ffe14a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    tracker.regionPoints.forEach((p, i) => (i ? ctx.lineTo(p.x * w, p.y * h) : ctx.moveTo(p.x * w, p.y * h)));
+    ctx.closePath();
+    ctx.stroke();
+  }
   if (detection) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
@@ -607,6 +634,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function startPlaying() {
+  updateRegion();
   setMessage();
   sound.resume();
   keepAwake();
@@ -673,6 +701,7 @@ async function calibrate(kind) {
       : await manualCalibrate(calibrationIO, engine.fieldCorners());
     config.calib = { ...result, aspect: stage.width / stage.height };
     saveConfig();
+    updateRegion();
     mode = 'camera';
     engine.override = null;
     startPlaying();

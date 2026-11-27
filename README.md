@@ -118,6 +118,8 @@ Ganz oben in der Einrichtung läuft die Animation **„So funktioniert es“**: 
 
 Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Taste `C`).
 
+Nach der Kalibrierung sucht die App den Ball **nur noch im Spielfeld** (mit etwas Rand). Möbel, Wände oder Kleidung in ähnlicher Farbe neben dem Feld stören dann nicht mehr. Im Kamerabild (Taste `D`) ist das gefundene Spielfeld gelb umrandet.
+
 Die Kamera sollte das **ganze Spielfeld** sehen, mit etwas Rand an allen vier Seiten. Sieht sie nur einen Teil, klappt die Kalibrierung trotzdem, aber die App meldet danach, wie viel Prozent des Felds die Kamera sieht und an welcher Seite ein Stück fehlt (auch in der Checkliste der Einrichtung). Dort wird der Ball nicht erkannt.
 
 Oben in der Einrichtung zeigt eine kleine Checkliste, was schon erledigt ist: Kamera läuft, Ball erkannt, kalibriert.

@@ -145,3 +145,20 @@ test('Kalibrierung: gespeicherte Kalibrierung mit großem Fehler gilt als unbrau
   assert.equal(calibOk({ H: [1, 0, 0, 0, 1, 0, 0, 0, 1], error: 29.4 }), false);
   assert.equal(calibOk(null), false);
 });
+
+test('Ballerkennung sucht nur im Spielfeld: Farbe außerhalb zählt nicht', async () => {
+  const { detectBall, regionMask, BALL_PRESETS } = await import('../src/tracker.js');
+  const w = 200, h = 120, img = new Uint8ClampedArray(w * h * 4).fill(20);
+  const blob = (cx, cy, r) => {
+    for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) img.set([255, 45, 155, 255], (y * w + x) * 4);
+  };
+  blob(20, 100, 12); // großes Ding in Ballfarbe neben dem Feld
+  blob(120, 60, 3);  // der kleine Ball im Feld
+  const region = regionMask([{ x: 0.3, y: 0.1 }, { x: 0.9, y: 0.1 }, { x: 0.95, y: 0.9 }, { x: 0.25, y: 0.9 }], w, h);
+  assert.equal(region[60 * w + 120], 1);
+  assert.equal(region[100 * w + 20], 0);
+  const free = detectBall(img, w, h, BALL_PRESETS.pink);
+  assert.ok(Math.abs(free.x - 20) < 1, 'ohne Feldgrenze gewinnt das große Ding');
+  const inside = detectBall(img, w, h, BALL_PRESETS.pink, null, new Uint8Array(w * h), region);
+  assert.ok(Math.abs(inside.x - 120) < 1 && Math.abs(inside.y - 60) < 1);
+});

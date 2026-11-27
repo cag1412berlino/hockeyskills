@@ -96,9 +96,12 @@ export function ballLike(b) {
 /**
  * Sucht den Ball in einem RGBA-Bild. last ist die letzte Position (oder null);
  * ein Fleck in ihrer Nähe wird bevorzugt, damit die Erkennung nicht springt.
+ * region (optional) ist eine Maske wie mask: 1 = hier darf gesucht werden.
  */
-export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array(w * h)) {
+export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array(w * h), region = null) {
   colorMask(rgba, w, h, color, mask);
+  // Nur im Spielfeld suchen: alles außerhalb (Möbel, Wände, Kleidung am Rand) zählt nicht.
+  if (region) for (let i = 0; i < mask.length; i++) if (!region[i]) mask[i] = 0;
   const minArea = Math.max(6, Math.round(w * h * 0.00004));
   const maxArea = w * h * 0.15; // größere Flächen sind kein Ball (z. B. oranger Boden)
   let best = null, bestScore = 0;
@@ -137,6 +140,28 @@ export function mergeColors(list) {
   };
 }
 
+/**
+ * Baut eine Suchmaske (1 = innen) aus einem Vieleck. points sind Ecken im Kamerabild, 0..1.
+ */
+export function regionMask(points, w, h) {
+  const out = new Uint8Array(w * h);
+  const p = points.map((q) => ({ x: q.x * w, y: q.y * h }));
+  for (let y = 0; y < h; y++) {
+    // Schnittpunkte der Zeile mit den Kanten, dazwischen füllen
+    const xs = [];
+    for (let i = 0; i < p.length; i++) {
+      const a = p[i], b = p[(i + 1) % p.length];
+      if ((a.y <= y + 0.5) !== (b.y <= y + 0.5)) xs.push(a.x + ((y + 0.5 - a.y) / (b.y - a.y)) * (b.x - a.x));
+    }
+    xs.sort((m, n) => m - n);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const from = Math.max(0, Math.ceil(xs[k] - 0.5)), to = Math.min(w - 1, Math.floor(xs[k + 1] - 0.5));
+      for (let x = from; x <= to; x++) out[y * w + x] = 1;
+    }
+  }
+  return out;
+}
+
 /** Holt Bilder aus der Kamera (verkleinert) und sucht darin den Ball. */
 export class BallTracker {
   constructor(procWidth = 480) {
@@ -146,6 +171,15 @@ export class BallTracker {
     this.frame = null; // letztes Bild (ImageData)
     this.mask = null;  // letzte Maske (0 = kein Treffer, sonst Ballfarbe)
     this.last = null;
+    this.regionPoints = null; // Spielfeld im Kamerabild (Vieleck, 0..1) oder null
+    this.region = null;       // daraus gebaute Suchmaske in der Größe des Auswertebilds
+    this.useRegion = false;
+  }
+
+  /** Legt fest, wo das Spielfeld im Kamerabild liegt (Ecken 0..1) – oder null für das ganze Bild. */
+  setRegion(points) {
+    this.regionPoints = points;
+    this.region = null;
   }
 
   /** Zeichnet die Quelle verkleinert und gibt die Pixel zurück (oder null). */
@@ -160,6 +194,7 @@ export class BallTracker {
       this.canvas.height = h;
       this.mask = new Uint8Array(w * h);
       this.last = null;
+      this.region = null;
     }
     this.ctx.drawImage(source, 0, 0, w, h);
     this.frame = this.ctx.getImageData(0, 0, w, h);
@@ -171,19 +206,21 @@ export class BallTracker {
     const img = this.grab(source);
     if (!img) return null;
     const { width: w, height: h } = img;
-    const b = detectBall(img.data, w, h, color, this.last, this.mask);
+    if (this.regionPoints && (!this.region || this.region.length !== w * h)) this.region = regionMask(this.regionPoints, w, h);
+    const region = this.useRegion && this.regionPoints ? this.region : null;
+    const b = detectBall(img.data, w, h, color, this.last, this.mask, region);
     this.last = b;
     return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals: b.rivals } : null;
   }
 
   /** Lernt die Ballfarbe aus dem letzten Bild an der normierten Stelle (nx, ny). */
-  sampleColor(nx, ny, sFloor = 0.3) {
+  sampleColor(nx, ny, sFloor = 0.3, radius = 3) {
     if (!this.frame) return null;
     const { width: w, height: h, data } = this.frame;
     const cx = Math.round(nx * w), cy = Math.round(ny * h);
     let r = 0, g = 0, b = 0, n = 0;
-    for (let y = cy - 3; y <= cy + 3; y++) {
-      for (let x = cx - 3; x <= cx + 3; x++) {
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
         if (x < 0 || y < 0 || x >= w || y >= h) continue;
         const p = (y * w + x) * 4;
         r += data[p]; g += data[p + 1]; b += data[p + 2]; n++;
