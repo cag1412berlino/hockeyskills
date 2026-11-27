@@ -126,7 +126,7 @@ export default {
   name: 'Lichtkegel',
   duration: 60,
   scale: 0.45,
-  medals: [[240, 670, 940], [20, 550, 830], [20, 160, 620]],
+  medals: [[230, 670, 940], [20, 520, 830], [20, 180, 610]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

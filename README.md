@@ -109,6 +109,28 @@ Jedes Rennen ist anders: Die Strecke führt durch wechselnde Zonen in zufällige
 
 Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus. Ist der Ball orange oder rot, brennt das Feuer blau, damit die Kamera es nicht für den Ball hält.
 
+## Tricktrainer: Themen und Dauertraining
+
+Wer „Tricks“ wählt, entscheidet zuerst: **Runde auf Zeit** (75 Sekunden, Tricks je nach Stufe, mit Sternen) oder ein **Thema zum Dauertraining**: Zieher, Vorhand, Rückhand, Dribbeln, Drehungen, Täuschen oder alle Tricks gemischt. Im Dauertraining gibt es keine Zeitgrenze; die Tricks des Themas kommen in gemischter Reihenfolge, bis man den Ball aufs X legt. Dann wird abgerechnet („Geübt 4:12“), die Sterne richten sich nach der geübten Zeit. Jedes Thema hat einen eigenen Rekord.
+
+Die elf Tricks (die meisten in beide Richtungen):
+
+| Trick | Bewegung |
+| --- | --- |
+| Vorhandzieher | gerade an, kurz vor dem Verteidiger quer auf die Vorhand (rechts) ziehen, vorbei |
+| Rückhandzieher | dasselbe zur Rückhand (links) |
+| Umlaufen | im Bogen außen herum |
+| Rückzieher | an, ein Stück zurückziehen, seitlich weg |
+| Zickzack | zwei schnelle Haken |
+| Körpertäuschung | kurz zur einen Seite antäuschen, dann zur anderen vorbei |
+| V-Zieher | schräg an, zurückziehen, zur anderen Seite weg (Spur wie ein V) |
+| Doppelzieher | erst antäuschen, dann weit zur anderen Seite ziehen |
+| Indisches Dribbling | schnell links-rechts vor dem Körper, dann vorbei |
+| Drehung | vor dem Verteidiger eine ganze Runde um sich selbst, dann vorbei |
+| Rückwärtsdrehung | abdrehen, mit dem Rücken zum Verteidiger herum und seitlich weg |
+
+Neue Tricks lassen sich in `src/games/tricks.js` als Weg aus wenigen Punkten ergänzen. Lupfer und andere Tricks in der Luft (3D) kann die Kamera von oben nicht erkennen.
+
 ## Gewertet wird nur mit echtem Ball
 
 Punkte, Rekorde, Sterne im Profil, Abzeichen, Rang und die Plätze in der Bestenliste gibt es nur, wenn mit dem echten Ball vor der Kamera gespielt wird. Mit der Maus als Ball, mit dem gemalten Test-Ball und mit der simulierten Kamera (`?sim`) läuft der **Übungsmodus**: Alles lässt sich ausprobieren, aber nichts wird verbucht. Am unteren Feldrand steht dann „Übungsmodus – Punkte zählen nicht“.

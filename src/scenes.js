@@ -324,7 +324,7 @@ export class ResultScene extends ButtonScene {
     }
     // Die Punktzahl zählt hoch
     text(ctx, Math.round(this.score * Math.min(1, this.time / 1.2)), cx, 395, 150, '#fff', 'center', 10, 600);
-    const held = this.held != null ? `Durchgehalten ${Math.floor(this.held / 60)}:${String(Math.floor(this.held % 60)).padStart(2, '0')}` : null;
+    const held = this.held != null ? `${this.heldLabel ?? 'Durchgehalten'} ${Math.floor(this.held / 60)}:${String(Math.floor(this.held % 60)).padStart(2, '0')}` : null;
     if (this.best || held) caption(ctx, [held, this.best ? `Rekord ${this.best}` : null].filter(Boolean).join('  ·  '), cx, 500, 22, tone(c[1], 80), 'center');
 
     // Was es fürs Profil gab, erscheint Zeile für Zeile

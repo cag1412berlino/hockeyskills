@@ -310,3 +310,33 @@ test('Rennen endlos: nur Herzen beenden es, es wird immer schneller; im Training
   assert.equal(timed.lives, null);
   assert.equal(timed.timeLeft, 40);
 });
+
+test('Tricks: elf Tricks, Themen fürs Dauertraining, Dauertraining endet erst auf Wunsch', async () => {
+  const { MOVES, TOPICS, variants, topicGame } = await import('../src/games/tricks.js');
+  assert.ok(MOVES.length >= 11);
+  for (const t of TOPICS) assert.ok(variants(1, t.id).length >= 4, `${t.name}: genug Tricks`);
+  assert.ok(variants(1).length < variants(2).length && variants(2).length < variants(3).length, 'mehr Tricks auf höherer Stufe');
+  assert.ok(variants(1, 'vorhand').every((v) => v.side > 0) && variants(1, 'rueckhand').every((v) => v.side < 0));
+  // Jeder Weg geht am Verteidiger vorbei, ohne ihn zu berühren
+  for (const m of MOVES) for (const [x, y] of m.pts) assert.ok(Math.hypot(x, y) > 90, `${m.name} kommt dem Verteidiger zu nah: ${x},${y}`);
+
+  const game = topicGame('zieher');
+  let result = null;
+  const app = fakeApp({ demos: false });
+  app.result = (r) => { result = r; };
+  const scene = new PlayScene(app, game, 2, null, { events: false });
+  scene.layout();
+  scene.countdown = 0;
+  const bot = new Bot(SKILLS.strong);
+  for (let i = 0; i < 30 * 150; i++) {
+    scene.update(1 / 30, bot.ball);
+    bot.step(1 / 30, goals.tricks(scene.instance, bot.ball));
+  }
+  assert.equal(result, null, 'läuft nach zweieinhalb Minuten noch');
+  assert.ok(scene.instance.n >= 8, `${scene.instance.n} Tricks geschafft`);
+  assert.ok(Object.keys(scene.instance.done).every((n) => ['Vorhandzieher', 'Rückhandzieher', 'Rückzieher', 'V-Zieher', 'Doppelzieher'].includes(n)), 'nur Zieher');
+  scene.exit.onActivate();
+  assert.ok(result, 'X beendet das Dauertraining mit Abrechnung');
+  assert.equal(result.heldLabel, 'Geübt');
+  assert.ok(result.stars >= 1, `${result.stars} Sterne nach ${Math.round(result.held)} s`);
+});

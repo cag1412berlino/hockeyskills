@@ -5,7 +5,7 @@ export const LEVEL_NAMES = ['Leicht', 'Mittel', 'Schwer'];
 export const SPEEDS = [{ name: 'Langsam', factor: 0.65 }, { name: 'Normal', factor: 1 }, { name: 'Schnell', factor: 1.45 }];
 
 /** Schlüssel für den Bestwert einer Übung: je Stufe und Tempo getrennt. */
-export const scoreKey = (app, game, level) => `${game.id}:${level}:${app.config.speed}`;
+export const scoreKey = (app, game, level) => `${game.scoreId ?? game.id}:${level}:${app.config.speed}`;
 
 /** Die drei Sterne-Schwellen einer Übung auf einer Stufe (für die volle Rundenlänge). */
 export function thresholds(game, level) {

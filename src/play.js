@@ -36,6 +36,7 @@ export class PlayScene {
     this.elapsed = 0;
     this.lives = this.endless ? game.endless.lives : game.lives ?? null;
     this.pace = 0;           // Endlos: so oft wurde es schon schneller
+    this.steady = this.endless && !!game.endless.steady; // Dauertraining: endlos, aber gleichbleibend
     this.countdown = 3.5;
     this.lastTick = 4;
     this.speed = SPEEDS[app.config.speed].factor;
@@ -109,6 +110,7 @@ export class PlayScene {
     const env = {
       field: app.engine.field,
       level: this.level,
+      topic: this.game.topic ?? null,
       duration: this.duration,
       palette: this.colors,
       sound: demo ? new Proxy({}, { get: () => nothing }) : app.sound,
@@ -120,7 +122,7 @@ export class PlayScene {
       /** 0 bis 3: Das Spiel wird im Lauf der Runde stufenweise schwieriger. */
       get stage() { return demo ? 0 : scene.stage; },
       /** Tempo-Faktor passend zur Stufe und dazu, wie gut es gerade läuft. */
-      get ramp() { return demo ? 1 : (scene.endless ? 1 + 0.011 * scene.elapsed : 1 + 0.2 * scene.stage) * scene.assist; },
+      get ramp() { return demo ? 1 : (scene.endless && !scene.steady ? 1 + 0.011 * scene.elapsed : 1 + 0.2 * scene.stage) * scene.assist; },
       get mult() { return demo ? 1 : scene.multiplier(); },
       addScore: demo ? nothing : (n) => { scene.score = Math.max(0, scene.score + (n > 0 ? n * scene.scale * (scene.double > 0 ? 2 : 1) : n)); },
       /** Punkte für eine gelungene Aktion. Schnelle Treffer in Folge bauen eine Serie auf, die die Punkte vervielfacht. */
@@ -142,7 +144,13 @@ export class PlayScene {
   layout() {
     this.exit = new DwellButton({
       x: this.app.engine.field.w - 72, y: 108, r: 36, dwell: 1.5, icon: icons.close,
-      onActivate: () => { this.app.sound.select(); this.app.music.stop(); this.app.menu(); },
+      // Im Dauertraining heißt „X“: fertig für heute – dann wird abgerechnet.
+      onActivate: () => {
+        this.app.sound.select();
+        if (this.steady && this.elapsed > 10 && !this.demo) return this.finish();
+        this.app.music.stop();
+        this.app.menu();
+      },
     });
   }
 
@@ -300,7 +308,7 @@ export class PlayScene {
     // Je höher die Serie, desto farbiger und lebendiger wird die Welt.
     this.app.engine.bloomTo?.(0.25 + 0.25 * (this.multiplier() - 1));
 
-    if (this.endless) {
+    if (this.endless && !this.steady) {
       // Alle 20 Sekunden wird es schneller – ohne Ende
       const pace = Math.floor(this.elapsed / 20);
       if (pace > this.pace) {
@@ -309,7 +317,7 @@ export class PlayScene {
         this.banner = { str: pace === 1 ? 'Schneller!' : pace < 4 ? 'Noch schneller!' : `Tempo ${pace + 1}!`, age: 0, color: '#fff' };
       }
     }
-    const stage = Math.min(STAGES - 1, Math.floor(this.elapsed / ((this.endless ? 60 : this.duration) / STAGES)));
+    const stage = this.steady ? 0 : Math.min(STAGES - 1, Math.floor(this.elapsed / ((this.endless ? 60 : this.duration) / STAGES)));
     if (stage > this.stage) {
       this.stage = stage;
       this.app.sound.stage();
@@ -355,7 +363,8 @@ export class PlayScene {
     const { app, game, level } = this;
     this.score = Math.round(this.score);
     app.music.stop();
-    const stars = medals(game, this.score, level, this.endless ? game.duration ?? 60 : this.duration);
+    // Dauertraining: Sterne nach der geübten Zeit, so zählt fleißiges Üben genauso wie eine Runde
+    const stars = this.steady ? (this.elapsed < 20 ? 0 : medals(game, this.score, level, this.elapsed)) : medals(game, this.score, level, this.endless ? game.duration ?? 60 : this.duration);
     const rewards = app.record(
       { game, level, score: this.score, stars, maxMult: this.maxMult, lives: this.endless ? 0 : game.lives ?? 0, livesLeft: this.lives ?? 0 },
       this.player(),
@@ -372,7 +381,7 @@ export class PlayScene {
       app.profile.highscores[key] = this.score;
       app.save();
     }
-    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards, held: this.endless ? this.elapsed : null });
+    app.result({ game, level, score: this.score, best: record ? this.score : best, record, stars, rewards, held: this.endless ? this.elapsed : null, heldLabel: this.steady ? 'Geübt' : 'Durchgehalten' });
   }
 
   onClick(x, y) { clickButtons([this.exit], x, y); }

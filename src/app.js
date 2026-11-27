@@ -6,6 +6,8 @@ import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScen
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { rankOf, recordRound, recordEvent, dailyGame, dateString } from './profile.js';
 import { CollectionScene } from './collection.js';
+import { TrickMenuScene } from './trickmenu.js';
+import { topicGame } from './games/tricks.js';
 import { setMascotHat } from './ui.js';
 import { randomTheme, worldPalette, bright } from './themes.js';
 
@@ -35,7 +37,8 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     worldPalette: () => worldPalette(engine.theme),
     /** Farbe des Schwerpunkts, zu dem eine Übung (oder der Schwerpunkt selbst) gehört; sonst null. */
     accentOf: (x) => {
-      const cat = categories.find((c) => c === x || c.games.includes(x));
+      // auch für Abwandlungen einer Übung (z. B. Tricks-Dauertraining), die dieselbe id tragen
+      const cat = categories.find((c) => c === x || c.games.some((g) => g === x || g.id === x?.id));
       return cat ? bright(cat.hue) : null;
     },
     today: () => dateString(),
@@ -58,13 +61,31 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     category: (cat) => (cat.games.length > 1 ? app.show(new CategoryScene(app, cat)) : app.levels(cat.games[0])),
     levelsFor: (opts) => app.show(new LevelScene(app, opts)),
     levels: (game) => {
+      // Beim Tricktrainer kommt erst die Wahl: Runde auf Zeit oder ein Thema
+      if (game.id === 'tricks') return app.show(new TrickMenuScene(app, game));
+      app.trickLevels(game);
+    },
+    /** Stufenwahl für eine Übung (beim Tricktrainer für die Runde auf Zeit). */
+    trickLevels: (game) => {
       const cat = categories.find((c) => c.games.includes(game));
       app.levelsFor({
         title: game.name,
         color: app.accentOf(game),
         sub: (level) => bestLabel(app, game, level),
         onPick: (level) => app.play(game, level),
-        onBack: () => (cat.games.length > 1 ? app.category(cat) : app.menu()),
+        onBack: () => (game.id === 'tricks' ? app.levels(game) : cat.games.length > 1 ? app.category(cat) : app.menu()),
+      });
+    },
+    /** Dauertraining der Tricks zu einem Thema: erst die Stufe (wie genau und wie schnell), dann los. */
+    trickTopic: (topicId) => {
+      const game = topicGame(topicId);
+      const tricks = games.find((g) => g.id === 'tricks');
+      app.levelsFor({
+        title: game.name,
+        color: app.accentOf(tricks),
+        sub: (level) => bestLabel(app, game, level),
+        onPick: (level) => app.play(game, level),
+        onBack: () => app.levels(tricks),
       });
     },
     /**

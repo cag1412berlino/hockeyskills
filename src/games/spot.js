@@ -89,7 +89,7 @@ export default {
   name: 'Punktlandung',
   duration: 60,
   scale: 0.95,
-  medals: [[100, 890, 3470], [50, 430, 3370], [20, 280, 3130]],
+  medals: [[100, 890, 3400], [50, 490, 3410], [20, 260, 3240]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

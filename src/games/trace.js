@@ -149,8 +149,8 @@ export default {
   hint: 'Fahre die Form mit dem Ball genau nach!',
   name: 'Zeichnen',
   duration: 60,
-  scale: 1.25,
-  medals: [[130, 610, 1100], [70, 550, 1070], [20, 320, 950]],
+  scale: 1.3,
+  medals: [[130, 630, 1150], [70, 560, 1110], [20, 320, 990]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

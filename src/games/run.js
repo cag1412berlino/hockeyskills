@@ -505,8 +505,8 @@ export default {
   name: 'Rennen',
   duration: 60,
   endless: { lives: 3 }, // als einzelne Übung endlos mit drei Herzen
-  scale: 0.75,
-  medals: [[270, 930, 2050], [50, 530, 1500], [20, 210, 750]],
+  scale: 0.7,
+  medals: [[270, 920, 1960], [30, 480, 1530], [20, 120, 700]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

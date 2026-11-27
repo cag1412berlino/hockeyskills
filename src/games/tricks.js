@@ -1,7 +1,10 @@
 // Spiel "Tricks": der Trick-Trainer. Ein Geisterball zeigt eine Umspielbewegung um einen
 // Verteidiger, danach macht das Kind sie nach: vom Startpunkt aus dem gezeigten Weg folgen,
-// den Verteidiger nicht berühren und rechtzeitig ankommen. Jeder Trick kommt einmal nach
-// rechts und einmal nach links. Wer es nicht schafft, bekommt denselben Trick noch einmal gezeigt.
+// den Verteidiger nicht berühren und rechtzeitig ankommen. Die Tricks kommen in gemischter
+// Reihenfolge und in beide Richtungen. Wer es nicht schafft, bekommt denselben Trick noch einmal gezeigt.
+//
+// Zwei Arten zu spielen: die Runde auf Zeit (Tricks je nach Stufe) und das Dauertraining zu einem
+// Thema (Zieher, Vorhand, Rückhand, Dribbeln, Drehungen, Täuschen): ohne Zeitgrenze, bis man aufhört.
 //
 // Die Tricks sind als einfache Wege beschrieben und lassen sich hier leicht anpassen oder ergänzen:
 // Punkte [seitlich, vor/zurück] relativ zum Verteidiger; der Spieler kommt von unten (positives y).
@@ -15,26 +18,72 @@ const arc = (r, from, to, n = 14) =>
     return [Math.cos(a) * r, Math.sin(a) * r];
   });
 
-const MOVES = [
-  // gerade an, quer ziehen, vorbei
-  { name: 'Seitzieher', pts: [[0, 320], [0, 125], [190, 125], [190, -230]] },
+// pts: Weg um den Verteidiger, diff: ab welcher Stufe der Trick in der Runde auf Zeit vorkommt,
+// topics: zu welchen Themen er gehört. only: 1 = nur nach rechts (Vorhandseite), -1 = nur nach links.
+// Ohne only kommt der Trick in beide Richtungen (gespiegelt).
+const PULL = [[0, 320], [0, 125], [190, 125], [190, -230]];
+export const MOVES = [
+  // gerade an, kurz vor dem Verteidiger quer auf die Vorhand ziehen, vorbei
+  { name: 'Vorhandzieher', pts: PULL, diff: 1, only: 1, topics: ['zieher', 'vorhand'] },
+  // dasselbe zur Rückhand
+  { name: 'Rückhandzieher', pts: PULL, diff: 1, only: -1, topics: ['zieher', 'rueckhand'] },
   // im Bogen außen herum
-  { name: 'Umlaufen', pts: [[0, 320], ...arc(185, 90, -90), [0, -230]] },
-  // schräg an, zurückziehen, zur anderen Seite weg – die Spur sieht aus wie ein V
-  { name: 'V-Zieher', pts: [[-40, 320], [-130, 95], [-10, 230], [150, 70], [150, -230]] },
-  // erst zur einen Seite antäuschen, dann zur anderen ziehen
-  { name: 'Doppelzieher', pts: [[0, 320], [0, 185], [-160, 165], [160, 95], [160, -230]] },
+  { name: 'Umlaufen', pts: [[0, 320], ...arc(185, 90, -90)], diff: 1, topics: ['dribbeln'] },
   // an, ein Stück zurück, seitlich weg
-  { name: 'Rückzieher', pts: [[0, 320], [0, 115], [0, 250], [190, 195], [190, -230]] },
+  { name: 'Rückzieher', pts: [[0, 320], [0, 115], [0, 250], [190, 195], [190, -230]], diff: 2, topics: ['zieher'] },
   // zwei schnelle Haken
-  { name: 'Zickzack', pts: [[0, 320], [110, 190], [-120, 70], [-120, -230]] },
+  { name: 'Zickzack', pts: [[0, 320], [110, 190], [-120, 70], [-120, -230]], diff: 2, topics: ['dribbeln', 'taeuschen'] },
+  // kurz zur einen Seite antäuschen, dann zur anderen vorbei
+  { name: 'Körpertäuschung', pts: [[0, 320], [0, 205], [-75, 175], [0, 150], [190, 110], [190, -230]], diff: 2, topics: ['taeuschen'] },
+  // schräg an, zurückziehen, zur anderen Seite weg – die Spur sieht aus wie ein V
+  { name: 'V-Zieher', pts: [[-40, 320], [-130, 95], [-10, 230], [150, 70], [150, -230]], diff: 2, topics: ['zieher', 'taeuschen'] },
+  // erst zur einen Seite antäuschen, dann weit zur anderen ziehen
+  { name: 'Doppelzieher', pts: [[0, 320], [0, 185], [-160, 165], [160, 95], [160, -230]], diff: 3, topics: ['zieher', 'taeuschen'] },
+  // Indisches Dribbling: schnell links-rechts vor dem Körper, dann vorbei
+  { name: 'Indisches Dribbling', pts: [[0, 330], [-55, 290], [55, 250], [-55, 210], [55, 170], [-40, 135], [180, 95], [180, -230]], diff: 3, topics: ['dribbeln', 'vorhand', 'rueckhand'] },
+  // Drehung: vor dem Verteidiger eine ganze Runde um sich selbst, dann vorbei
+  { name: 'Drehung', pts: [[0, 330], [0, 225], ...arc(62, 180, -180, 22).map(([x, y]) => [x + 62, y + 225]), [190, 150], [190, -230]], diff: 3, topics: ['drehung'] },
+  // Rückwärtsdrehung: vor dem Verteidiger abdrehen, mit dem Rücken zu ihm herum und seitlich weg
+  { name: 'Rückwärtsdrehung', pts: [[0, 330], [0, 170], ...arc(70, -90, 90, 14).map(([x, y]) => [x * -1 + 0, y + 240]), [150, 240], [200, 120], [200, -230]], diff: 3, topics: ['drehung', 'taeuschen'] },
 ];
 
+/** Themen für das Dauertraining. */
+export const TOPICS = [
+  { id: 'zieher', name: 'Zieher', sub: 'Vorhand, Rückhand, V, Rück' },
+  { id: 'vorhand', name: 'Vorhand', sub: 'vorbei auf der rechten Seite' },
+  { id: 'rueckhand', name: 'Rückhand', sub: 'vorbei auf der linken Seite' },
+  { id: 'dribbeln', name: 'Dribbeln', sub: 'Indisch, Zickzack, Bogen' },
+  { id: 'drehung', name: 'Drehungen', sub: 'Drehung, Rückwärtsdrehung' },
+  { id: 'taeuschen', name: 'Täuschen', sub: 'Antäuschen und weg' },
+  { id: 'alle', name: 'Alle Tricks', sub: 'alles gemischt' },
+];
+
+/** Richtung, in der ein Weg am Verteidiger vorbeigeht: 1 = rechts, -1 = links. */
+const exitSide = (move) => Math.sign(move.pts[move.pts.length - 1][0]) || 1;
+
+/** Alle Varianten (Trick + Richtung) für eine Stufe oder ein Thema. */
+export function variants(level, topic = null) {
+  const out = [];
+  for (const move of MOVES) {
+    for (const mirror of [1, -1]) {
+      const side = exitSide(move) * mirror;
+      if (move.only && side !== move.only) continue;
+      if (topic === 'vorhand' && side < 0) continue;
+      if (topic === 'rueckhand' && side > 0) continue;
+      // Vorhand und Rückhand: alle Tricks, die auf dieser Seite vorbeigehen
+      if (topic && !['alle', 'vorhand', 'rueckhand'].includes(topic) && !move.topics.includes(topic)) continue;
+      if (!topic && move.diff > level) continue;
+      out.push({ move, mirror, side });
+    }
+  }
+  return out;
+}
+
 const LEVELS = {
-  //   Anzahl Tricks, erlaubte Abweichung, Zeit im Verhältnis zum Geisterball
-  1: { moves: 2, tol: 95, time: 3.2 },
-  2: { moves: 4, tol: 78, time: 2.5 },
-  3: { moves: 6, tol: 50, time: 1.6 },
+  //   erlaubte Abweichung, Zeit im Verhältnis zum Geisterball
+  1: { tol: 95, time: 3.2 },
+  2: { tol: 78, time: 2.5 },
+  3: { tol: 50, time: 1.6 },
 };
 const GHOST_SPEED = 300; // Feld-Einheiten pro Sekunde
 const REACH = 62;        // so weit reicht der Verteidiger
@@ -45,20 +94,34 @@ class Tricks {
     this.p = LEVELS[env.level];
     this.time = 0;
     this.n = 0;          // wie viele Tricks schon geschafft sind
+    this.done = {};      // geschafft je Trick (Dauertraining)
     this.fx = new Fx();
     this.defender = { x: env.field.w / 2, y: 530 };
+    this.pool = variants(env.level, env.topic ?? null);
+    this.deck = [];
+    this.current = null;
     this.load();
   }
 
-  /** Bereitet den nächsten Trick vor: jeder Trick erst nach rechts, dann gespiegelt nach links. */
+  /** Nächster Trick aus dem gemischten Stapel; nie zweimal derselbe hintereinander. */
+  draw_() {
+    if (!this.deck.length) {
+      this.deck = [...this.pool].sort(() => Math.random() - 0.5);
+      if (this.deck.length > 1 && this.deck[this.deck.length - 1] === this.current) this.deck.unshift(this.deck.pop());
+    }
+    return this.deck.pop();
+  }
+
+  /** Bereitet den nächsten Trick vor. */
   load() {
-    const move = MOVES[Math.floor(this.n / 2) % this.p.moves];
-    const mirror = this.n % 2 ? -1 : 1;
+    this.current = this.draw_();
+    const { move, mirror, side } = this.current;
     const { x, y } = this.defender;
-    this.name = `${move.name} ${mirror > 0 ? '→' : '←'}`;
+    const dir = move.only ? '' : side > 0 ? ' →' : ' ←';
+    this.name = `${move.name}${dir}`;
     this.path = resample(move.pts.map(([px, py]) => ({ x: x + px * mirror, y: y + py })));
     this.ghostTime = (this.path.length * 10) / GHOST_SPEED;
-    this.env.say(`${move.name} nach ${mirror > 0 ? 'rechts' : 'links'}`);
+    this.env.say(move.only ? move.name : `${move.name} nach ${side > 0 ? 'rechts' : 'links'}`);
     this.state = 'show'; // 'show' = vormachen, 'ready' = Ball zum Start, 'do' = nachmachen
     this.t = 0;
     this.idx = 0;
@@ -131,6 +194,9 @@ class Tricks {
       fx.text(ball.x, Math.max(400, ball.y - 50), `${quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
       fx.burst(ball.x, ball.y, env.palette[1], 26);
       this.n++;
+      this.done[this.current.move.name] = (this.done[this.current.move.name] || 0) + 1;
+      // Jeder zehnte geschaffte Trick wird gefeiert
+      if (this.n % 10 === 0) { env.banner(`${this.n} Tricks!`); env.say(`${this.n} Tricks geschafft!`); }
       this.load();
     }
   }
@@ -209,19 +275,21 @@ class Tricks {
     }
 
     text(ctx, this.name, env.field.w / 2, 205, 52, tone(c1, 80), 'center', 8);
+    if (this.n > 0) text(ctx, `${this.n} geschafft`, env.field.w / 2, 150, 24, 'rgba(255,255,255,0.7)', 'center', 0, 500);
     const sub = state === 'show' ? 'Schau zu …' : state === 'ready' ? 'Ball zum Startpunkt' : '';
     if (sub) text(ctx, sub, env.field.w / 2, 262, 32, '#fff', 'center', 0);
     this.fx.draw(ctx, env.field);
   }
 }
 
-export default {
+const module = { default: null };
+export default module.default = {
   id: 'tricks',
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.7,
-  medals: [[130, 600, 980], [80, 530, 870], [20, 460, 800]],
+  scale: 0.75,
+  medals: [[140, 680, 1070], [70, 540, 940], [20, 470, 800]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';
@@ -240,3 +308,18 @@ export default {
   },
   create: (env) => new Tricks(env),
 };
+
+/** Die Übung „Tricks“ als Dauertraining zu einem Thema: ohne Zeitgrenze, bis man aufhört. */
+export function topicGame(topicId) {
+  const topic = TOPICS.find((t) => t.id === topicId);
+  const base = module.default;
+  return {
+    ...base,
+    name: `Tricks: ${topic.name}`,
+    hint: `${topic.name} üben, so lange du magst. Zum Aufhören den Ball aufs X legen.`,
+    scoreId: `tricks-${topic.id}`,
+    topic: topic.id,
+    endless: { lives: null, steady: true },
+    create: (env) => new Tricks(env),
+  };
+}

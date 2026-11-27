@@ -103,7 +103,7 @@ export default {
   name: 'Tippen',
   duration: 60,
   scale: 0.45,
-  medals: [[160, 530, 950], [180, 530, 960], [200, 750, 1050]],
+  medals: [[160, 530, 950], [190, 530, 960], [200, 740, 1040]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

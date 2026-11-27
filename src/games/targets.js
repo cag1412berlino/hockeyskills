@@ -193,7 +193,7 @@ export default {
   name: 'Ziele',
   duration: 60,
   scale: 0.2,
-  medals: [[180, 510, 780], [190, 570, 810], [50, 250, 490]],
+  medals: [[210, 500, 800], [200, 550, 800], [60, 250, 450]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;
