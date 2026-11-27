@@ -54,3 +54,17 @@ test('findBrightSpot findet den Kalibrierpunkt', () => {
   assert.ok(Math.hypot(s.x - 50, s.y - 20) < 0.5);
   assert.equal(findBrightSpot(ref, ref, w, h), null);
 });
+
+test('Vorhalt: schiebt die Position in Bewegungsrichtung, aber begrenzt', async () => {
+  const { predict, setFieldMeters } = await import('../src/engine.js');
+  assert.deepEqual(predict({ x: 100, y: 100 }, { x: 500, y: 0 }, 0.1), { x: 150, y: 100 });
+  assert.deepEqual(predict({ x: 100, y: 100 }, { x: 0, y: 0 }, 0.2), { x: 100, y: 100 });
+  const far = predict({ x: 0, y: 0 }, { x: 9000, y: 0 }, 0.2);
+  assert.equal(far.x, 150, 'ein Ausreißer verschiebt höchstens um 150 Einheiten');
+  // Ballgröße passt sich der Feldgröße an (über die laufende Verknüpfung des Exports)
+  const engine = await import('../src/engine.js');
+  setFieldMeters(3);
+  assert.equal(engine.BALL_RADIUS, 23);
+  setFieldMeters(2);
+  assert.equal(engine.BALL_RADIUS, 35);
+});

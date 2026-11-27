@@ -62,3 +62,6 @@ input[type=text] { font: inherit; padding: 9px 12px; border-radius: 10px; border
 #history th { color: #9cc4ff; font-weight: 600; }
 #history .up { color: #7dffb0; }
 #history .down { color: #ffb38a; }
+#checklist { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 22px; }
+#checklist li { font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(120, 165, 255, 0.3); color: #9aa8c2; }
+#checklist li.done { border-color: rgba(125, 255, 176, 0.6); color: #b9ffd4; background: rgba(40, 120, 80, 0.2); }

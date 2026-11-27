@@ -1,6 +1,6 @@
 // Startpunkt: verbindet Einrichtungsseite, Kamera, Ballerkennung und Kalibrierung mit der App.
 import { config, saveConfig, BRAND } from './config.js';
-import { Engine } from './engine.js';
+import { Engine, setFieldMeters } from './engine.js';
 import { BallTracker, BALL_PRESETS } from './tracker.js';
 import { Camera } from './camera.js';
 import { SimCamera } from './simcam.js';
@@ -10,7 +10,7 @@ import { autoCalibrate, manualCalibrate, toGray } from './calibration.js';
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
 import { games, categories } from './games/index.js';
-import { newProfile, rankOf, summarize } from './profile.js';
+import { newProfile, completeProfile, rankOf, summarize } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
 
@@ -38,6 +38,7 @@ let detection = null;   // letzte Ballposition im Kamerabild
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
+const recent = [];      // die letzten Kamerabilder: Ball erkannt oder nicht (für die Erkennungsquote)
 const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0 };
 
 // ---------- Die App: Navigation, Abrechnung, Training (siehe app.js) ----------
@@ -71,6 +72,8 @@ engine.onFrame = () => {
   }
   detection = tracker.process(source, config.ball);
   fps.tracked++;
+  recent.push(detection ? 1 : 0);
+  if (recent.length > 90) recent.shift();
   if (!setupEl.hidden) drawPreview(preview);
   if (!debugEl.hidden) drawPreview($('#debug-view'));
 };
@@ -95,6 +98,13 @@ function refreshSetup() {
     radio.checked = radio.value === config.fieldShape;
   }
   setBallHue(config.ball.h); // Spielfarben meiden den Farbbereich um den Ball
+  setFieldMeters(config.fieldMeters);
+  $('#field-meters').value = String(config.fieldMeters);
+  $('#latency').value = config.latency;
+  $('#latency-value').textContent = config.latency ? `${config.latency} ms` : 'aus';
+  $('#dim').value = Math.round(config.dim * 100);
+  $('#dim-value').textContent = config.dim ? `${Math.round(config.dim * 100)} %` : 'aus';
+  renderChecklist();
   $('#tolerance').value = config.ball.hTol;
   $('#tolerance-value').textContent = `±${config.ball.hTol}°`;
   $('#rotation').value = String(config.rotation);
@@ -114,6 +124,11 @@ function refreshSetup() {
       : `Kalibriert ✔ (Abweichung ${(c.error * 100).toFixed(1)} % der Fläche${c.error > 0.03 ? ' – eher ungenau, bitte wiederholen' : ''})`;
 }
 
+/** In wie viel Prozent der letzten Kamerabilder der Ball erkannt wurde. */
+function quality() {
+  return recent.length ? Math.round((recent.reduce((a, b) => a + b, 0) / recent.length) * 100) : 0;
+}
+
 /** Zählt einmal pro Sekunde, wie viele Bilder gezeichnet und wie viele Kamerabilder ausgewertet wurden. */
 function countFps() {
   fps.frames++;
@@ -125,11 +140,29 @@ function countFps() {
   fps.since = now;
   if (!debugEl.hidden) {
     $('#debug-info').textContent =
-      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'}`;
+      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder`;
   }
 }
 
 /** Zeichnet das Kamerabild mit türkis markierter Ballfarbe in die Einrichtung oder die Einblendung. */
+/** Kleine Übersicht ganz oben: Was ist für den Betrieb mit Kamera schon erledigt? */
+function renderChecklist() {
+  const steps = [
+    ['Kamera läuft', !!source],
+    ['Ball erkannt', !!source && quality() >= 80],
+    ['Kalibriert', !!config.calib],
+  ];
+  const list = $('#checklist');
+  if (list.children.length !== steps.length) {
+    list.replaceChildren(...steps.map(() => document.createElement('li')));
+  }
+  steps.forEach(([label, done], i) => {
+    const li = list.children[i];
+    li.textContent = `${done ? '✔' : '○'} ${label}`;
+    li.className = done ? 'done' : '';
+  });
+}
+
 /** Liste der Spieler: aktiven wählen, umbenennen, löschen. */
 function renderPlayers() {
   $('#players').replaceChildren(...config.profiles.map((p) => {
@@ -221,7 +254,10 @@ function drawPreview(target) {
     ctx.arc(detection.x * w, detection.y * h, 14, 0, Math.PI * 2);
     ctx.stroke();
   }
-  if (target === preview) $('#track-status').textContent = detection ? 'Ball erkannt ✔' : 'Kein Ball im Bild erkannt.';
+  if (target === preview) {
+    $('#track-status').textContent = detection ? `Ball erkannt ✔ (in ${quality()} % der letzten Bilder)` : 'Kein Ball im Bild erkannt.';
+    renderChecklist();
+  }
 }
 
 async function startCamera(deviceId) {
@@ -324,6 +360,42 @@ function buildSetup() {
     config.theme = e.target.value;
     saveConfig();
     engine.theme = config.theme === 'auto' ? randomTheme() : config.theme;
+  };
+
+  // Feinabstimmung für den Aufbau
+  $('#field-meters').onchange = (e) => { config.fieldMeters = Number(e.target.value); saveConfig(); refreshSetup(); };
+  $('#latency').oninput = (e) => { config.latency = Number(e.target.value); saveConfig(); refreshSetup(); };
+  $('#dim').oninput = (e) => { config.dim = Number(e.target.value) / 100; saveConfig(); refreshSetup(); };
+
+  // Spielstände sichern und laden
+  $('#btn-export').onclick = () => {
+    const data = JSON.stringify({ app: BRAND.name, saved: new Date().toISOString(), current: config.current, profiles: config.profiles }, null, 2);
+    const link = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(new Blob([data], { type: 'application/json' })),
+      download: `skiller-academy-spielstaende-${new Date().toISOString().slice(0, 10)}.json`,
+    });
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+  $('#btn-import').onclick = () => $('#import-file').click();
+  $('#import-file').onchange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.profiles) || !data.profiles.length) throw new Error('keine Spieler in der Datei');
+      const names = data.profiles.map((p) => p.name).join(', ');
+      if (!confirm(`Sicherung laden? Die jetzigen Spieler werden ersetzt durch: ${names}`)) return;
+      config.profiles = data.profiles.map(completeProfile);
+      config.current = config.profiles.some((p) => p.id === data.current) ? data.current : config.profiles[0].id;
+      saveConfig();
+      refreshSetup();
+      app.menu();
+      setMessage();
+    } catch (err) {
+      setMessage(`Die Sicherung konnte nicht geladen werden (${err.message}).`);
+    }
   };
 
   // Spieler
@@ -523,6 +595,7 @@ $('#brand').textContent = BRAND.name;
 for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
 setBallHue(config.ball.h);
+setFieldMeters(config.fieldMeters);
 engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt
 $('#version').textContent = `Version ${VERSION}`;
 sound.muted = config.muted;

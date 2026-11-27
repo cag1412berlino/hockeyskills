@@ -9,6 +9,9 @@ const defaults = () => ({
   ball: { preset: 'orange', ...BALL_PRESETS.orange },
   fieldShape: 'square', // 'square' = Quadrat, 'full' = ganze Projektionsfläche
   speed: 1,             // Tempo: 0 = langsam, 1 = normal, 2 = schnell
+  fieldMeters: 2,       // tatsächliche Kantenlänge des projizierten Felds in Metern
+  latency: 0,           // Vorhalt in Millisekunden gegen die Verzögerung von Kamera und Beamer
+  dim: 0,               // Projektion abdunkeln, 0 bis 0.6
   rotation: 0,          // Bild drehen: 0, 90, 180 oder 270 Grad (startet immer bei 0)
   muted: false,
   calib: null,          // { H, aspect, error }

@@ -5,7 +5,27 @@
 import { theme, glow, noGlow, star } from './ui.js';
 import { THEMES, Floor } from './themes.js';
 
-export const BALL_RADIUS = 35; // Ballgröße in Feld-Einheiten (für Treffer-Abfragen)
+/**
+ * Ballgröße in Feld-Einheiten, großzügig für Treffer-Abfragen. Sie hängt davon ab, wie groß
+ * das projizierte Feld wirklich ist: Auf einem 3-Meter-Feld ist der Ball im Verhältnis kleiner.
+ */
+export let BALL_RADIUS = 35;
+
+/** Stellt die tatsächliche Kantenlänge des Felds in Metern ein (Höhe der Projektion). */
+export function setFieldMeters(meters) {
+  BALL_RADIUS = Math.round(70 / Math.max(1, meters));
+}
+
+/**
+ * Vorhalt: schätzt, wo der Ball jetzt wirklich ist, obwohl das Kamerabild `seconds` alt ist.
+ * Die Verschiebung ist begrenzt, damit ein Ausreißer in der Geschwindigkeit nichts verreißt.
+ */
+export function predict(pos, vel, seconds, limit = 150) {
+  const dx = vel.x * seconds, dy = vel.y * seconds;
+  const d = Math.hypot(dx, dy);
+  const k = d > limit ? limit / d : 1;
+  return { x: pos.x + dx * k, y: pos.y + dy * k };
+}
 const MAX_HEIGHT = 1440;       // höchste Bildhöhe in Pixeln, mit der gerechnet wird
 
 export class Engine {
@@ -16,6 +36,7 @@ export class Engine {
     this.field = { x: 0, y: 0, scale: 1, w: 1000, h: 1000 };
     this.ball = { x: 0, y: 0, vx: 0, vy: 0, visible: false };
     this.lostFor = Infinity;
+    this.seen = { x: 0, y: 0, vx: 0, vy: 0 }; // Ball, wie ihn die Kamera zuletzt gesehen hat
     this.trail = [];            // letzte Ballpositionen für den Schweif
     this.scene = null;
     this.paused = false;        // true, solange die Einrichtung offen ist
@@ -141,15 +162,24 @@ export class Engine {
       if (this.lostFor > 0.3) { b.visible = false; b.vx = b.vy = 0; this.trail.length = 0; }
       return;
     }
+    // s = geglättete Position aus dem Kamerabild, v = beruhigte Geschwindigkeit
+    const s = this.seen;
     if (!b.visible || dt <= 0) {
-      b.x = x; b.y = y; b.vx = b.vy = 0;
+      s.x = x; s.y = y; s.vx = s.vy = 0;
     } else {
-      const nx = b.x + (x - b.x) * 0.7; // leichte Glättung gegen Zittern
-      const ny = b.y + (y - b.y) * 0.7;
-      b.vx = (nx - b.x) / dt;
-      b.vy = (ny - b.y) / dt;
-      b.x = nx; b.y = ny;
+      const nx = s.x + (x - s.x) * 0.7; // leichte Glättung gegen Zittern
+      const ny = s.y + (y - s.y) * 0.7;
+      b.vx = (nx - s.x) / dt;
+      b.vy = (ny - s.y) / dt;
+      s.vx += (b.vx - s.vx) * 0.35;
+      s.vy += (b.vy - s.vy) * 0.35;
+      s.x = nx; s.y = ny;
     }
+    // Vorhalt gleicht die Verzögerung von Kamera und Beamer aus (0 = aus).
+    const lead = (this.config.latency || 0) / 1000;
+    const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead) : s;
+    b.x = at.x; b.y = at.y;
+    if (!b.visible) b.vx = b.vy = 0;
     b.visible = true;
     this.lostFor = 0;
     this.trail.push({ x: b.x, y: b.y });
@@ -284,6 +314,11 @@ export class Engine {
       if (ball.visible) this.drawBall(ctx);
       ctx.restore();
       this.drawFrame(ctx);
+      if (this.config.dim > 0) {
+        // Projektion abdunkeln: weniger Licht auf dem Ball, falls die Kamera ihn sonst schlecht erkennt
+        ctx.fillStyle = `rgba(0,0,0,${Math.min(0.7, this.config.dim)})`;
+        ctx.fillRect(0, 0, f.w, f.h);
+      }
       if (this.fade > 0) {
         // weiche Überblendung nach einem Szenenwechsel
         ctx.fillStyle = `rgba(2,4,14,${this.fade})`;

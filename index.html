@@ -15,6 +15,8 @@
     <div class="panel">
       <header><img id="logo" alt="Vereinslogo" hidden><h1 id="brand">Blau-Weiss Skiller Academy</h1></header>
 
+      <ul id="checklist" aria-label="Stand der Einrichtung"></ul>
+
       <section>
         <h2>1. Kamera</h2>
         <div class="row">
@@ -68,6 +70,20 @@
       </section>
 
       <p id="message" class="error"></p>
+      <details>
+        <summary>Feinabstimmung für den Aufbau</summary>
+        <div class="row">
+          <label>Feldgröße (Höhe der Projektion)
+            <select id="field-meters"><option value="1.5">1,5 m</option><option value="2">2 m</option><option value="2.5">2,5 m</option><option value="3">3 m</option></select>
+          </label>
+        </div>
+        <p class="hint">Damit der Ring um den Ball und die Trefferflächen zur echten Ballgröße passen.</p>
+        <label>Vorhalt <input type="range" id="latency" min="0" max="250" step="10"> <span id="latency-value"></span></label>
+        <p class="hint">Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft. Zu viel lässt ihn vorauseilen und zittern.</p>
+        <label>Projektion abdunkeln <input type="range" id="dim" min="0" max="60" step="5"> <span id="dim-value"></span></label>
+        <p class="hint">Erhöhen, wenn der Ball im projizierten Bild schlechter erkannt wird als auf dunklem Boden.</p>
+      </details>
+
       <details open>
         <summary>Spieler</summary>
         <div id="players"></div>
@@ -107,6 +123,12 @@
         <p class="hint" id="history-title"></p>
         <table id="history"></table>
         <div class="row"><button id="btn-reset-scores">Bestwerte dieses Spielers löschen</button></div>
+        <div class="row">
+          <button id="btn-export">Alle Spielstände sichern</button>
+          <button id="btn-import">Sicherung laden</button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+        <p class="hint">Spielstände liegen nur in diesem Browser auf diesem Gerät. Die Sicherung ist eine Datei, die sich auf einem anderen Gerät wieder laden lässt.</p>
       </details>
 
       <p class="hint" id="version"></p>

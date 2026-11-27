@@ -116,6 +116,20 @@ Danach in Chrome `http://localhost:8080` öffnen. Die Kamera funktioniert nur ü
 
 Nach jedem Umstellen von Beamer, Kamera oder Fenstergröße neu kalibrieren (Taste `C`).
 
+Oben in der Einrichtung zeigt eine kleine Checkliste, was schon erledigt ist: Kamera läuft, Ball erkannt, kalibriert.
+
+### Feinabstimmung für den Aufbau
+
+| Einstellung | Wofür |
+| --- | --- |
+| **Feldgröße** | Tatsächliche Höhe der Projektion (1,5 bis 3 m). Damit passen der Ring um den Ball und die Trefferflächen zur echten Ballgröße. |
+| **Vorhalt** | Gleicht die Verzögerung von Kamera und Beamer aus. Erhöhen, wenn der Ring dem Ball bei schnellen Bewegungen hinterherläuft; zu viel lässt ihn vorauseilen. |
+| **Projektion abdunkeln** | Weniger Beamerlicht auf dem Ball, falls er im projizierten Bild schlechter erkannt wird als auf dunklem Boden. |
+
+### Spielstände sichern
+
+Spielstände liegen nur im Browser des Geräts. Unter **Verlauf** lassen sich alle Spieler als Datei sichern und auf einem anderen Gerät (oder nach dem Löschen der Browserdaten) wieder laden.
+
 | Taste | Funktion |
 | --- | --- |
 | `F` | Vollbild an/aus |
@@ -130,11 +144,12 @@ Fehlt der Ball länger als 2,5 Sekunden (weggerollt, verdeckt), pausiert das Spi
 
 ## Wenn der Ball nicht zuverlässig erkannt wird
 
-1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden.
+1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden und in wie viel Prozent der letzten Bilder der Ball erkannt wurde (gut sind über 90 %).
 2. Wird der Ball nur manchmal türkis: in der Einrichtung die **Farbtoleranz** erhöhen oder im Kamerabild auf den Ball klicken, während er im projizierten Feld liegt.
 3. Leuchtet anderes türkis auf (Kleidung, Möbel, Schläger): Toleranz senken oder die störenden Dinge aus dem Bild nehmen.
 4. Schwankt die Erkennung, wenn das projizierte Bild heller oder dunkler wird: **Kamera-Automatik sperren** einschalten. Das geht nicht mit jeder Webcam.
-5. Raum weiter abdunkeln. Farbiges Beamerlicht verfälscht die Ballfarbe weniger, wenn kein Tageslicht dazukommt.
+5. **Projektion abdunkeln** (Feinabstimmung) erhöhen, wenn der Ball nur im hellen Beamerbild verloren geht.
+6. Raum weiter abdunkeln. Farbiges Beamerlicht verfälscht die Ballfarbe weniger, wenn kein Tageslicht dazukommt.
 
 ## Offline
 
