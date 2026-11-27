@@ -1,0 +1,11 @@
+{
+  "name": "hockeyskills",
+  "version": "0.1.0",
+  "description": "Interaktive Hockey-Skill-Spiele mit Beamer und Kamera",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

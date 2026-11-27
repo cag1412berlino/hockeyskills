@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hockey Skills</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <video id="cam" playsinline muted hidden></video>
+
+  <div id="setup">
+    <div class="panel">
+      <h1>Hockey Skills</h1>
+
+      <section>
+        <h2>1. Kamera</h2>
+        <div class="row">
+          <select id="camera-select" aria-label="Kamera"></select>
+          <button id="btn-camera">Kamera starten</button>
+        </div>
+        <canvas id="preview" width="480" height="270"></canvas>
+        <p id="track-status" class="status">Kamera ist aus.</p>
+      </section>
+
+      <section>
+        <h2>2. Ballfarbe</h2>
+        <div id="ball-presets" class="row"></div>
+        <p class="hint">Erkannte Ballfarbe leuchtet im Kamerabild türkis. Passt es nicht: im Kamerabild direkt auf den Ball klicken.</p>
+      </section>
+
+      <section>
+        <h2>3. Spielfeld</h2>
+        <div class="row">
+          <label><input type="radio" name="shape" value="square"> Quadrat</label>
+          <label><input type="radio" name="shape" value="full"> Ganze Projektionsfläche</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>4. Kalibrierung</h2>
+        <p class="hint">Fenster zuerst auf den Beamer legen und Vollbild einschalten. Die Kamera muss das ganze Spielfeld sehen.</p>
+        <div class="row">
+          <button id="btn-fullscreen">Vollbild</button>
+          <button id="btn-auto">Automatisch (mit Beamer)</button>
+          <button id="btn-manual">Manuell (4 Ecken anklicken)</button>
+        </div>
+        <p id="calib-status" class="status"></p>
+      </section>
+
+      <section class="row">
+        <button id="btn-play" class="primary">Spielen</button>
+        <button id="btn-mouse">Ohne Kamera testen (Maus als Ball)</button>
+      </section>
+
+      <p id="message" class="error"></p>
+      <p class="hint">Tasten: <b>F</b> Vollbild · <b>C</b> neu kalibrieren · <b>Esc</b> zurück / Einrichtung</p>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
