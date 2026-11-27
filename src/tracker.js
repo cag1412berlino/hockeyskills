@@ -83,12 +83,16 @@ export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array
   const minArea = Math.max(6, Math.round(w * h * 0.00004));
   const maxArea = w * h * 0.15; // größere Flächen sind kein Ball (z. B. oranger Boden)
   let best = null, bestScore = 0;
+  const seen = [];
   for (const b of findBlobs(mask, w, h, minArea)) {
     if (b.area > maxArea) continue;
     let score = b.area;
     if (last && Math.hypot(b.x - last.x, b.y - last.y) < w * 0.15) score *= 2;
     if (score > bestScore) { bestScore = score; best = b; }
+    seen.push(b);
   }
+  // Wie viele andere Flecken sind ähnlich groß? (Hinweis auf Störungen in Ballfarbe)
+  if (best) best.rivals = seen.filter((b) => b !== best && b.area >= best.area * 0.3).length;
   return best;
 }
 
@@ -128,7 +132,7 @@ export class BallTracker {
     const { width: w, height: h } = img;
     const b = detectBall(img.data, w, h, color, this.last, this.mask);
     this.last = b;
-    return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area } : null;
+    return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals: b.rivals } : null;
   }
 
   /** Lernt die Ballfarbe aus dem letzten Bild an der normierten Stelle (nx, ny). */

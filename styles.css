@@ -66,3 +66,16 @@ input[type=text] { font: inherit; padding: 9px 12px; border-radius: 10px; border
 #checklist li { font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(120, 165, 255, 0.3); color: #9aa8c2; }
 #checklist li.done { border-color: rgba(125, 255, 176, 0.6); color: #b9ffd4; background: rgba(40, 120, 80, 0.2); }
 #howto { width: 100%; display: block; border-radius: 12px; border: 1px solid rgba(120, 165, 255, 0.35); cursor: pointer; }
+#test-box { margin: 10px 0; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(120, 165, 255, 0.35); background: rgba(8, 18, 44, 0.6); }
+#test-step { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+#test-bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+#test-bar i { display: block; height: 100%; width: 0; background: #46e0ff; }
+#test-verdict { font-weight: 600; margin: 10px 0 6px; }
+#test-verdict.g0 { color: #7dffb0; } #test-verdict.g1 { color: #ffd76a; } #test-verdict.g2 { color: #ff8f8f; }
+#test-result { list-style: none; padding: 0; margin: 0; font-size: 15px; }
+#test-result li { padding: 6px 0; border-top: 1px solid rgba(120, 165, 255, 0.15); }
+#test-result li b { font-weight: 600; }
+#test-result li .tip { display: block; color: #9aa8c2; font-size: 14px; margin-top: 2px; }
+#test-result li.g0::before { content: '✔ '; color: #7dffb0; }
+#test-result li.g1::before { content: '● '; color: #ffd76a; }
+#test-result li.g2::before { content: '✘ '; color: #ff8f8f; }

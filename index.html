@@ -40,8 +40,17 @@
         <h2>2. Ballfarbe</h2>
         <div id="ball-presets" class="row"></div>
         <p class="hint">Erkannte Ballfarbe leuchtet im Kamerabild türkis. Passt es nicht: im Kamerabild direkt auf den Ball klicken.</p>
+        <p class="hint">Noch kein Ball da? Ein Post-it in Neonfarbe (gelb, grün, pink oder orange) geht zum Ausprobieren genauso: auf den Boden legen und im Kamerabild darauf klicken.</p>
         <label>Farbtoleranz <input type="range" id="tolerance" min="6" max="40" step="1"> <span id="tolerance-value"></span></label>
         <p class="hint">Höher, wenn der Ball nicht immer erkannt wird. Niedriger, wenn anderes türkis aufleuchtet.</p>
+        <div class="row"><button id="btn-test">Erkennung testen</button></div>
+        <div id="test-box" hidden>
+          <p id="test-step"></p>
+          <div id="test-bar"><i></i></div>
+          <p id="test-verdict"></p>
+          <ul id="test-result"></ul>
+        </div>
+        <p class="hint">Der Test dauert 11 Sekunden: Ball oder Post-it erst still liegen lassen, dann langsam durchs ganze Kamerabild schieben. Danach steht hier, was gut ist und was sich verbessern lässt. Beamer und Kalibrierung braucht es dafür nicht.</p>
       </section>
 
       <section>

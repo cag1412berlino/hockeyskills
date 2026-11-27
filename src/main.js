@@ -14,6 +14,7 @@ import { newProfile, completeProfile, rankOf, summarize } from './profile.js';
 import { THEMES, randomTheme, setBallHue } from './themes.js';
 import { VERSION } from './version.js';
 import { startHowTo } from './howto.js';
+import { RecognitionTest, STILL_SECONDS, MOVE_SECONDS } from './trackingtest.js';
 
 const $ = (s) => document.querySelector(s);
 const SIM = new URLSearchParams(location.search).has('sim');
@@ -39,6 +40,8 @@ let detection = null;   // letzte Ballposition im Kamerabild
 let lastVideoTime = -1;
 let cancelCalibration = null;
 let calibrating = false;
+let recognition = null; // laufender Erkennungstest oder null
+let lastTrackTime = 0;
 const recent = [];      // die letzten Kamerabilder: Ball erkannt oder nicht (für die Erkennungsquote)
 const fps = { frames: 0, tracked: 0, since: performance.now(), render: 0, camera: 0 };
 
@@ -75,6 +78,9 @@ engine.onFrame = () => {
   fps.tracked++;
   recent.push(detection ? 1 : 0);
   if (recent.length > 90) recent.shift();
+  const now = performance.now();
+  if (recognition) stepRecognition(Math.min(0.5, (now - lastTrackTime) / 1000));
+  lastTrackTime = now;
   if (!setupEl.hidden) drawPreview(preview);
   if (!debugEl.hidden) drawPreview($('#debug-view'));
 };
@@ -95,6 +101,8 @@ function refreshSetup() {
   for (const btn of $('#ball-presets').children) {
     btn.classList.toggle('active', btn.dataset.preset === config.ball.preset);
   }
+  $('#btn-test').onclick = startRecognition;
+
   for (const radio of document.querySelectorAll('input[name=shape]')) {
     radio.checked = radio.value === config.fieldShape;
   }
@@ -123,6 +131,55 @@ function refreshSetup() {
     : c.error == null
       ? 'Kalibriert ✔'
       : `Kalibriert ✔ (Abweichung ${(c.error * 100).toFixed(1)} % der Fläche${c.error > 0.03 ? ' – eher ungenau, bitte wiederholen' : ''})`;
+}
+
+/** Erkennungstest: ein Kamerabild weiterreichen, Anzeige nachführen, am Ende auswerten. */
+function stepRecognition(dt) {
+  const t = recognition;
+  t.add(detection, dt, tracker.frame?.width || 480);
+  const total = STILL_SECONDS + MOVE_SECONDS;
+  $('#test-bar').firstElementChild.style.width = `${Math.min(100, (t.time / total) * 100)}%`;
+  if (t.phase === 'still') {
+    $('#test-step').textContent = `1. Still liegen lassen … ${Math.ceil(t.remaining)}`;
+  } else if (t.phase === 'move') {
+    $('#test-step').textContent = `2. Jetzt langsam durchs ganze Kamerabild bewegen … ${Math.ceil(t.remaining)}`;
+  } else {
+    recognition = null;
+    showRecognition(t.result());
+  }
+}
+
+function showRecognition(r) {
+  $('#test-step').textContent = 'Ergebnis';
+  $('#test-verdict').textContent = r.verdict;
+  $('#test-verdict').className = `g${r.grade}`;
+  $('#test-result').replaceChildren(...r.checks.map((c) => {
+    const li = document.createElement('li');
+    li.className = `g${c.grade}`;
+    const b = document.createElement('b');
+    b.textContent = `${c.label}: `;
+    li.append(b, c.value);
+    if (c.tip) {
+      const tip = document.createElement('span');
+      tip.className = 'tip';
+      tip.textContent = c.tip;
+      li.append(tip);
+    }
+    return li;
+  }));
+  $('#btn-test').textContent = 'Test wiederholen';
+  $('#btn-test').disabled = false;
+}
+
+function startRecognition() {
+  if (!source) { setMessage('Für den Test zuerst die Kamera starten.'); return; }
+  setMessage();
+  recognition = new RecognitionTest();
+  lastTrackTime = performance.now();
+  $('#test-box').hidden = false;
+  $('#test-verdict').textContent = '';
+  $('#test-result').replaceChildren();
+  $('#btn-test').disabled = true;
 }
 
 /** In wie viel Prozent der letzten Kamerabilder der Ball erkannt wurde. */

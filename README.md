@@ -144,6 +144,17 @@ Spielstände liegen nur im Browser des Geräts. Unter **Verlauf** lassen sich al
 
 Fehlt der Ball länger als 2,5 Sekunden (weggerollt, verdeckt), pausiert das Spiel von selbst und läuft weiter, sobald er wieder im Feld liegt.
 
+## Erkennung testen (auch mit Post-it)
+
+Unter **2. Ballfarbe** gibt es den Knopf **Erkennung testen**. Der Test braucht nur die Kamera, keinen Beamer und keine Kalibrierung, und dauert 11 Sekunden:
+
+1. Ball vier Sekunden still liegen lassen.
+2. Sieben Sekunden langsam kreuz und quer durchs ganze Kamerabild bewegen.
+
+Danach zeigt die App, wie oft der Ball im Liegen und in Bewegung erkannt wurde, wie groß er im Bild ist, ob die Position zittert, ob etwas anderes dieselbe Farbe hat und wie viele Bilder pro Sekunde die Kamera liefert. Zu jedem Mangel steht ein Tipp dabei.
+
+Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen, im Kamerabild darauf klicken (die App lernt die Farbe) und den Test starten. Ein Post-it ist etwa so groß wie ein Hockeyball, liegt aber flach; ein echter Ball wirft Schatten und glänzt, das Ergebnis ist also ein guter Anhaltspunkt, kein Ersatz für den Test mit Ball.
+
 ## Wenn der Ball nicht zuverlässig erkannt wird
 
 1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden und in wie viel Prozent der letzten Bilder der Ball erkannt wurde (gut sind über 90 %).
@@ -214,6 +225,7 @@ Die App kommt ohne Build-Schritt und ohne Abhängigkeiten aus: reines HTML, CSS 
 | `src/play.js` | Der Spielbildschirm: Vormachen, Countdown, Punkte, Serien, Ereignisse, Pause |
 | `src/scenes.js`, `src/session.js`, `src/scenebase.js` | Menü, Stufenwahl, Ergebnis, Profil; Training und Duell; gemeinsame Grundlage |
 | `src/games/` | Die 18 Übungen, `index.js` ordnet sie den Schwerpunkten zu, `common.js` enthält gemeinsame Bausteine |
+| `src/trackingtest.js` | Erkennungstest: Messwerte sammeln und bewerten |
 | `src/howto.js` | Erklär-Animation „So funktioniert es“ in der Einrichtung |
 | `src/draw.js`, `src/characters.js`, `src/ui.js` | Schrift und Leuchten; Wesen, Sammelstücke, Bösewichte, Maskottchen; Buttons und Symbole. `ui.js` reicht alles weiter, ein Import genügt. |
 | `src/themes.js` | Die vier Themenwelten, die Farbregel zur Ballfarbe und der reagierende Boden |
