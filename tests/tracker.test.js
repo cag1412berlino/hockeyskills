@@ -182,3 +182,24 @@ test('Blasser Ball (überbelichtet, Filz) auf ähnlich gefärbtem Boden: Farbe p
   assert.ok(found && Math.abs(found.x - 98) < 3 && Math.abs(found.y - 40) < 3, JSON.stringify(found));
   assert.ok(t.share(color) < 0.01, 'Boden und weiße Flächen zählen nicht');
 });
+
+test('Ball-Verfolgung: bleibt am Ball, auch wenn das Schlägerblatt in Ballfarbe kurz größer ist', async () => {
+  const { BallFollower } = await import('../src/tracker.js');
+  const f = new BallFollower(480);
+  const ball = (x, y) => ({ x, y, area: 20, fill: 0.78 });
+  const stick = (x, y) => ({ x, y, area: 45, fill: 0.5 });
+  let jumps = 0, prev = null;
+  for (let i = 0; i < 60; i++) {
+    const list = [ball(200 + i * 2, 150)];
+    if (i % 3 === 0) list.push(stick(320, 90 + (i % 7) * 5)); // Schläger taucht immer wieder auf, an wechselnden Stellen
+    if (i % 10 === 5) list.shift();                          // Ball kurz verdeckt
+    const got = f.step(list);
+    if (got && prev && Math.hypot(got.x - prev.x, got.y - prev.y) > 30) jumps++;
+    if (got) prev = got;
+  }
+  assert.equal(jumps, 0, 'kein Sprung zum Schläger');
+  // Verschwindet der Ball wirklich, wird ein stabiler anderer Fleck übernommen
+  let taken = null;
+  for (let i = 0; i < 6; i++) taken = f.step([ball(60, 230)]);
+  assert.ok(taken && taken.x === 60, 'neuer Ball an anderer Stelle wird nach kurzer Zeit gefunden');
+});

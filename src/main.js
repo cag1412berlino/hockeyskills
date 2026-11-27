@@ -496,6 +496,11 @@ function buildSetup() {
     refreshSetup();
     // Rückmeldung: wie eindeutig ist die gelernte Farbe?
     const share = tracker.share(config.ball);
+    const blob = tracker.blobAt((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, config.ball);
+    if (blob && !blob.round) {
+      setMessage('Das sieht eher länglich aus als rund – vielleicht der Schläger? Bitte genau auf den Ball klicken, am besten wenn er allein im Feld liegt.');
+      return;
+    }
     setMessage(share > 0.02
       ? 'Ballfarbe gelernt – aber diese Farbe kommt auch noch woanders im Bild vor (türkis markiert). Störende Dinge wegräumen oder die Farbtoleranz senken.'
       : pale ? 'Ballfarbe gelernt. Der Ball wirkt im Kamerabild blass – die App sucht deshalb nach hellen Stellen in Ballfarbe. Weniger Licht oder „Projektion abdunkeln“ macht die Farbe kräftiger.' : 'Ballfarbe gelernt ✔');

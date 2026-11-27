@@ -87,9 +87,10 @@ export function findBlobs(mask, w, h, minArea = 1) {
 export function ballLike(b) {
   if (!b.bw || !b.bh) return 1; // ohne Maße keine Aussage
   const fill = b.area / (b.bw * b.bh);
-  if (b.area < 16) return Math.max(0.5, fill); // winzige Flecken sind zu grob gerastert für eine Formprüfung
+  // winzige Flecken sind zu grob gerastert für eine genaue Formprüfung – nur ganz schmale (ein Schlägerstück) fallen raus
+  if (b.area < 16) return Math.max(b.bw, b.bh) / Math.min(b.bw, b.bh) > 3 ? 0 : Math.max(0.5, fill);
   const aspect = Math.max(b.bw, b.bh) / Math.min(b.bw, b.bh);
-  if (fill < 0.42 || aspect > 3.5) return 0;
+  if (fill < 0.45 || aspect > 2.6) return 0;
   return Math.min(1, fill);
 }
 
@@ -99,25 +100,111 @@ export function ballLike(b) {
  * region (optional) ist eine Maske wie mask: 1 = hier darf gesucht werden.
  */
 export function detectBall(rgba, w, h, color, last = null, mask = new Uint8Array(w * h), region = null) {
+  const list = candidates(rgba, w, h, color, mask, region);
+  let best = null, bestScore = 0;
+  for (const b of list) {
+    let score = b.area * b.fill * b.fill;
+    if (last && Math.hypot(b.x - last.x, b.y - last.y) < w * 0.15) score *= 2;
+    if (score > bestScore) { bestScore = score; best = b; }
+  }
+  // Wie viele andere Flecken sind ähnlich groß? (Hinweis auf Störungen in Ballfarbe)
+  if (best) best.rivals = list.filter((b) => b !== best && b.area >= best.area * 0.3).length;
+  return best;
+}
+
+/** Alle Flecken in Ballfarbe, die wie ein Ball aussehen (kompakt, nicht zu groß), mit Füllgrad. */
+export function candidates(rgba, w, h, color, mask = new Uint8Array(w * h), region = null) {
   colorMask(rgba, w, h, color, mask);
   // Nur im Spielfeld suchen: alles außerhalb (Möbel, Wände, Kleidung am Rand) zählt nicht.
   if (region) for (let i = 0; i < mask.length; i++) if (!region[i]) mask[i] = 0;
   const minArea = Math.max(6, Math.round(w * h * 0.00004));
   const maxArea = w * h * 0.15; // größere Flächen sind kein Ball (z. B. oranger Boden)
-  let best = null, bestScore = 0;
-  const seen = [];
+  const out = [];
   for (const b of findBlobs(mask, w, h, minArea)) {
     if (b.area > maxArea) continue;
     const fill = ballLike(b);
-    if (!fill) continue;
-    let score = b.area * fill * fill;
-    if (last && Math.hypot(b.x - last.x, b.y - last.y) < w * 0.15) score *= 2;
-    if (score > bestScore) { bestScore = score; best = b; }
-    seen.push(b);
+    if (fill) out.push({ ...b, fill });
   }
-  // Wie viele andere Flecken sind ähnlich groß? (Hinweis auf Störungen in Ballfarbe)
-  if (best) best.rivals = seen.filter((b) => b !== best && b.area >= best.area * 0.3).length;
-  return best;
+  return out;
+}
+
+/**
+ * Bleibt am Ball: Von Bild zu Bild wird der Fleck genommen, der dort liegt, wo der Ball nach seiner
+ * bisherigen Bewegung sein müsste, und ungefähr so groß ist wie bisher. Ein anderer Fleck in
+ * Ballfarbe (Schlägerblatt, Kleidung) wird erst übernommen, wenn der Ball länger verschwunden ist
+ * oder der andere Fleck mehrere Bilder hintereinander an derselben Stelle auftaucht.
+ * So springt die Erkennung nicht zwischen Ball und Schläger hin und her.
+ */
+export class BallFollower {
+  constructor(width) {
+    this.w = width;
+    this.reset();
+  }
+
+  reset() {
+    this.last = null;     // { x, y, area }
+    this.vx = 0;
+    this.vy = 0;
+    this.missed = 0;      // Bilder ohne passenden Fleck
+    this.pending = null;  // anderer Fleck, der vielleicht der Ball ist { x, y, area, count }
+  }
+
+  /** Nächstes Kamerabild: list = Kandidaten. Liefert den Ball oder null. */
+  step(list) {
+    const { w } = this;
+    const best = (arr) => arr.reduce((a, b) => (!a || b.area * b.fill * b.fill > a.area * a.fill * a.fill ? b : a), null);
+    if (!this.last) {
+      const b = best(list);
+      if (b) this.take(b, false);
+      return b;
+    }
+    const px = this.last.x + this.vx, py = this.last.y + this.vy;
+    const gate = Math.max(w * 0.07, Math.hypot(this.vx, this.vy) * 1.6 + w * 0.04);
+    let pick = null, pickScore = -Infinity;
+    for (const b of list) {
+      const d = Math.hypot(b.x - px, b.y - py);
+      if (d > gate) continue;
+      // nah an der Vorhersage und ähnlich groß wie bisher
+      const size = Math.abs(Math.log(b.area / this.last.area));
+      const score = -d / gate - size * 0.5 + b.fill * 0.3;
+      if (score > pickScore) { pickScore = score; pick = b; }
+    }
+    if (pick) {
+      this.take(pick, true);
+      return pick;
+    }
+    // Kein Fleck, wo der Ball sein müsste
+    this.missed++;
+    const far = best(list);
+    if (far) {
+      const p = this.pending;
+      this.pending = p && Math.hypot(far.x - p.x, far.y - p.y) < w * 0.06 ? { ...far, count: p.count + 1 } : { ...far, count: 1 };
+      // umschwenken, wenn der andere Fleck stabil da ist oder der Ball schon länger fehlt
+      if (this.pending.count >= 4 || this.missed > 9) {
+        this.take(far, false);
+        return far;
+      }
+    }
+    if (this.missed > 15) this.reset();
+    // die Bewegung läuft gedämpft weiter, damit die Vorhersage stimmt, wenn er wieder auftaucht
+    this.vx *= 0.8;
+    this.vy *= 0.8;
+    return null;
+  }
+
+  take(b, follow) {
+    if (follow && this.last) {
+      this.vx = this.vx * 0.4 + (b.x - this.last.x) * 0.6;
+      this.vy = this.vy * 0.4 + (b.y - this.last.y) * 0.6;
+      this.last = { x: b.x, y: b.y, area: this.last.area * 0.7 + b.area * 0.3 };
+    } else {
+      this.vx = 0;
+      this.vy = 0;
+      this.last = { x: b.x, y: b.y, area: b.area };
+    }
+    this.missed = 0;
+    this.pending = null;
+  }
 }
 
 /**
@@ -164,7 +251,7 @@ export function regionMask(points, w, h) {
 
 /** Holt Bilder aus der Kamera (verkleinert) und sucht darin den Ball. */
 export class BallTracker {
-  constructor(procWidth = 480) {
+  constructor(procWidth = 640) {
     this.procWidth = procWidth;
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
@@ -194,6 +281,7 @@ export class BallTracker {
       this.canvas.height = h;
       this.mask = new Uint8Array(w * h);
       this.last = null;
+      this.follow = new BallFollower(w);
       this.region = null;
     }
     this.ctx.drawImage(source, 0, 0, w, h);
@@ -208,9 +296,12 @@ export class BallTracker {
     const { width: w, height: h } = img;
     if (this.regionPoints && (!this.region || this.region.length !== w * h)) this.region = regionMask(this.regionPoints, w, h);
     const region = this.useRegion && this.regionPoints ? this.region : null;
-    const b = detectBall(img.data, w, h, color, this.last, this.mask, region);
+    const list = candidates(img.data, w, h, color, this.mask, region);
+    this.follow ??= new BallFollower(w);
+    const b = this.follow.step(list);
     this.last = b;
-    return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals: b.rivals } : null;
+    const rivals = b ? list.filter((c) => c !== b && c.area >= b.area * 0.3).length : 0;
+    return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals } : null;
   }
 
   /**
@@ -247,6 +338,20 @@ export class BallTracker {
       vMin: pale ? Math.max(0.3, val * 0.84) : Math.max(0.25, val * 0.5),
       pale,
     };
+  }
+
+  /** Der Fleck in dieser Farbe, der am Klickpunkt liegt (oder null) – um zu prüfen, ob er wie ein Ball aussieht. */
+  blobAt(nx, ny, color) {
+    if (!this.frame) return null;
+    const { width: w, height: h, data } = this.frame;
+    const m = colorMask(data, w, h, color, new Uint8Array(w * h));
+    const cx = nx * w, cy = ny * h;
+    let best = null;
+    for (const b of findBlobs(m, w, h, 3)) {
+      const d = Math.hypot(b.x - cx, b.y - cy);
+      if (d < Math.max(b.bw, b.bh) + 4 && (!best || d < best.d)) best = { ...b, d };
+    }
+    return best && { ...best, round: ballLike(best) > 0 };
   }
 
   /** Anteil des Bildes (0..1), der zu einer Farbe passt – viel mehr als ein Ball heißt: Farbe nicht eindeutig. */

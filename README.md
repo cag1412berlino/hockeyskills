@@ -263,6 +263,8 @@ Ohne Ball geht das auch mit einem **Post-it in Neonfarbe**: auf den Boden legen,
 
 **Der wichtigste Schritt: im Kamerabild auf den Ball klicken.** Die festen Ballfarben (Gelb, Pink …) erwarten eine kräftige Farbe. Im echten Raum wirkt ein Ball oft viel blasser, besonders ein Filzball oder bei viel Licht. Beim Klick lernt die App die beleuchtete Seite des Balls; wirkt er blass, sucht sie nach „heller als die Umgebung und leicht in Ballfarbe“. Danach sagt sie, ob die Farbe auch woanders im Bild vorkommt.
 
+**Ruhig und ohne Springen:** Die App bleibt am Ball. Von Bild zu Bild nimmt sie den Fleck, der dort liegt, wo der Ball nach seiner Bewegung sein müsste, und der ungefähr so groß ist wie bisher. Ein anderer Fleck in Ballfarbe wird erst übernommen, wenn der Ball länger weg ist oder der andere Fleck mehrere Bilder stabil an einer Stelle liegt. Kurze Aussetzer (Schläger verdeckt den Ball) überbrückt sie, indem der Ring gedämpft weiterrollt. Liegt der Ball still, wird stark beruhigt; bei schnellen Bewegungen folgt der Ring sofort. Klickt man in der Einrichtung auf etwas Längliches statt auf den Ball, sagt die App das.
+
 **Ball und Schläger brauchen verschiedene Farben.** Ein gelber Ball mit einem gelb-grünen Schläger wird verwechselt (in einer Testaufnahme hat die App immer wieder das Schlägerblatt für den Ball gehalten). Dann besser einen pinken oder orangen Neonball nehmen – oder das Blatt abkleben.
 
 1. Mit `D` das Kamerabild einblenden. Türkis markiert ist, was die App für den Ball hält; darunter steht, wie viele Kamerabilder pro Sekunde ausgewertet werden und in wie viel Prozent der letzten Bilder der Ball erkannt wurde (gut sind über 90 %).

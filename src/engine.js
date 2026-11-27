@@ -185,8 +185,14 @@ export class Engine {
     }
     if (!ok) {
       this.lostFor += dt;
-      // Kurze Aussetzer (Schläger verdeckt den Ball) überbrücken.
-      if (this.lostFor > 0.3) { b.visible = false; b.vx = b.vy = 0; this.trail.length = 0; }
+      // Kurze Aussetzer (Schläger verdeckt den Ball) überbrücken: Der Ball rollt gedämpft weiter.
+      if (b.visible && this.lostFor <= 0.45) {
+        const s = this.seen, k = Math.max(0, 1 - this.lostFor * 3);
+        s.x += s.vx * dt * k;
+        s.y += s.vy * dt * k;
+        b.x = s.x; b.y = s.y;
+      }
+      if (this.lostFor > 0.45) { b.visible = false; b.vx = b.vy = 0; this.trail.length = 0; }
       return;
     }
     // s = geglättete Position aus dem Kamerabild, v = beruhigte Geschwindigkeit
@@ -194,8 +200,12 @@ export class Engine {
     if (!b.visible || dt <= 0) {
       s.x = x; s.y = y; s.vx = s.vy = 0;
     } else {
-      const nx = s.x + (x - s.x) * 0.7; // leichte Glättung gegen Zittern
-      const ny = s.y + (y - s.y) * 0.7;
+      // Glättung je nach Tempo: Liegt der Ball fast still, wird kräftig beruhigt (kein Zittern),
+      // bei schnellen Bewegungen folgt der Ring fast sofort (keine Verzögerung).
+      const jump = Math.hypot(x - s.x, y - s.y);
+      const k = Math.min(0.85, Math.max(0.25, 0.25 + jump / 160));
+      const nx = s.x + (x - s.x) * k;
+      const ny = s.y + (y - s.y) * k;
       b.vx = (nx - s.x) / dt;
       b.vy = (ny - s.y) / dt;
       s.vx += (b.vx - s.vx) * 0.35;
