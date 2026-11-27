@@ -242,8 +242,8 @@ export default {
   hint: 'Führe den Ball an der Linie entlang!',
   name: 'Linie',
   duration: 60,
-  scale: 0.4,
-  medals: [[330, 1330, 2770], [20, 390, 940], [20, 50, 310]],
+  scale: 0.45,
+  medals: [[390, 1470, 3090], [30, 490, 1130], [20, 60, 450]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;

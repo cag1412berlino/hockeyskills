@@ -221,7 +221,7 @@ export default {
   name: 'Rennen',
   duration: 60,
   scale: 3,
-  medals: [[470, 780, 1090], [320, 660, 920], [250, 460, 650]],
+  medals: [[460, 750, 1050], [330, 650, 910], [240, 450, 640]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

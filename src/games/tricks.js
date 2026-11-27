@@ -218,8 +218,8 @@ export default {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.75,
-  medals: [[130, 650, 1050], [80, 560, 940], [40, 520, 870]],
+  scale: 0.7,
+  medals: [[120, 570, 970], [80, 520, 870], [30, 490, 820]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

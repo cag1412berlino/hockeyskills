@@ -93,7 +93,7 @@ export default {
   name: 'Rhythmus',
   duration: 60,
   scale: 0.4,
-  medals: [[260, 860, 1200], [130, 540, 1180], [110, 390, 1120]],
+  medals: [[260, 860, 1200], [130, 540, 1150], [110, 390, 1090]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

@@ -21,7 +21,7 @@ Das Menü zeigt fünf Schwerpunkte und das Training. Insgesamt gibt es 18 Übung
 | | Achter | Den Ball in einer Acht um zwei Hütchen führen, später andersherum. |
 | | Lichtkegel | Ein Lichtkreis wandert durchs Feld, der Ball muss darin bleiben. |
 | | Zeichnen | Formen nachfahren (Kreis, Dreieck, Stern, Herz …), gewertet wird die Genauigkeit. |
-| **Wechsel** | Pendel | Vorhand-Rückhand-Wechsel zwischen zwei Feldern, im Takt gibt es dreifache Punkte. |
+| **Wechsel** | Pendel | Vorhand-Rückhand-Wechsel zwischen zwei Feldern, im Takt gibt es dreifache Punkte. Alle paar Wechsel ändern sich Abstand, Richtung und Ort; später kommt ein Dreieck aus drei Feldern dazu. |
 | | Tippen | Den Ball so oft wie möglich über eine Linie und zurück ziehen. |
 | | Rhythmus | Kugeln laufen auf Bahnen herunter; der Ball muss rechtzeitig im richtigen Kreis liegen. |
 | **Stoppen** | Stopp | Sterne sammeln; bei „Stopp!“ muss der Ball sofort still liegen. Drei Leben. |

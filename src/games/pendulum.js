@@ -1,18 +1,19 @@
 // Spiel "Pendel": Vorhand-Rückhand-Wechsel. Zwei Felder leuchten abwechselnd auf,
 // der Ball muss hin und her. Ein Ring zieht sich um das aktive Feld zusammen:
 // Wer ankommt, bevor er geschlossen ist, ist "im Takt" und bekommt dreifache Punkte.
-// Später wandert das Feldpaar durchs Feld und dreht sich (quer, schräg, vor und zurück).
+// Alle paar Wechsel ändert sich die Aufgabe: mal enger, mal weiter, an anderer Stelle, in anderer
+// Richtung – und in späten Abschnitten kommt ein Dreieck aus drei Feldern dazu.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, creature, tone } from '../ui.js';
 import { Fx } from './common.js';
 
 const LEVELS = {
-  //   Feldgröße, halber Abstand der Felder, Sekunden pro Wechsel
-  1: { r: 95, d: 200, beat: 1.5 },
-  2: { r: 78, d: 180, beat: 1.15 },
-  3: { r: 64, d: 160, beat: 0.9 },
+  //   Feldgröße, Sekunden pro Wechsel bei normalem Abstand, kleinster und größter halber Abstand, schräge Lagen
+  1: { r: 95, beat: 1.5, min: 150, max: 270, tilt: 0.45 },
+  2: { r: 78, beat: 1.15, min: 125, max: 300, tilt: Math.PI },
+  3: { r: 64, beat: 0.9, min: 105, max: 320, tilt: Math.PI },
 };
-const MOVE_EVERY = 8; // nach so vielen Wechseln zieht das Feldpaar um
+const NORMAL = 200; // bei diesem halben Abstand gilt die Taktzeit aus der Tabelle
 
 class Pendulum {
   constructor(env) {
@@ -24,31 +25,52 @@ class Pendulum {
     this.active = 0;
     this.lapsed = false;
     this.fx = new Fx();
-    // Mitte und Drehwinkel des Feldpaars, jeweils aktuell und Ziel (für weiches Umziehen)
-    this.c = { x: env.field.w / 2, y: 560, a: 0 };
+    // Lage der Felder: Mitte, Drehwinkel, halber Abstand, Anzahl – jeweils aktuell und Ziel (für weiches Umziehen)
+    this.c = { x: env.field.w / 2, y: 560, a: 0, d: NORMAL, n: 2 };
     this.goal = { ...this.c };
+    this.changeAt = 5; // nach so vielen Wechseln ändert sich die Aufgabe
   }
 
+  /** Taktzeit: Ein weiter Weg bekommt mehr Zeit als ein kurzer. */
   beat() {
-    return this.p.beat / this.env.ramp;
+    return (this.p.beat * (0.6 + (0.4 * this.goal.d) / NORMAL)) / this.env.ramp;
   }
 
+  /** Die Felder liegen gleichmäßig auf einem Kreis um die Mitte: zwei gegenüber oder drei im Dreieck. */
   pads() {
-    const { c, p } = this;
-    const dx = Math.cos(c.a) * p.d, dy = Math.sin(c.a) * p.d;
-    return [{ x: c.x - dx, y: c.y - dy }, { x: c.x + dx, y: c.y + dy }];
+    const { c } = this;
+    return Array.from({ length: c.n }, (_, i) => {
+      const a = c.a + Math.PI + (i * Math.PI * 2) / c.n;
+      return { x: c.x + Math.cos(a) * c.d, y: c.y + Math.sin(a) * c.d };
+    });
   }
 
-  /** Neuer Platz für das Feldpaar; ab Stufe 2 auch schräg oder längs. */
-  relocate() {
-    const { env, p } = this;
+  /**
+   * Neue Aufgabe: Abstand, Richtung und Ort ändern sich. Ab der zweiten Schwierigkeitsstufe
+   * einer Runde kommt gelegentlich ein Dreieck aus drei Feldern dazu.
+   */
+  change() {
+    const { env, p, fx } = this;
     const { field } = env;
-    const m = p.d + p.r + 30;
+    const before = this.goal;
+    // Abstand: bewusst mal eng, mal weit – nie zweimal fast derselbe
+    let d;
+    do d = p.min + Math.random() * (p.max - p.min); while (Math.abs(d - before.d) < 45);
+    const n = env.stage >= 2 && Math.random() < 0.28 ? 3 : 2;
+    if (n === 3) d = Math.min(d, 230);
+    const m = d + p.r + 30;
     this.goal = {
-      x: m + Math.random() * (field.w - 2 * m),
-      y: m + 150 + Math.random() * (field.h - 2 * m - 150),
-      a: env.stage >= 2 ? (Math.floor(Math.random() * 4) * Math.PI) / 4 : 0,
+      x: m + Math.random() * Math.max(0, field.w - 2 * m),
+      y: m + 150 + Math.random() * Math.max(0, field.h - 2 * m - 150),
+      a: (Math.random() - 0.5) * 2 * p.tilt,
+      d, n,
     };
+    this.c.n = n;
+    this.active = 0;
+    this.changeAt = this.hits + 4 + Math.floor(Math.random() * 4);
+    const what = n === 3 ? 'Dreieck!' : d > before.d + 30 ? 'Weiter auseinander!' : d < before.d - 30 ? 'Enger!' : 'Neue Richtung!';
+    fx.text(this.goal.x, Math.max(250, this.goal.y - d - p.r - 30), what, '#fff', 44);
+    env.sound.select();
   }
 
   update(dt, ball) {
@@ -61,6 +83,7 @@ class Pendulum {
     c.x += (goal.x - c.x) * k;
     c.y += (goal.y - c.y) * k;
     c.a += (goal.a - c.a) * k;
+    c.d += (goal.d - c.d) * k;
 
     // Wer zu lange trödelt, verliert die Serie.
     if (this.since > this.beat() * 3 && !this.lapsed) {
@@ -78,31 +101,35 @@ class Pendulum {
       fx.text(pad.x, pad.y - p.r, inTime ? `Im Takt! +${points}` : `+${points}`, env.palette[inTime ? 1 : 0], inTime ? 54 : 44);
       fx.ring(pad.x, pad.y, env.palette[1], p.r * 1.8);
       this.hits++;
-      this.active = 1 - this.active;
+      this.active = (this.active + 1) % c.n;
       this.since = 0;
       this.lapsed = false;
-      if (env.stage >= 1 && this.hits % MOVE_EVERY === 0) this.relocate();
+      if (this.hits >= this.changeAt) this.change();
     }
   }
 
   draw(ctx) {
     const { env, p } = this;
     const [c0, c1] = env.palette;
-    const [a, b] = this.pads();
+    const pads = this.pads();
 
-    // Verbindungslinie mit laufenden Strichen in Richtung des aktiven Felds
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
+    // Verbindungslinien mit laufenden Strichen in Richtung des aktiven Felds
     ctx.setLineDash([10, 18]);
-    ctx.lineDashOffset = (this.active ? -1 : 1) * this.time * 90;
+    ctx.lineDashOffset = -this.time * 90;
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.stroke();
+    pads.forEach((to, i) => {
+      const from = pads[(i + pads.length - 1) % pads.length];
+      if (pads.length === 2 && i !== this.active) return; // bei zwei Feldern genügt eine Linie
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    });
     ctx.setLineDash([]);
 
-    [a, b].forEach((pad, i) => {
+    pads.forEach((pad, i) => {
       if (i === this.active) {
         creature(ctx, pad.x, pad.y, p.r * (1 + 0.04 * Math.sin(this.time * 8)), c1, this.look, this.time);
         // Takt-Ring: zieht sich zusammen, solange man noch im Takt ist
@@ -135,8 +162,8 @@ export default {
   hint: 'Zieh den Ball im Takt hin und her!',
   name: 'Pendel',
   duration: 60,
-  scale: 0.65,
-  medals: [[180, 780, 1370], [130, 600, 1420], [70, 420, 1340]],
+  scale: 0.8,
+  medals: [[200, 870, 1720], [120, 550, 1360], [70, 340, 860]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

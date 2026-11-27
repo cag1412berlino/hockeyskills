@@ -164,8 +164,8 @@ export default {
   hint: 'Führe den Ball durch den Gang, ohne die Wand zu berühren!',
   name: 'Draht',
   duration: 60,
-  scale: 0.65,
-  medals: [[30, 870, 1380], [20, 580, 1370], [20, 260, 1380]],
+  scale: 0.55,
+  medals: [[30, 660, 1180], [20, 470, 1170], [20, 170, 1170]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

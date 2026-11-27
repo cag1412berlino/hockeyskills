@@ -179,8 +179,8 @@ export default {
   name: 'Ausweichen',
   duration: 60,
   lives: 3,
-  scale: 1.1,
-  medals: [[210, 630, 1250], [200, 610, 1210], [200, 570, 1220]],
+  scale: 1.05,
+  medals: [[220, 630, 1170], [200, 580, 1210], [200, 550, 1030]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;
