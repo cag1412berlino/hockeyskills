@@ -251,3 +251,9 @@ export function drawBullseye(ctx, t, rings, color, time) {
   ctx.fillStyle = '#fff';
   ctx.fill();
 }
+
+/** Punktabzug mit rotem Hinweis an der Stelle (x, y). Die Punktzahl fällt nie unter null. */
+export function penalty(env, fx, x, y, points) {
+  env.addScore(-points);
+  fx.text(x, y, `−${points}`, '#ff8f8f', 44);
+}

@@ -56,7 +56,8 @@ class Rhythm {
       }
       if (n.y > HIT_Y + WINDOW) {
         env.miss();
-        fx.text(x, HIT_Y, 'Verpasst', '#fff', 36);
+        env.addScore(-4);
+        fx.text(x, HIT_Y, 'Verpasst −4', '#ff8f8f', 36);
         return false;
       }
       return true;
@@ -92,8 +93,8 @@ export default {
   hint: 'Leg den Ball in den Kreis, wenn die Kugel ankommt!',
   name: 'Rhythmus',
   duration: 60,
-  scale: 0.4,
-  medals: [[260, 860, 1200], [130, 540, 1150], [110, 390, 1090]],
+  scale: 0.45,
+  medals: [[260, 950, 1330], [100, 510, 1300], [30, 290, 1160]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

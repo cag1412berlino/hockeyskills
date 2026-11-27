@@ -193,7 +193,7 @@ export default {
   name: 'Slalom',
   duration: 60,
   scale: 0.7,
-  medals: [[900, 2280, 4100], [150, 450, 910], [110, 420, 880]],
+  medals: [[910, 2300, 4020], [150, 450, 910], [110, 410, 870]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

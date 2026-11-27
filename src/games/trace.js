@@ -2,7 +2,7 @@
 // Am Ende jeder Form gibt es Punkte nach Genauigkeit: Je näher an der Linie, desto mehr.
 // Die Formen werden der Reihe nach schwieriger, die erlaubte Abweichung mit jeder Stufe kleiner.
 import { glow, noGlow, text, tone } from '../ui.js';
-import { Fx, resample, nearestOnPath } from './common.js';
+import { Fx, resample, nearestOnPath, penalty } from './common.js';
 
 const LEVELS = { 1: { tol: 95 }, 2: { tol: 72 }, 3: { tol: 55 } };
 
@@ -41,6 +41,8 @@ class Trace {
     this.devSum = 0;
     this.devN = 0;
     this.off = false;
+    this.offFor = 0;
+    this.offPaid = false;
   }
 
   tol() {
@@ -63,7 +65,19 @@ class Trace {
     // Nur ein Stück voraus suchen: Bei geschlossenen Formen liegt das Ende am Anfang.
     const { k, d } = nearestOnPath(path, ball, this.idx - 6, this.idx + 14);
     this.off = d > this.tol();
-    if (this.off) return;
+    if (this.off) {
+      // Neben der Linie: kurz verziehen, dann kostet es einmal Punkte und die Serie.
+      this.offFor += dt;
+      if (this.offFor > 0.6 && !this.offPaid) {
+        this.offPaid = true;
+        env.miss();
+        env.sound.tick();
+        penalty(env, this.fx, ball.x, ball.y - 50, 6);
+      }
+      return;
+    }
+    this.offFor = 0;
+    this.offPaid = false;
     if (k > this.idx) {
       if (Math.floor(k / 12) > Math.floor(this.idx / 12)) env.sound.blip();
       this.idx = k;
@@ -136,7 +150,7 @@ export default {
   name: 'Zeichnen',
   duration: 60,
   scale: 1.25,
-  medals: [[130, 600, 1100], [120, 550, 1070], [110, 480, 1010]],
+  medals: [[110, 590, 1100], [60, 540, 1070], [30, 460, 1020]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

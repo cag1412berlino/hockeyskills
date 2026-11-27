@@ -5,7 +5,7 @@
 // Richtung – und in späten Abschnitten kommt ein Dreieck aus drei Feldern dazu.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, creature, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, penalty } from './common.js';
 
 const LEVELS = {
   //   Feldgröße, Sekunden pro Wechsel bei normalem Abstand, kleinster und größter halber Abstand, schräge Lagen
@@ -89,6 +89,7 @@ class Pendulum {
     if (this.since > this.beat() * 3 && !this.lapsed) {
       this.lapsed = true;
       env.miss();
+      if (ball.visible) penalty(env, this.fx, ball.x, ball.y - 50, 5);
     }
     if (!ball.visible) return;
 
@@ -165,7 +166,7 @@ export default {
   name: 'Pendel',
   duration: 60,
   scale: 0.8,
-  medals: [[200, 870, 1720], [120, 550, 1360], [70, 340, 860]],
+  medals: [[190, 820, 1700], [120, 530, 1390], [60, 340, 840]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

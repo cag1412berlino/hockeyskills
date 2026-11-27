@@ -2,7 +2,7 @@
 // Je länger am Stück, desto mehr Punkte. Mit jeder Stufe wird der Kreis kleiner,
 // schneller und wechselt öfter die Richtung.
 import { glow, noGlow, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, penalty } from './common.js';
 
 const LEVELS = {
   1: { r: 155, speed: 95 },
@@ -24,6 +24,8 @@ class Spotlight {
     this.inside = false;
     this.hold = 0;       // Sekunden am Stück im Licht
     this.outFor = 0;
+    this.left = false;  // schon für das Verlassen bestraft
+    this.drain = 0;
     this.acc = 0;
     this.fx = new Fx();
   }
@@ -55,6 +57,7 @@ class Spotlight {
     this.inside = ball.visible && Math.hypot(ball.x - this.x, ball.y - this.y) < r;
     if (this.inside) {
       this.outFor = 0;
+      this.left = false;
       const before = Math.floor(this.hold / 2);
       this.hold += dt;
       this.acc += dt * 3;
@@ -67,10 +70,21 @@ class Spotlight {
       }
     } else if (ball.visible) {
       this.outFor += dt;
-      if (this.outFor > 0.5 && this.hold > 0) {
+      // Kurz draußen ist verziehen. Danach kostet es einmal Punkte und die Serie,
+      // und jede weitere Sekunde im Dunkeln kostet noch einmal ein wenig.
+      if (this.outFor > 0.5 && !this.left) {
+        this.left = true;
         this.hold = 0;
+        this.drain = 0;
         env.miss();
-        env.sound.tick();
+        env.sound.bad();
+        penalty(env, fx, ball.x, ball.y - 50, 10);
+      } else if (this.left) {
+        this.drain += dt;
+        if (this.drain >= 1) {
+          this.drain -= 1;
+          penalty(env, fx, ball.x, ball.y - 50, 4);
+        }
       }
     }
   }
@@ -112,7 +126,7 @@ export default {
   name: 'Lichtkegel',
   duration: 60,
   scale: 0.45,
-  medals: [[250, 670, 940], [110, 580, 830], [40, 260, 620]],
+  medals: [[220, 670, 940], [20, 530, 830], [20, 180, 590]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

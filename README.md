@@ -82,6 +82,14 @@ Für alle Spiele gilt:
 - **Sterne:** Am Ende gibt es je nach Punktzahl bis zu drei Sterne. Die Schwellen sind je Übung und Stufe mit simulierten Spielern ermittelt (siehe „Austarieren“).
 - **Tempo:** Im Bildschirm „Wähle eine Stufe“ schaltet der Button unten rechts zwischen Langsam, Normal und Schnell um. Bestwerte werden pro Spiel, Stufe und Tempo getrennt gespeichert.
 
+## Punktabzug
+
+Fehler kosten in jeder Übung ein paar Punkte und die laufende Serie, damit sauberes Spielen mehr bringt als schnelles Herumschieben: den Lichtkegel verlassen (einmal 10, danach 4 je Sekunde im Dunkeln), im Rennen oder beim Zeichnen neben der Spur bleiben, im Rhythmus eine Note verpassen, bei Punktlandung zu spät kommen, beim Zielrollen vorbeirollen, beim Pendel trödeln, einen Trick verpatzen. Die Punktzahl fällt nie unter null.
+
+## Bestenliste
+
+Im Profil (Knopf mit der Krone) gibt es die Bestenliste aller Spieler auf diesem Gerät: einmal nach Gesamtpunkten, einmal mit dem Rekordhalter je Übung. Sie liegt wie die Spielstände nur im Browser dieses Geräts.
+
 ## Vereinslogo
 
 Das Logo des TC Blau-Weiss liegt als `assets/logo.svg` bei. Die App zeigt im Menü und in der Einrichtung ein Logo, wenn die Datei `assets/logo.svg` oder `assets/logo.png` vorhanden ist. Am besten eignet sich ein Logo mit durchsichtigem Hintergrund; ein weißer Hintergrund erscheint auf dem Boden als heller Kasten. Name, Vereinsname und Blautöne stehen in `src/config.js` unter `BRAND`.

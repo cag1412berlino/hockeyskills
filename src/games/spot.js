@@ -40,7 +40,8 @@ class Spot {
     t.left -= dt;
     if (t.left <= 0) {
       env.miss();
-      fx.text(t.x, t.y, 'Zu spät', '#fff', 40);
+      env.addScore(-6);
+      fx.text(t.x, t.y, 'Zu spät −6', '#ff8f8f', 40);
       this.newTarget(ball);
       return;
     }
@@ -88,7 +89,7 @@ export default {
   name: 'Punktlandung',
   duration: 60,
   scale: 1.05,
-  medals: [[130, 960, 3780], [80, 610, 3800], [50, 370, 3530]],
+  medals: [[100, 950, 3840], [60, 570, 3740], [20, 300, 3500]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

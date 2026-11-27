@@ -1,7 +1,7 @@
 // Die App als Ganzes: Wechsel zwischen den Bildschirmen, Abrechnung der Runden,
 // Training und Duell. Die Bildschirme rufen nur diese Funktionen auf und kennen einander nicht.
 import { config, saveConfig, paletteFor, currentProfile } from './config.js';
-import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileScene, PlayerPickScene, bestLabel } from './scenes.js';
+import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileScene, PlayerPickScene, LeaderboardScene, bestLabel } from './scenes.js';
 import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { rankOf, recordRound, recordEvent, dailyGame, dateString } from './profile.js';
@@ -93,6 +93,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     // ----- Profil -----
     profileScene: () => app.show(new ProfileScene(app)),
     playerPick: () => app.show(new PlayerPickScene(app)),
+    leaderboard: () => app.show(new LeaderboardScene(app)),
     setPlayer: (id) => {
       config.current = id;
       saveConfig();

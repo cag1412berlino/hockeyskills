@@ -134,7 +134,7 @@ export default {
   name: 'Achter',
   duration: 60,
   scale: 0.35,
-  medals: [[180, 530, 900], [140, 570, 940], [100, 590, 1050]],
+  medals: [[190, 530, 900], [150, 570, 940], [100, 580, 1050]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

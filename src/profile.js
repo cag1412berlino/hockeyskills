@@ -37,7 +37,7 @@ export function newProfile(name) {
     history: [],       // { d: Datum, g: Übung, l: Stufe, s: Punkte, st: Sterne }
     days: { last: null, streak: 0 },
     daily: null,       // Datum, an dem der Tagesbonus zuletzt geholt wurde
-    stats: { rounds: 0, stars: 0, maxMult: 0, played: {}, best: {}, hard3: false, flawless: 0, sessions: {}, dailyCount: 0, duelWins: 0 },
+    stats: { rounds: 0, stars: 0, maxMult: 0, played: {}, best: {}, hard3: false, flawless: 0, sessions: {}, dailyCount: 0, duelWins: 0, maxScore: 0, hardPlayed: {} },
   };
 }
 
@@ -51,9 +51,11 @@ export function completeProfile(saved) {
   p.days = { ...fresh.days, ...saved?.days };
   p.stats = { ...fresh.stats, ...saved?.stats };
   for (const key of ['highscores', 'badges', 'seen']) if (!p[key] || typeof p[key] !== 'object') p[key] = {};
-  for (const key of ['played', 'best', 'sessions']) if (!p.stats[key] || typeof p.stats[key] !== 'object') p.stats[key] = {};
+  for (const key of ['played', 'best', 'sessions', 'hardPlayed']) if (!p.stats[key] || typeof p.stats[key] !== 'object') p.stats[key] = {};
   if (!Array.isArray(p.history)) p.history = [];
   if (!Number.isFinite(p.xp)) p.xp = 0;
+  // Ältere Spielstände kannten den Rundenrekord noch nicht: aus dem Verlauf nachtragen.
+  if (!p.stats.maxScore) p.stats.maxScore = Math.max(0, ...p.history.map((h) => h.s || 0));
   return p;
 }
 
@@ -100,7 +102,33 @@ export const BADGES = [
   { id: 'daily', sym: '☀', name: 'Tagesheld', desc: 'Spiele an fünf verschiedenen Tagen die Übung unter „Heute“.', test: (p) => p.stats.dailyCount >= 5 },
   { id: 'duel', sym: 'VS', name: 'Duellant', desc: 'Gewinne ein Duell gegen einen anderen Spieler.', test: (p) => p.stats.duelWins >= 1 },
   { id: 'rank', sym: '▲', name: 'Aufsteiger', desc: 'Sammle 18.000 Punkte und erreiche den Rang „Techniker“.', test: (p) => rankOf(p.xp).index >= 3 },
+  // Zweite Albumhälfte: für alle, die länger dabei sind
+  { id: 'stars250', sym: '250★', name: 'Galaxie', desc: 'Sammle insgesamt 250 Sterne.', test: (p) => p.stats.stars >= 250 },
+  { id: 'all3', sym: '★★★', name: 'Perfektionist', desc: 'Hole in jeder der 18 Übungen alle drei Sterne.', test: (p, cats) => cats.every((c) => c.games.every((g) => (p.stats.best[g.id] || 0) >= 3)) },
+  { id: 'hardall', sym: '18!', name: 'Furchtlos', desc: 'Spiele jede Übung einmal auf der Stufe „Schwer“ zu Ende.', test: (p, cats) => cats.every((c) => c.games.every((g) => p.stats.hardPlayed[g.id])) },
+  { id: 'score1500', sym: '1,5k', name: 'Punktejäger', desc: 'Hole in einer einzigen Übung 1.500 Punkte.', test: (p) => p.stats.maxScore >= 1500 },
+  { id: 'score2500', sym: '2,5k', name: 'Rekordjäger', desc: 'Hole in einer einzigen Übung 2.500 Punkte.', test: (p) => p.stats.maxScore >= 2500 },
+  { id: 'variety', sym: '5×', name: 'Vielseitig', desc: 'Spiele an einem Tag fünf verschiedene Übungen.', test: (p) => mostGamesOnOneDay(p) >= 5 },
+  { id: 'flawless5', sym: '♥♥', name: 'Eisern', desc: 'Beende fünfmal „Ausweichen“, „Fangen“ oder „Stopp“ mit allen drei Herzen.', test: (p) => p.stats.flawless >= 5 },
+  { id: 'train10', sym: 'T10', name: 'Trainingsfleiß', desc: 'Spiele zehn Trainings bis zum Ende durch.', test: (p) => trainings(p) >= 10 },
+  { id: 'custom', sym: '✎', name: 'Eigener Plan', desc: 'Stelle in der Einrichtung ein eigenes Training zusammen und spiele es durch.', test: (p) => (p.stats.sessions.custom || 0) >= 1 },
+  { id: 'days14', sym: '14T', name: 'Zwei Wochen', desc: 'Trainiere an 14 Tagen hintereinander.', test: (p) => p.days.streak >= 14 },
+  { id: 'days30', sym: '30T', name: 'Monatsheld', desc: 'Trainiere an 30 Tagen hintereinander.', test: (p) => p.days.streak >= 30 },
+  { id: 'daily15', sym: '☀☀', name: 'Sonnenkind', desc: 'Spiele an 15 verschiedenen Tagen die Übung unter „Heute“.', test: (p) => p.stats.dailyCount >= 15 },
+  { id: 'duel5', sym: 'VS5', name: 'Duellkönig', desc: 'Gewinne fünf Duelle.', test: (p) => p.stats.duelWins >= 5 },
+  { id: 'xp100k', sym: '100k', name: 'Hunderttausend', desc: 'Sammle insgesamt 100.000 Punkte und erreiche den Rang „Profi“.', test: (p) => p.xp >= 100000 },
+  { id: 'legend', sym: '♛', name: 'Legende', desc: 'Sammle 160.000 Punkte und erreiche den höchsten Rang „Legende“.', test: (p) => rankOf(p.xp).index >= RANKS.length - 1 },
+  { id: 'collector', sym: '30', name: 'Sammler', desc: 'Hole 30 andere Abzeichen.', test: (p) => Object.keys(p.badges).filter((id) => id !== 'collector').length >= 30 },
 ];
+
+const trainings = (p) => Object.values(p.stats.sessions).reduce((a, b) => a + b, 0);
+
+/** Wie viele verschiedene Übungen an einem einzigen Tag gespielt wurden (höchster Wert im Verlauf). */
+function mostGamesOnOneDay(p) {
+  const days = {};
+  for (const h of p.history) (days[h.d] ??= new Set()).add(h.g);
+  return Math.max(0, ...Object.values(days).map((s) => s.size));
+}
 
 // Bei zählbaren Abzeichen: wie weit man schon ist, als [geschafft, nötig].
 const PROGRESS = {
@@ -114,6 +142,21 @@ const PROGRESS = {
   days7: (p) => [p.days.streak, 7],
   daily: (p) => [p.stats.dailyCount, 5],
   rank: (p) => [p.xp, RANKS[3].xp],
+  stars250: (p) => [p.stats.stars, 250],
+  all3: (p, cats) => [cats.reduce((n, c) => n + c.games.filter((g) => (p.stats.best[g.id] || 0) >= 3).length, 0), cats.reduce((n, c) => n + c.games.length, 0)],
+  hardall: (p, cats) => [cats.reduce((n, c) => n + c.games.filter((g) => p.stats.hardPlayed[g.id]).length, 0), cats.reduce((n, c) => n + c.games.length, 0)],
+  score1500: (p) => [p.stats.maxScore, 1500],
+  score2500: (p) => [p.stats.maxScore, 2500],
+  variety: (p) => [mostGamesOnOneDay(p), 5],
+  flawless5: (p) => [p.stats.flawless, 5],
+  train10: (p) => [trainings(p), 10],
+  days14: (p) => [p.days.streak, 14],
+  days30: (p) => [p.days.streak, 30],
+  daily15: (p) => [p.stats.dailyCount, 15],
+  duel5: (p) => [p.stats.duelWins, 5],
+  xp100k: (p) => [p.xp, 100000],
+  legend: (p) => [p.xp, RANKS[RANKS.length - 1].xp],
+  collector: (p) => [Object.keys(p.badges).filter((id) => id !== 'collector').length, 30],
 };
 
 /** Fortschritt zu einem Abzeichen als [geschafft, nötig] oder null, wenn es nichts zu zählen gibt. */
@@ -160,6 +203,8 @@ export function recordRound(p, r, categories, day = dateString()) {
     s.played[r.gameId] = (s.played[r.gameId] || 0) + 1;
     s.best[r.gameId] = Math.max(s.best[r.gameId] || 0, r.stars);
     if (r.level === 3 && r.stars >= 3) s.hard3 = true;
+    if (r.level === 3) s.hardPlayed[r.gameId] = 1;
+    s.maxScore = Math.max(s.maxScore, Math.round(r.score));
     if (r.lives && r.livesLeft === r.lives) s.flawless++;
     p.history.push({ d: day, g: r.gameId, l: r.level, s: Math.round(r.score), st: r.stars });
     if (p.history.length > 400) p.history.splice(0, p.history.length - 400);

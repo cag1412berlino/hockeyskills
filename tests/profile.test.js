@@ -19,7 +19,7 @@ test('Runde verbuchen: Punkte, Abzeichen, Verlauf', () => {
   const r = recordRound(p, round({ score: 3600, stars: 3, maxMult: 4 }), categories, '2026-01-10');
   assert.equal(p.xp, 3600);
   assert.ok(r.rankUp);
-  assert.deepEqual(r.badges.map((b) => b.id).sort(), ['first', 'mult4', 'star3']);
+  assert.deepEqual(r.badges.map((b) => b.id).sort(), ['first', 'mult4', 'score1500', 'score2500', 'star3']);
   assert.equal(p.history.length, 1);
   // dieselben Abzeichen gibt es nicht doppelt
   assert.equal(recordRound(p, round(), categories, '2026-01-10').badges.length, 0);
@@ -63,13 +63,15 @@ test('Trainings- und Schwerpunkt-Abzeichen', () => {
 test('Alle Abzeichen sind erreichbar und eindeutig', () => {
   assert.equal(new Set(BADGES.map((b) => b.id)).size, BADGES.length);
   const p = newProfile('Test');
-  for (let day = 1; day <= 8; day++) {
+  for (let day = 1; day <= 30; day++) {
     for (const g of games) {
-      recordRound(p, round({ gameId: g.id, level: 3, score: 3000, stars: 3, maxMult: 4, lives: 3, livesLeft: 3, daily: true }), categories, `2026-03-0${day}`);
+      recordRound(p, round({ gameId: g.id, level: 3, score: 3000, stars: 3, maxMult: 4, lives: 3, livesLeft: 3, daily: true }), categories, `2026-03-${String(day).padStart(2, '0')}`);
     }
   }
-  for (let i = 0; i < 80; i++) recordRound(p, round(), categories, '2026-03-08');
-  for (const kind of ['short', 'medium', 'full', 'duel']) recordEvent(p, kind, categories);
+  for (let i = 0; i < 80; i++) recordRound(p, round(), categories, '2026-03-30');
+  for (const kind of ['short', 'medium', 'full', 'custom']) recordEvent(p, kind, categories);
+  for (let i = 0; i < 6; i++) { recordEvent(p, 'short', categories); recordEvent(p, 'duel', categories); }
+  assert.ok(p.badges.collector, 'der Sammler kommt, sobald 30 andere da sind');
   assert.deepEqual(BADGES.filter((b) => !p.badges[b.id]).map((b) => b.id), []);
 });
 

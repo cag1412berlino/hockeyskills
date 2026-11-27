@@ -4,7 +4,7 @@
 // Die Kamera sieht nur den Ball: Dass der Schläger wirklich loslässt, ist Ehrensache.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, text, tone } from '../ui.js';
-import { Fx, Rest, drawBullseye } from './common.js';
+import { Fx, Rest, drawBullseye, penalty } from './common.js';
 
 const LEVELS = {
   //   Größe der Zielscheibe, Entfernung zum Ziel (von, bis)
@@ -63,6 +63,7 @@ class Roll {
       const along = (ball.x - start.x) * ux + (ball.y - start.y) * uy;
       const side = Math.abs((ball.x - start.x) * -uy + (ball.y - start.y) * ux);
       env.miss();
+      penalty(env, fx, ball.x, ball.y - 95, 6);
       env.sound.end();
       fx.text(ball.x, ball.y - 40, side > this.rings[2] ? 'Seitlich vorbei' : along < len ? 'Zu kurz!' : 'Zu weit!', '#fff', 50);
     }
@@ -169,8 +170,8 @@ export default {
   hint: 'Schieb den Ball an und lass ihn ins Ziel rollen!',
   name: 'Zielrollen',
   duration: 60,
-  scale: 2.25,
-  medals: [[200, 1070, 3700], [100, 730, 2910], [80, 360, 1940]],
+  scale: 2.4,
+  medals: [[210, 1310, 3960], [90, 590, 3240], [30, 300, 1770]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

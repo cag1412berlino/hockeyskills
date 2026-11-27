@@ -71,9 +71,10 @@ class Tricks {
   fail(msg, ball) {
     const { env, fx } = this;
     env.miss();
+    env.addScore(-6);
     env.sound.bad();
     env.shake(12);
-    fx.text(ball.x, Math.max(400, ball.y - 40), msg, '#fff', 46);
+    fx.text(ball.x, Math.max(400, ball.y - 40), `${msg} −6`, '#ff8f8f', 46);
     this.state = 'show';
     this.t = 0;
     this.idx = 0;
@@ -219,8 +220,8 @@ export default {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.7,
-  medals: [[120, 570, 970], [80, 520, 870], [30, 490, 820]],
+  scale: 0.75,
+  medals: [[150, 660, 1050], [70, 550, 940], [20, 550, 880]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

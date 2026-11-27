@@ -304,12 +304,16 @@ export class ProfileScene extends ButtonScene {
         onActivate: this.act(() => this.app.playerPick()),
       }));
     }
-    // Album: sechs Abzeichen je Reihe
-    const cols = 6, cell = Math.min(160, (w - 60) / cols);
+    this.buttons.push(new DwellButton({
+      x: w - 70, y: 800, r: 40, color: colors[1], icon: initial('♛'),
+      onActivate: this.act(() => this.app.leaderboard()),
+    }));
+    // Album: acht Abzeichen je Reihe
+    const cols = 8, cell = Math.min(150, (w - 64) / cols);
     this.spots = BADGES.map((badge, i) => ({
       badge,
       x: w / 2 + ((i % cols) - (cols - 1) / 2) * cell,
-      y: 330 + Math.floor(i / cols) * 128,
+      y: 296 + Math.floor(i / cols) * 98,
     }));
     this.chosen ??= null;
   }
@@ -317,7 +321,7 @@ export class ProfileScene extends ButtonScene {
   update(dt, ball) {
     super.update(dt, ball);
     if (!ball.visible) return;
-    const hit = this.spots.find((s) => Math.hypot(ball.x - s.x, ball.y - s.y) < 62);
+    const hit = this.spots.find((s) => Math.hypot(ball.x - s.x, ball.y - s.y) < 50);
     if (hit && hit !== this.chosen) {
       this.chosen = hit;
       this.app.sound.blip();
@@ -328,7 +332,7 @@ export class ProfileScene extends ButtonScene {
 
   onClick(x, y) {
     super.onClick(x, y);
-    const hit = this.spots.find((s) => Math.hypot(x - s.x, y - s.y) < 62);
+    const hit = this.spots.find((s) => Math.hypot(x - s.x, y - s.y) < 50);
     if (hit) this.chosen = hit;
   }
 
@@ -344,7 +348,7 @@ export class ProfileScene extends ButtonScene {
     this.spots.forEach(({ badge, x, y }, i) => {
       const has = !!p.badges[badge.id];
       const picked = this.chosen?.badge === badge;
-      const r = picked ? 50 : 44;
+      const r = picked ? 40 : 34;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = has ? tone(c[i % 4], 22, 70) : 'rgba(255,255,255,0.04)';
@@ -361,12 +365,12 @@ export class ProfileScene extends ButtonScene {
         ctx.strokeStyle = '#fff';
         ctx.stroke();
       }
-      text(ctx, badge.sym, x, y + 2, badge.sym.length > 2 ? 22 : 30, has ? '#fff' : `rgba(255,255,255,${picked ? 0.6 : 0.25})`, 'center', 0, 600);
-      text(ctx, badge.name, x, y + 64, 17, has || picked ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0, 400);
+      text(ctx, badge.sym, x, y + 2, badge.sym.length > 3 ? 16 : badge.sym.length > 2 ? 19 : 26, has ? '#fff' : `rgba(255,255,255,${picked ? 0.6 : 0.25})`, 'center', 0, 600);
+      text(ctx, badge.name, x, y + 52, badge.name.length > 13 ? 12.5 : 15, has || picked ? '#fff' : 'rgba(255,255,255,0.35)', 'center', 0, 400);
     });
 
     // Erklärung zum gewählten Abzeichen
-    const x0 = 165, x1 = w - (this.buttons.length > 1 ? 165 : 30);
+    const x0 = 165, x1 = w - (this.app.config.profiles.length > 1 ? 165 : 30);
     ctx.beginPath();
     ctx.roundRect(x0, 848, x1 - x0, 132, 22);
     ctx.fillStyle = 'rgba(8,14,36,0.78)';
@@ -417,6 +421,72 @@ function wrapText(ctx, str, x, y, maxWidth, size, lineHeight) {
 }
 
 /** "Wer spielt?" – Auswahl des aktiven Spielers. */
+/** Bestenliste aller Spieler auf diesem Gerät: Gesamtpunkte oder die Rekordhalter je Übung. */
+export class LeaderboardScene extends ButtonScene {
+  layout() {
+    const { w } = this.field;
+    const colors = this.app.palette();
+    this.view ??= 'points';
+    this.buttons = [
+      new DwellButton({ x: 90, y: 920, r: 54, icon: icons.back, onActivate: this.act(() => this.app.profileScene()) }),
+      new DwellButton({
+        x: w - 90, y: 920, r: 54, color: colors[1], icon: initial(this.view === 'points' ? '★' : '♛'),
+        label: this.view === 'points' ? 'Rekorde' : 'Punkte',
+        onActivate: this.act(() => { const view = this.view === 'points' ? 'records' : 'points'; const next = new LeaderboardScene(this.app); next.view = view; this.app.show(next); }),
+      }),
+    ];
+  }
+
+  draw(ctx) {
+    const { app } = this;
+    const { w } = this.field;
+    const c = app.palette();
+    const me = app.profile;
+    title(ctx, 'Bestenliste', w / 2, 80, 70, c[1]);
+    if (this.view === 'points') {
+      text(ctx, 'Alle Spieler auf diesem Gerät, nach Gesamtpunkten', w / 2, 142, 22, 'rgba(255,255,255,0.7)', 'center', 0, 400);
+      const list = [...app.config.profiles].sort((a, b) => b.xp - a.xp).slice(0, 8);
+      list.forEach((p, i) => {
+        const y = 215 + i * 78;
+        const mine = p.id === me.id;
+        ctx.beginPath();
+        ctx.roundRect(70, y - 32, w - 140, 64, 18);
+        ctx.fillStyle = mine ? 'rgba(255,255,255,0.14)' : 'rgba(8,14,36,0.6)';
+        ctx.fill();
+        if (mine) { ctx.lineWidth = 2; ctx.strokeStyle = c[1]; ctx.stroke(); }
+        text(ctx, i < 3 ? ['♛', '2', '3'][i] : String(i + 1), 112, y + 2, 34, i === 0 ? '#ffd76a' : '#fff', 'center', 0, 600);
+        text(ctx, p.name, 160, y - 8, 28, '#fff', 'left', 0, 600);
+        const badges = Object.keys(p.badges).length;
+        text(ctx, `${rankOf(p.xp).name} · ${p.stats.stars} Sterne · ${badges} Abzeichen`, 160, y + 18, 17, 'rgba(255,255,255,0.7)', 'left', 0, 400);
+        text(ctx, p.xp.toLocaleString('de-DE'), w - 100, y + 2, 32, tone(c[i % 4], 78), 'right', 0, 600);
+      });
+    } else {
+      text(ctx, 'Wer hält den Rekord in welcher Übung?', w / 2, 142, 22, 'rgba(255,255,255,0.7)', 'center', 0, 400);
+      const rows = app.games.map((g) => {
+        let best = null;
+        for (const p of app.config.profiles) {
+          for (const [key, score] of Object.entries(p.highscores)) {
+            if (key.startsWith(`${g.id}:`) && (!best || score > best.score)) best = { score, name: p.name, mine: p.id === me.id };
+          }
+        }
+        return { g, best };
+      });
+      const half = Math.ceil(rows.length / 2), colW = (w - 120) / 2;
+      rows.forEach(({ g, best }, i) => {
+        const x = 60 + Math.floor(i / half) * (colW + 20), y = 200 + (i % half) * 70;
+        ctx.beginPath();
+        ctx.roundRect(x, y - 28, colW - 20, 56, 14);
+        ctx.fillStyle = best?.mine ? 'rgba(255,255,255,0.14)' : 'rgba(8,14,36,0.6)';
+        ctx.fill();
+        text(ctx, g.name, x + 18, y - 8, 22, tone(app.accentOf(g) || c[0], 78), 'left', 0, 600);
+        text(ctx, best ? best.name : 'noch niemand', x + 18, y + 14, 16, 'rgba(255,255,255,0.7)', 'left', 0, 400);
+        if (best) text(ctx, Math.round(best.score).toLocaleString('de-DE'), x + colW - 38, y + 2, 26, '#fff', 'right', 0, 600);
+      });
+    }
+    super.draw(ctx);
+  }
+}
+
 export class PlayerPickScene extends ButtonScene {
   layout() {
     const { app } = this;

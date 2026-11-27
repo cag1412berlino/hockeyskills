@@ -4,7 +4,7 @@
 // Auf der Bahn bleiben bringt Punkte, Sterne an den Ecken bringen Serien.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, randomVillain, collectible, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, penalty } from './common.js';
 
 const LEVELS = {
   //            Bahnbreite, Tempo, Anteil harter Schnitte, Anteil Rückzieher, Stachelbälle
@@ -115,12 +115,19 @@ class Run {
     }
     if (this.onTrack) {
       this.offFor = 0;
+      this.offPaid = false;
       this.acc += dt * 3;
       while (this.acc >= 1) { this.acc -= 1; env.addScore(env.mult); }
     } else {
       this.offFor += dt;
       // Kurz daneben ist verziehen, länger daneben kostet die Serie.
-      if (this.offFor > 0.5 && ball.visible) env.miss();
+      if (this.offFor > 0.5 && ball.visible) {
+        env.miss();
+        if (!this.offPaid) {
+          this.offPaid = true;
+          penalty(env, this.fx, ball.x, ball.y - 50, 8);
+        }
+      }
       if (was && ball.visible) env.sound.tick();
     }
     if (!ball.visible) return;
@@ -221,7 +228,7 @@ export default {
   name: 'Rennen',
   duration: 60,
   scale: 3,
-  medals: [[460, 750, 1050], [330, 650, 910], [240, 450, 640]],
+  medals: [[440, 770, 1080], [260, 590, 830], [120, 310, 570]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;
