@@ -251,8 +251,14 @@ export function regionMask(points, w, h) {
 
 /** Holt Bilder aus der Kamera (verkleinert) und sucht darin den Ball. */
 export class BallTracker {
-  constructor(procWidth = 640) {
-    this.procWidth = procWidth;
+  /**
+   * fullWidth: so breit wird das ganze Kamerabild ausgewertet (Einrichtung, Kalibrierung).
+   * cropWidth: so breit höchstens der Ausschnitt um das Spielfeld im Spiel – dort wird in voller
+   * Kameraauflösung gesucht (nie hochgerechnet), damit auch ein kleiner Ball genug Bildpunkte hat.
+   */
+  constructor(fullWidth = 960, cropWidth = 1280) {
+    this.procWidth = fullWidth;
+    this.cropWidth = cropWidth;
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     this.frame = null; // letztes Bild (ImageData)
@@ -260,22 +266,43 @@ export class BallTracker {
     this.last = null;
     this.regionPoints = null; // Spielfeld im Kamerabild (Vieleck, 0..1) oder null
     this.region = null;       // daraus gebaute Suchmaske in der Größe des Auswertebilds
+    this.regionKey = '';
     this.useRegion = false;
+    this.view = { x: 0, y: 0, w: 1, h: 1 }; // welcher Teil des Kamerabilds im Auswertebild liegt (0..1)
   }
 
   /** Legt fest, wo das Spielfeld im Kamerabild liegt (Ecken 0..1) – oder null für das ganze Bild. */
   setRegion(points) {
     this.regionPoints = points;
     this.region = null;
+    this.regionKey = '';
   }
 
-  /** Zeichnet die Quelle verkleinert und gibt die Pixel zurück (oder null). */
-  grab(source) {
-    const sw = source.videoWidth || source.width;
-    const sh = source.videoHeight || source.height;
-    if (!sw || !sh) return null;
-    const w = this.procWidth;
-    const h = Math.round((w * sh) / sw);
+  /** Punkt im ganzen Kamerabild (0..1) -> Punkt im Auswertebild (0..1). */
+  toFrame(p) {
+    const v = this.view;
+    return { x: (p.x - v.x) / v.w, y: (p.y - v.y) / v.h };
+  }
+
+  /** Punkt im Auswertebild (0..1) -> Punkt im ganzen Kamerabild (0..1). */
+  fromFrame(p) {
+    const v = this.view;
+    return { x: v.x + p.x * v.w, y: v.y + p.y * v.h };
+  }
+
+  /**
+   * Zeichnet die Quelle ins Auswertebild und gibt die Pixel zurück (oder null).
+   * crop (optional, 0..1): nur dieser Ausschnitt, in voller Auflösung (höchstens cropWidth breit).
+   */
+  grab(source, crop = null) {
+    const W = source.videoWidth || source.width;
+    const H = source.videoHeight || source.height;
+    if (!W || !H) return null;
+    const v = crop ?? { x: 0, y: 0, w: 1, h: 1 };
+    const sw = v.w * W, sh = v.h * H;
+    const scale = Math.min(1, (crop ? this.cropWidth : this.procWidth) / sw);
+    const w = Math.max(16, Math.round(sw * scale));
+    const h = Math.max(16, Math.round(sh * scale));
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w;
       this.canvas.height = h;
@@ -284,25 +311,49 @@ export class BallTracker {
       this.follow = new BallFollower(w);
       this.region = null;
     }
-    this.ctx.drawImage(source, 0, 0, w, h);
+    this.view = v;
+    this.ctx.drawImage(source, v.x * W, v.y * H, sw, sh, 0, 0, w, h);
     this.frame = this.ctx.getImageData(0, 0, w, h);
     return this.frame;
   }
 
+  /** Ausschnitt um das Spielfeld (mit Rand), auf ganze Kamerabild-Grenzen beschnitten. */
+  fieldCrop() {
+    const xs = this.regionPoints.map((p) => p.x), ys = this.regionPoints.map((p) => p.y);
+    const m = 0.03;
+    const x0 = Math.max(0, Math.min(...xs) - m), y0 = Math.max(0, Math.min(...ys) - m);
+    const x1 = Math.min(1, Math.max(...xs) + m), y1 = Math.min(1, Math.max(...ys) + m);
+    // auf feste Schritte runden, damit der Ausschnitt nicht bei jedem Bild minimal anders ist
+    const q = (n) => Math.round(n * 200) / 200;
+    return x1 - x0 > 0.05 && y1 - y0 > 0.05 ? { x: q(x0), y: q(y0), w: q(x1 - x0), h: q(y1 - y0) } : null;
+  }
+
   /** Liefert die Ballposition im Kamerabild, normiert auf 0..1, oder null. */
   process(source, color) {
-    const img = this.grab(source);
+    // Im Spiel: nur das Spielfeld, dafür in voller Kameraauflösung. In der Einrichtung: das ganze Bild.
+    const crop = this.useRegion && this.regionPoints ? this.fieldCrop() : null;
+    const img = this.grab(source, crop);
     if (!img) return null;
     const { width: w, height: h } = img;
-    if (this.regionPoints && (!this.region || this.region.length !== w * h)) this.region = regionMask(this.regionPoints, w, h);
-    const region = this.useRegion && this.regionPoints ? this.region : null;
+    let region = null;
+    if (this.useRegion && this.regionPoints) {
+      const key = `${w}x${h}:${this.view.x},${this.view.y},${this.view.w},${this.view.h}`;
+      if (!this.region || this.regionKey !== key) {
+        this.region = regionMask(this.regionPoints.map((p) => this.toFrame(p)), w, h);
+        this.regionKey = key;
+      }
+      region = this.region;
+    }
     const list = candidates(img.data, w, h, color, this.mask, region);
     this.follow ??= new BallFollower(w);
     const b = this.follow.step(list);
     this.last = b;
     const rivals = b ? list.filter((c) => c !== b && c.area >= b.area * 0.3).length : 0;
-    return b ? { x: (b.x + 0.5) / w, y: (b.y + 0.5) / h, area: b.area, rivals } : null;
+    if (!b) return null;
+    const p = this.fromFrame({ x: (b.x + 0.5) / w, y: (b.y + 0.5) / h });
+    return { x: p.x, y: p.y, area: b.area, rivals };
   }
+
 
   /**
    * Lernt die Ballfarbe aus einem Klick ins Kamerabild (nx, ny von 0 bis 1).
@@ -359,7 +410,7 @@ export class BallTracker {
     if (!this.frame) return 0;
     const { width: w, height: h, data } = this.frame;
     const m = colorMask(data, w, h, color, new Uint8Array(w * h));
-    if (this.useRegion && this.region) for (let i = 0; i < m.length; i++) if (!this.region[i]) m[i] = 0;
+    if (this.useRegion && this.region?.length === m.length) for (let i = 0; i < m.length; i++) if (!this.region[i]) m[i] = 0;
     return m.reduce((a, b) => a + b, 0) / (w * h);
   }
 

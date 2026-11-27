@@ -12,11 +12,19 @@ export class Camera {
 
   async start(deviceId) {
     this.stop();
-    const video = {
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      frameRate: { ideal: 60 },
-    };
+    // Volle Auflösung (Full HD) anfordern; was die Kamera nicht kann, gibt sie so gut es geht.
+    const full = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } };
+    let settings = await this.open(deviceId, full);
+    // Manche Webcams schaffen Full HD nur mit wenigen Bildern pro Sekunde. Flüssig ist wichtiger:
+    // dann lieber 1280 × 720 mit vollem Tempo.
+    if (settings.height > 720 && settings.frameRate && settings.frameRate < 20) {
+      this.stop();
+      settings = await this.open(deviceId, { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } });
+    }
+    return settings;
+  }
+
+  async open(deviceId, video) {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
@@ -31,6 +39,7 @@ export class Camera {
     await this.video.play();
     return this.stream.getVideoTracks()[0].getSettings();
   }
+
 
   /**
    * Schaltet Belichtungs-, Weißabgleich- und Fokus-Automatik aus (oder wieder ein).

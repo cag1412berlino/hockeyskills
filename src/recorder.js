@@ -50,10 +50,11 @@ export class Recorder {
   }
 
   /**
-   * Ein Bild festhalten. camera = Bild, in dem gesucht wird (Zeichenfläche), stage = Projektion,
-   * detection = Fund im Kamerabild (0..1) oder null, ball = Ball im Spielfeld, text = Statuszeile.
+   * Ein Bild festhalten. camera = Bild, in dem gesucht wird (Zeichenfläche, im Spiel nur der Ausschnitt ums Feld),
+   * stage = Projektion, detection = Fund im ganzen Kamerabild (0..1) oder null, ball = Ball im Spielfeld,
+   * mark = Fund im gezeigten Ausschnitt (0..1), text = Statuszeile.
    */
-  frame(camera, stage, detection, ball, text) {
+  frame(camera, stage, detection, ball, mark, text) {
     if (!this.active) return;
     const { ctx, canvas } = this;
     const t = this.seconds;
@@ -74,9 +75,9 @@ export class Recorder {
     };
     const cam = camera && fit(camera, 0);
     fit(stage, 480);
-    if (cam && detection) {
-      // nur kleine Eckmarken, damit die Ballfarbe im Film unverfälscht bleibt
-      const x = cam.x + detection.x * cam.w, y = cam.y + detection.y * cam.h;
+    if (cam && mark) {
+      // nur kleine Eckmarken, damit die Ballfarbe im Film unverfälscht bleibt (mark: Lage im gezeigten Ausschnitt)
+      const x = cam.x + mark.x * cam.w, y = cam.y + mark.y * cam.h;
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
       ctx.beginPath();
       for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {

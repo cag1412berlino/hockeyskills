@@ -181,7 +181,7 @@ engine.onFrame = () => {
   if (recognition) stepRecognition(Math.min(0.5, (now - lastTrackTime) / 1000));
   lastTrackTime = now;
   if (recorder.active) {
-    recorder.frame(tracker.canvas, stage, detection, engine.ball,
+    recorder.frame(tracker.canvas, stage, detection, engine.ball, detection && tracker.toFrame(detection),
       `Bild ${fps.render}/s Kamera ${fps.camera}/s erkannt ${quality()} %${fakeBall ? ' Test-Ball' : ''}`);
     if (recorder.seconds >= MAX_SECONDS) toggleRecording();
   }
@@ -302,7 +302,7 @@ function countFps() {
   fps.since = now;
   if (!debugEl.hidden) {
     $('#debug-info').textContent =
-      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder · Qualität ${['voll', 'mittel', 'sparsam'][engine.quality]}`;
+      `Bild ${fps.render}/s · Kamera ${fps.camera}/s · Ball ${detection ? `${detection.area} Pixel` : 'nicht erkannt'} · erkannt in ${quality()} % der Bilder · Kamera ${source?.videoWidth || source?.width || 0}×${source?.videoHeight || source?.height || 0}, ausgewertet ${tracker.frame?.width || 0}×${tracker.frame?.height || 0} · Qualität ${['voll', 'mittel', 'sparsam'][engine.quality]}`;
   }
 }
 
@@ -428,15 +428,16 @@ function drawPreview(target) {
     ctx.strokeStyle = '#ffe14a';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    tracker.regionPoints.forEach((p, i) => (i ? ctx.lineTo(p.x * w, p.y * h) : ctx.moveTo(p.x * w, p.y * h)));
+    tracker.regionPoints.map((q) => tracker.toFrame(q)).forEach((p, i) => (i ? ctx.lineTo(p.x * w, p.y * h) : ctx.moveTo(p.x * w, p.y * h)));
     ctx.closePath();
     ctx.stroke();
   }
   if (detection) {
+    const d = tracker.toFrame(detection);
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(detection.x * w, detection.y * h, 14, 0, Math.PI * 2);
+    ctx.arc(d.x * w, d.y * h, 14, 0, Math.PI * 2);
     ctx.stroke();
   }
   if (target === preview) {
