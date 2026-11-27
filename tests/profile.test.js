@@ -135,3 +135,13 @@ test('Alter und Altersklasse', async () => {
     ['U6', 'U6', 'U8', 'U8', 'U10', 'U12', 'U14', 'U16', 'U18', 'Erwachsene', 'Erwachsene']);
   assert.equal(completeProfile({ name: 'Alt' }).birthYear, null, 'alte Spielstände ohne Alter bleiben gültig');
 });
+
+test('Rang: mit einer Million Punkten wird man Clubpräsident', () => {
+  assert.equal(rankOf(999999).name, 'Legende');
+  assert.equal(rankOf(1000000).name, 'Clubpräsident');
+  const p = newProfile('Test');
+  p.xp = 999500;
+  const r = recordRound(p, round({ score: 600 }), categories, '2026-01-10');
+  assert.ok(r.rankUp);
+  assert.ok(p.badges.president);
+});

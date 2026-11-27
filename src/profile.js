@@ -11,6 +11,7 @@ export const RANKS = [
   { xp: 60000, name: 'Kapitän' },
   { xp: 100000, name: 'Profi' },
   { xp: 160000, name: 'Legende' },
+  { xp: 1000000, name: 'Clubpräsident' },
 ];
 
 /** Rang zu einem XP-Stand: Nummer, Name und Fortschritt (0..1) bis zum nächsten Rang. */
@@ -152,7 +153,8 @@ export const BADGES = [
   { id: 'daily15', sym: '☀☀', name: 'Sonnenkind', desc: 'Spiele an 15 verschiedenen Tagen die Übung unter „Heute“.', test: (p) => p.stats.dailyCount >= 15 },
   { id: 'duel5', sym: 'VS5', name: 'Duellkönig', desc: 'Gewinne fünf Duelle.', test: (p) => p.stats.duelWins >= 5 },
   { id: 'xp100k', sym: '100k', name: 'Hunderttausend', desc: 'Sammle insgesamt 100.000 Punkte und erreiche den Rang „Profi“.', test: (p) => p.xp >= 100000 },
-  { id: 'legend', sym: '♛', name: 'Legende', desc: 'Sammle 160.000 Punkte und erreiche den höchsten Rang „Legende“.', test: (p) => rankOf(p.xp).index >= RANKS.length - 1 },
+  { id: 'legend', sym: '♛', name: 'Legende', desc: 'Sammle 160.000 Punkte und erreiche den Rang „Legende“.', test: (p) => p.xp >= 160000 },
+  { id: 'president', sym: '1M', name: 'Clubpräsident', desc: 'Sammle eine Million Punkte und werde Clubpräsident, der höchste Rang.', test: (p) => p.xp >= 1000000 },
   { id: 'collector', sym: '30', name: 'Sammler', desc: 'Hole 30 andere Abzeichen.', test: (p) => Object.keys(p.badges).filter((id) => id !== 'collector').length >= 30 },
 ];
 
@@ -190,7 +192,8 @@ const PROGRESS = {
   daily15: (p) => [p.stats.dailyCount, 15],
   duel5: (p) => [p.stats.duelWins, 5],
   xp100k: (p) => [p.xp, 100000],
-  legend: (p) => [p.xp, RANKS[RANKS.length - 1].xp],
+  legend: (p) => [p.xp, 160000],
+  president: (p) => [p.xp, 1000000],
   collector: (p) => [Object.keys(p.badges).filter((id) => id !== 'collector').length, 30],
 };
 
