@@ -46,6 +46,44 @@ export class Camera {
    * Ohne Automatik bleibt die Ballfarbe im Kamerabild stabil, auch wenn das projizierte Bild
    * heller oder dunkler wird. Liefert false, wenn die Kamera das nicht unterstützt.
    */
+  /**
+   * Was die Kamera beim Fokus erlaubt: { manual, range: {min, max, step} | null, distance }.
+   * Viele Webcams (und Chrome auf dem Mac) geben das nicht frei – dann ist manual false.
+   */
+  focusInfo() {
+    const track = this.stream?.getVideoTracks()[0];
+    const caps = track?.getCapabilities?.() ?? {};
+    const st = track?.getSettings?.() ?? {};
+    return {
+      manual: !!caps.focusMode?.includes('manual'),
+      range: caps.focusDistance ? { min: caps.focusDistance.min, max: caps.focusDistance.max, step: caps.focusDistance.step || 0 } : null,
+      distance: st.focusDistance ?? null,
+    };
+  }
+
+  /** Autofokus aus und Schärfe fest auf distance (oder auf die zuletzt gefundene Schärfe, wenn null). */
+  async setFocus(distance = null) {
+    const track = this.stream?.getVideoTracks()[0];
+    if (!track || !this.focusInfo().manual) return false;
+    const c = { focusMode: 'manual' };
+    if (distance != null) c.focusDistance = distance;
+    await track.applyConstraints({ advanced: [c] });
+    return true;
+  }
+
+  /** Einmal automatisch scharf stellen (auf das, was die Kamera gerade sieht), danach festhalten. */
+  async focusOnce() {
+    const track = this.stream?.getVideoTracks()[0];
+    const caps = track?.getCapabilities?.() ?? {};
+    if (!track || !caps.focusMode) return false;
+    const auto = caps.focusMode.includes('single-shot') ? 'single-shot' : caps.focusMode.includes('continuous') ? 'continuous' : null;
+    if (!auto) return false;
+    await track.applyConstraints({ advanced: [{ focusMode: auto }] });
+    await new Promise((r) => setTimeout(r, 1500));
+    if (caps.focusMode.includes('manual')) await track.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+    return true;
+  }
+
   async lockAuto(on) {
     const track = this.stream?.getVideoTracks()[0];
     const caps = track?.getCapabilities?.() ?? {};

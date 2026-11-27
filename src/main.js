@@ -461,6 +461,11 @@ async function startCamera(deviceId) {
     source = video;
     config.cameraId = settings.deviceId ?? deviceId ?? null;
     saveConfig();
+    // Gespeicherten Fokus wiederherstellen (Autofokus aus, gleiche Schärfe wie beim letzten Mal)
+    if (config.focusLock) {
+      try { await camera.setFocus(config.focusDistance ?? null); $('#focus-lock').checked = true; } catch { /* nicht unterstützt */ }
+    }
+    window.focusUi?.();
     const select = $('#camera-select');
     select.replaceChildren(...(await Camera.list()).map((d, i) => {
       const o = new Option(d.label || `Kamera ${i + 1}`, d.deviceId);
@@ -524,6 +529,48 @@ function buildSetup() {
   };
   $('#rotation').onchange = (e) => setRotation(Number(e.target.value));
   $('#sound-on').onchange = (e) => setMuted(!e.target.checked);
+  // Fokus: Autofokus aus und Schärfe auf die Bodenebene festhalten (wenn Kamera und Browser es erlauben)
+  const focusUi = () => {
+    const info = camera.focusInfo();
+    const can = !!source && !sim && info.manual;
+    $('#focus-lock').disabled = !can;
+    $('#btn-focus-once').disabled = !source || !!sim;
+    $('#focus-range-label').hidden = !(can && info.range);
+    if (can && info.range) {
+      Object.assign($('#focus-range'), { min: info.range.min, max: info.range.max, step: info.range.step || (info.range.max - info.range.min) / 100 });
+      if (info.distance != null) $('#focus-range').value = info.distance;
+      $('#focus-value').textContent = info.distance != null ? String(Math.round(info.distance * 100) / 100) : '';
+    }
+    if (source && !sim && !info.manual) {
+      $('#focus-hint').textContent = 'Diese Kamera (oder dieser Browser) lässt den Fokus nicht von der App einstellen. Viele Webcams haben ohnehin einen festen Fokus. Sonst den Fokus mit der Software des Kameraherstellers festlegen (auf dem Mac z. B. mit einer App wie „Webcam Settings“) und dabei auf den Ball am Boden scharf stellen.';
+    }
+  };
+  $('#focus-lock').onchange = async (e) => {
+    try {
+      if (e.target.checked) await camera.setFocus(null);
+      else await camera.lockAuto(false);
+      config.focusLock = e.target.checked;
+      saveConfig();
+    } catch (err) { setMessage(`Fokus ließ sich nicht umstellen (${err.message}).`); }
+    focusUi();
+  };
+  $('#btn-focus-once').onclick = async () => {
+    setMessage('Stelle scharf … Ball bitte ruhig ins Feld legen.');
+    try {
+      const ok = await camera.focusOnce();
+      setMessage(ok ? 'Scharf gestellt und festgehalten ✔' : 'Diese Kamera lässt sich von der App nicht scharf stellen – siehe Hinweis unter dem Kamerabild.');
+      if (ok) { $('#focus-lock').checked = true; config.focusLock = true; saveConfig(); }
+    } catch (err) { setMessage(`Scharfstellen ging nicht (${err.message}).`); }
+    focusUi();
+  };
+  $('#focus-range').oninput = async (e) => {
+    const d = Number(e.target.value);
+    $('#focus-value').textContent = String(Math.round(d * 100) / 100);
+    try { await camera.setFocus(d); $('#focus-lock').checked = true; config.focusLock = true; config.focusDistance = d; saveConfig(); } catch { /* nicht unterstützt */ }
+  };
+  window.focusUi = focusUi;
+  focusUi();
+
   $('#lock-auto').onchange = async (e) => {
     setMessage();
     try {

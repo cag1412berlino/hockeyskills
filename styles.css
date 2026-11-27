@@ -82,3 +82,4 @@ input[type=text] { font: inherit; padding: 9px 12px; border-radius: 10px; border
 body.fake-ball #stage { cursor: none; }
 .age { width: 76px; }
 .player .lefty { font-size: 13px; white-space: nowrap; color: #a9b4c4; }
+[hidden] { display: none !important; }

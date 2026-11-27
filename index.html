@@ -34,6 +34,14 @@
         <p id="track-status" class="status">Kamera ist aus.</p>
         <label><input type="checkbox" id="lock-auto"> Kamera-Automatik sperren (Belichtung, Weißabgleich)</label>
         <p class="hint">Erst einschalten, wenn Beamer und Licht so sind wie beim Spielen. Dann bleibt die Ballfarbe im Bild stabil.</p>
+        <div id="focus-box">
+          <div class="row">
+            <label><input type="checkbox" id="focus-lock"> Autofokus aus</label>
+            <button id="btn-focus-once">Einmal scharf stellen und festhalten</button>
+          </div>
+          <label id="focus-range-label" hidden>Schärfe <input type="range" id="focus-range"> <span id="focus-value"></span></label>
+          <p class="hint" id="focus-hint">Der Autofokus kann beim Spielen hin und her springen (Kinderbeine, Schläger). Den Ball auf den Boden ins Feld legen, „Einmal scharf stellen und festhalten“ drücken – dann bleibt die Schärfe auf der Bodenebene.</p>
+        </div>
       </section>
 
       <section>
