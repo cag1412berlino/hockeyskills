@@ -2,7 +2,7 @@
 // Training und Duell. Die Bildschirme rufen nur diese Funktionen auf und kennen einander nicht.
 import { config, saveConfig, paletteFor, currentProfile } from './config.js';
 import { MenuScene, CategoryScene, LevelScene, PlayScene, ResultScene, ProfileScene, PlayerPickScene, LeaderboardScene, bestLabel } from './scenes.js';
-import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale } from './session.js';
+import { SessionSetupScene, IntermissionScene, SessionResultScene, DuelSetupScene, DuelResultScene, makeFinale, duelTotals } from './session.js';
 import { games, categories, SESSIONS, sessionPlan } from './games/index.js';
 import { rankOf, recordRound, recordEvent, dailyGame, dateString } from './profile.js';
 import { CollectionScene } from './collection.js';
@@ -96,7 +96,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       if (config.theme === 'auto') engine.theme = randomTheme();
       engine.setScene(make());
     },
-    play: (game, level) => app.playScene(() => new PlayScene(app, game, level)),
+    play: (game, level, opts = {}) => app.playScene(() => new PlayScene(app, game, level, null, opts)),
     result: (r) => {
       if (r.record) sound.win(); else sound.end();
       app.show(new ResultScene(app, r));
@@ -150,12 +150,14 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
 
     // ----- Duell: zwei Spieler, drei Übungen, jeder spielt jede -----
     duelSetup: () => app.show(new DuelSetupScene(app)),
-    startDuel: (level, opponent) => {
-      const players = [app.profile, opponent];
+    /** Duell. picks: dieselben Übungen wie zuvor (Revanche); swap: der Gegner fängt an. */
+    startDuel: (level, opponent, picks = null, swap = false) => {
+      const last = picks && app.session?.kind === 'duel' ? app.session.players : null;
+      const players = last ? (swap ? [last[1], last[0]] : [...last]) : [app.profile, opponent];
       // je eine Übung aus drei verschiedenen Schwerpunkten
-      const picks = pick3(categories).map((c) => c.games[Math.floor(Math.random() * c.games.length)]);
+      picks ??= pick3(categories).map((c) => c.games[Math.floor(Math.random() * c.games.length)]);
       app.session = {
-        kind: 'duel', level, i: 0, results: [], seconds: 40, players,
+        kind: 'duel', level, i: 0, results: [], seconds: 40, players, picks,
         names: players.map((p) => (p ? p.name : 'Gast')),
         plan: picks.flatMap((game) => [{ game, who: 0 }, { game, who: 1 }]),
       };
@@ -179,7 +181,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
           }
           sound.win();
           if (duel) {
-            const totals = [0, 1].map((w) => s.results.filter((r) => r.who === w).reduce((sum, r) => sum + r.score, 0));
+            const totals = duelTotals(s);
             const winner = totals[0] === totals[1] ? null : s.players[totals[0] > totals[1] ? 0 : 1];
             if (winner && !app.practice()) recordEvent(winner, 'duel', categories);
             saveConfig();

@@ -217,3 +217,25 @@ test('Trainer: Zurufe und Erinnerungen im Menü', async () => {
   assert.ok(later.some((l) => l.startsWith('Wie wäre es mal wieder mit')), later.join(' / '));
   assert.ok(later.some((l) => l.startsWith('Deine Lieblingsübung: „Ziele“')), later.join(' / '));
 });
+
+test('Duell: Altersbonus für den Jüngeren, Gesamtpunkte', async () => {
+  const { duelFactors, duelTotals } = await import('../src/session.js').catch(() => ({}));
+  if (!duelFactors) return; // session.js braucht den Browser nicht, aber scenes.js lädt Zeichenfunktionen
+  const kid = newProfile('Kind'), dad = newProfile('Papa');
+  kid.birthYear = new Date().getFullYear() - 8;
+  dad.birthYear = new Date().getFullYear() - 45;
+  assert.deepEqual(duelFactors([kid, dad]), [1.5, 1], 'höchstens 50 %');
+  const sib = newProfile('Bruder');
+  sib.birthYear = new Date().getFullYear() - 10;
+  assert.deepEqual(duelFactors([sib, kid]), [1, 1.1]);
+  assert.deepEqual(duelFactors([kid, newProfile('ohne Alter')]), [1, 1]);
+  assert.deepEqual(duelTotals({ players: [kid, dad], results: [{ who: 0, score: 400 }, { who: 1, score: 550 }, { who: 0, score: 100 }] }), [750, 550]);
+});
+
+test('Trainer: Tagesbilanz', async () => {
+  const { memories } = await import('../src/coach.js');
+  const p = newProfile('Lotta');
+  recordRound(p, round({ stars: 2 }), categories, '2026-11-27');
+  recordRound(p, round({ stars: 1 }), categories, '2026-11-27');
+  assert.ok(memories(p, games, categories, '2026-11-27', 12).includes('Heute schon 2 Übungen und 3 Sterne – stark!'));
+});

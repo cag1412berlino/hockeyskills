@@ -36,6 +36,12 @@ export function memories(p, games, categories, day, hour = 12) {
   const away = p.days.last ? dayDiff(p.days.last, day) : 0;
   lines.push(away >= 4 ? `Schön, dass du wieder da bist, ${p.name}!` : `${hello} ${p.name}!`);
 
+  // Was heute schon geschafft ist
+  const today = p.history.filter((h) => h.d === day);
+  if (today.length >= 2) {
+    const stars = today.reduce((n, h) => n + (h.st || 0), 0);
+    lines.push(`Heute schon ${today.length} Übungen und ${stars} ${stars === 1 ? 'Stern' : 'Sterne'} – stark!`);
+  }
   // Das beste Ergebnis vom letzten Trainingstag
   const earlier = p.history.filter((h) => h.d < day);
   if (earlier.length) {

@@ -97,6 +97,14 @@ export class MenuScene extends ButtonScene {
       icon: item.icon, label: item.name, sub: item.sub,
       onActivate: this.act(item.go),
     }));
+    // Neuigkeiten für diesen Spieler (z. B. „Lotta hat deinen Rekord geknackt“): einmal zeigen und vorlesen
+    const p = app.profile;
+    if (p.news?.length) {
+      this.news = p.news;
+      p.news = [];
+      app.save();
+      app.voice.say(this.news[0]);
+    }
     // Einmal je Woche den Sieger der Vorwoche ausrufen
     const week = weekStart(app.today());
     if (app.config.weekSeen !== week) {
@@ -122,6 +130,7 @@ export class MenuScene extends ButtonScene {
     const lines = [this.memo[0], 'Lege den Ball auf einen Kreis', ...this.memo.slice(1, 3)];
     // Montags (oder beim ersten Start der Woche): Wer hat die letzte Woche gewonnen?
     if (this.champion) lines.unshift(`Sieger der letzten Woche: ${this.champion.name}!`);
+    if (this.news) lines.unshift(...this.news);
     const quest = todaysMissions(p, app.categories, today);
     if (quest.chest) lines.push('Alle Aufgaben geschafft – morgen gibt es neue!');
     else for (const m of quest.list) if (m.n < m.target) lines.push(`Aufgabe: ${m.text}${m.target > 1 && m.n ? ` (${m.n.toLocaleString('de-DE')} von ${m.target.toLocaleString('de-DE')})` : ''}`);
@@ -292,7 +301,7 @@ export class ResultScene extends ButtonScene {
     this.buttons = [
       new DwellButton({
         x: w - 280, y: 835, r: 72, color: colors[0], icon: icons.replay, label: 'Nochmal',
-        onActivate: this.act(() => this.app.play(this.game, this.level)),
+        onActivate: this.act(() => this.app.play(this.game, this.level, { quick: true })),
       }),
       new DwellButton({
         x: w - 105, y: 835, r: 72, color: colors[2], icon: icons.home, label: 'Menü',
@@ -400,7 +409,24 @@ export class ProfileScene extends ButtonScene {
     title(ctx, p.name, w / 2, 74, 62, c[1]);
     drawRank(ctx, p, w / 2 - 300, 138, 600, c);
     const earned = BADGES.filter((b) => p.badges[b.id]).length;
-    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 226, 24, 'rgba(255,255,255,0.75)', 'center', 0, 400);
+    text(ctx, `${earned} von ${BADGES.length} Abzeichen${p.days.streak >= 2 ? ` · ${p.days.streak} Tage in Folge` : ''}`, w / 2, 192, 20, 'rgba(255,255,255,0.7)', 'center', 0, 400);
+    // Stärken: je Schwerpunkt der Anteil der geholten Sterne (beste Runde je Übung)
+    const cats = this.app.categories;
+    const bw = Math.min(150, (w - 200) / cats.length - 20);
+    cats.forEach((cat, i) => {
+      const x = w / 2 + (i - (cats.length - 1) / 2) * (bw + 24) - bw / 2;
+      const got = cat.games.reduce((n, g) => n + (p.stats.best[g.id] || 0), 0), all = cat.games.length * 3;
+      const color = this.app.accentOf(cat);
+      text(ctx, cat.name, x + bw / 2, 222, 16, tone(color, 80), 'center', 0, 500);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = 'rgba(255,255,255,0.13)';
+      ctx.beginPath(); ctx.moveTo(x, 244); ctx.lineTo(x + bw, 244); ctx.stroke();
+      if (got) {
+        ctx.strokeStyle = color;
+        ctx.beginPath(); ctx.moveTo(x, 244); ctx.lineTo(x + Math.max(2, bw * (got / all)), 244); ctx.stroke();
+      }
+    });
 
     this.spots.forEach(({ badge, x, y }, i) => {
       const has = !!p.badges[badge.id];

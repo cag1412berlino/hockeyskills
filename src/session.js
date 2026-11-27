@@ -3,6 +3,24 @@ import { DwellButton, icons, text, title, caption, star, glow, noGlow, tone, mas
 import { ButtonScene } from './scenebase.js';
 import { SESSIONS } from './games/index.js';
 import { initial, rewardLines } from './scenes.js';
+import { ageOf } from './profile.js';
+
+/**
+ * Altersausgleich im Duell: Wer jünger ist, bekommt je Lebensjahr Unterschied 5 % auf seine Punkte
+ * (höchstens 50 %). Nur wenn bei beiden ein Alter eingetragen ist. Liefert die Faktoren [Spieler 1, Spieler 2].
+ */
+export function duelFactors(players) {
+  const ages = players.map((p) => (p ? ageOf(p) : null));
+  if (ages.some((a) => a == null) || ages[0] === ages[1]) return [1, 1];
+  const bonus = 1 + Math.min(0.5, 0.05 * Math.abs(ages[0] - ages[1]));
+  return ages[0] < ages[1] ? [bonus, 1] : [1, bonus];
+}
+
+/** Gesamtpunkte beider Spieler im Duell, mit Altersausgleich. */
+export function duelTotals(s) {
+  const f = duelFactors(s.players);
+  return [0, 1].map((who) => Math.round(s.results.filter((r) => r.who === who).reduce((sum, r) => sum + r.score, 0) * f[who]));
+}
 
 const BREAK = 7; // Sekunden Pause zwischen zwei Übungen
 
@@ -238,6 +256,7 @@ export class DuelSetupScene extends ButtonScene {
     title(ctx, 'Duell', w / 2, 130, 86, this.app.palette()[1]);
     text(ctx, `${this.app.profile.name} gegen …`, w / 2, 240, 30, 'rgba(255,255,255,0.85)', 'center', 0, 400);
     text(ctx, 'Drei Übungen, jeder spielt jede. Wer mehr Punkte holt, gewinnt.', w / 2, 760, 24, 'rgba(255,255,255,0.7)', 'center', 0, 400);
+    text(ctx, 'Ist das Alter eingetragen, bekommt der Jüngere einen Altersbonus.', w / 2, 796, 20, 'rgba(255,255,255,0.55)', 'center', 0, 400);
     super.draw(ctx);
   }
 }
@@ -247,7 +266,8 @@ export class DuelResultScene extends ButtonScene {
   constructor(app, session) {
     super(app);
     this.session = session;
-    this.totals = [0, 1].map((who) => session.results.filter((r) => r.who === who).reduce((sum, r) => sum + r.score, 0));
+    this.totals = duelTotals(session);
+    this.factors = duelFactors(session.players);
     this.winner = this.totals[0] === this.totals[1] ? -1 : this.totals[0] > this.totals[1] ? 0 : 1;
     this.party = new Confetti(app.engine.field.w, [...app.palette(), '#fff']);
     app.voice.say(this.winner < 0 ? 'Unentschieden!' : `${session.names[this.winner]} gewinnt!`);
@@ -257,8 +277,9 @@ export class DuelResultScene extends ButtonScene {
     const colors = this.app.palette();
     this.buttons = [
       new DwellButton({
-        x: w / 2 - 110, y: 890, r: 66, color: colors[0], icon: icons.replay,
-        onActivate: this.act(() => this.app.startDuel(this.session.level, this.session.players[1])),
+        x: w / 2 - 110, y: 890, r: 66, color: colors[0], icon: icons.replay, label: 'Revanche',
+        // dieselben Übungen noch einmal – wer verloren hat, darf anfangen
+        onActivate: this.act(() => this.app.startDuel(this.session.level, null, this.session.picks, this.winner === 0)),
       }),
       new DwellButton({
         x: w / 2 + 110, y: 890, r: 66, color: colors[2], icon: icons.home,
@@ -279,6 +300,7 @@ export class DuelResultScene extends ButtonScene {
     names.forEach((name, who) => {
       text(ctx, name, xs[who], 215, 36, who === this.winner ? '#fff' : tone(c[3], 78), 'center', 0, 600);
       text(ctx, Math.round(this.totals[who] * Math.min(1, this.time / 1.5)), xs[who], 305, 96, '#fff', 'center', 8, 600);
+      if (this.factors[who] > 1) text(ctx, `mit Altersbonus +${Math.round((this.factors[who] - 1) * 100)} %`, xs[who], 370, 20, tone(c[1], 80), 'center', 0, 500);
     });
     const gamesPlayed = [...new Set(results.map((r) => r.game))];
     gamesPlayed.forEach((game, k) => {

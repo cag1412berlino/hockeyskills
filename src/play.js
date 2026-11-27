@@ -4,6 +4,7 @@
 import { BALL_RADIUS } from './engine.js';
 import { DwellButton, clickButtons, icons, text, title, caption, heart, star, orb, glow, noGlow, tone, mascot, bubble, Confetti } from './ui.js';
 import { shout, cheerful } from './coach.js';
+import { Show } from './games/spectacle.js';
 import { SPEEDS, scoreKey, medals } from './scenebase.js';
 import { Bot, SKILLS, goals } from './bots.js';
 
@@ -17,6 +18,7 @@ const EVENTS = {
   double: { label: 'Doppelte Punkte!', say: 'Doppelte Punkte!', seconds: 10 },
   slow: { label: 'Zeitlupe!', say: 'Zeitlupe!', seconds: 5 },
   lucky: { label: 'Glücksstern!', say: 'Ein Glücksstern!', seconds: 7 },
+  gold: { label: 'Goldregen! Punkte x3', say: 'Goldregen! Dreifache Punkte!', seconds: 6, rare: true },
 };
 
 export class PlayScene {
@@ -37,8 +39,9 @@ export class PlayScene {
     this.lives = this.endless ? game.endless.lives : game.lives ?? null;
     this.pace = 0;           // Endlos: so oft wurde es schon schneller
     this.steady = this.endless && !!game.endless.steady; // Dauertraining: endlos, aber gleichbleibend
-    this.countdown = 3.5;
-    this.lastTick = 4;
+    // „Nochmal“ startet schneller: kurzer Countdown
+    this.countdown = opts.quick ? 1.6 : 3.5;
+    this.lastTick = opts.quick ? 2 : 4;
     this.speed = SPEEDS[app.config.speed].factor;
     this.stage = 0;          // steigt im Lauf der Runde von 0 auf STAGES - 1
     // Ausgleichsfaktor: bringt alle Übungen auf ein vergleichbares Punkteniveau (ermittelt mit tools/balance.js)
@@ -67,15 +70,19 @@ export class PlayScene {
     this.slowmo = 0;         // Sekunden Zeitlupe nach einem neuen Rekord
     this.flash = 0;
     this.party = null;       // Konfetti bei Serie x4 und neuem Rekord
+    this.show = new Show();  // Goldregen
+    this.gold = 0;
     this.lastSecond = 99;
     this.lastLives = this.lives;
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
     this.events = [];
     if (opts.events !== false && this.duration >= 30) {
-      const kinds = Object.keys(EVENTS);
+      const kinds = Object.keys(EVENTS).filter((k) => !EVENTS[k].rare);
       for (const [from, to] of [[0.22, 0.42], [0.58, 0.8]]) {
-        if (Math.random() < 0.75) this.events.push({ at: this.duration * (from + Math.random() * (to - from)), kind: kinds[Math.floor(Math.random() * kinds.length)] });
+        // selten (etwa jede zehnte Runde) kommt der Goldregen
+        const kind = Math.random() < 0.06 ? 'gold' : kinds[Math.floor(Math.random() * kinds.length)];
+        if (Math.random() < 0.75) this.events.push({ at: this.duration * (from + Math.random() * (to - from)), kind });
       }
     }
 
@@ -124,7 +131,7 @@ export class PlayScene {
       /** Tempo-Faktor passend zur Stufe und dazu, wie gut es gerade läuft. */
       get ramp() { return demo ? 1 : (scene.endless && !scene.steady ? 1 + 0.011 * scene.elapsed : 1 + 0.2 * scene.stage) * scene.assist; },
       get mult() { return demo ? 1 : scene.multiplier(); },
-      addScore: demo ? nothing : (n) => { scene.score = Math.max(0, scene.score + (n > 0 ? n * scene.scale * (scene.double > 0 ? 2 : 1) : n)); },
+      addScore: demo ? nothing : (n) => { scene.score = Math.max(0, scene.score + (n > 0 ? n * scene.scale * scene.bonus() : n)); },
       /** Punkte für eine gelungene Aktion. Schnelle Treffer in Folge bauen eine Serie auf, die die Punkte vervielfacht. */
       combo: demo ? (points) => points : (points, window = 2.5) => scene.combo(points, window),
       /** Fehler: die Serie ist weg. */
@@ -154,6 +161,11 @@ export class PlayScene {
     });
   }
 
+  /** Ereignis-Bonus: Goldregen x3, doppelte Punkte x2. */
+  bonus() {
+    return this.gold > 0 ? 3 : this.double > 0 ? 2 : 1;
+  }
+
   multiplier() {
     return 1 + STREAK_STEPS.filter((s) => this.streak >= s).length;
   }
@@ -178,7 +190,7 @@ export class PlayScene {
       // Läuft es richtig gut, zieht das Tempo unauffällig etwas an.
       if (mult >= 3) this.assist = Math.min(1.15, this.assist + 0.04);
     }
-    const awarded = Math.max(1, Math.round(points * mult * this.scale * (this.double > 0 ? 2 : 1)));
+    const awarded = Math.max(1, Math.round(points * mult * this.scale * this.bonus()));
     this.score += awarded;
     return awarded;
   }
@@ -227,6 +239,7 @@ export class PlayScene {
     this.banner = { str: ev.label, age: 0, color: this.env.palette[1] };
     this.app.voice.say(ev.say);
     this.app.sound.power();
+    if (kind === 'gold') this.show.coins(this.app.engine.field, 70);
     if (kind === 'lucky') {
       const f = this.app.engine.field;
       this.lucky = { x: 120 + Math.random() * (f.w - 240), y: 260 + Math.random() * (f.h - 400), left: ev.seconds };
@@ -251,6 +264,7 @@ export class PlayScene {
     this.flash = Math.max(0, this.flash - dt * 2.5);
     this.slowmo = Math.max(0, this.slowmo - dt);
     if (this.coach && (this.coach.age += dt) > 2.6) this.coach = null;
+    this.show.update(dt);
     if (this.party) {
       this.party.update(dt);
       if ((this.partyLeft -= dt) <= 0) this.party = null;
@@ -303,6 +317,7 @@ export class PlayScene {
     this.elapsed += dt;
     if (this.streakLeft > 0 && (this.streakLeft -= dt) <= 0) this.streak = 0;
     this.double = Math.max(0, this.double - dt);
+    this.gold = Math.max(0, (this.gold || 0) - dt);
     this.slow = Math.max(0, this.slow - dt);
     this.app.music.intensity(this.multiplier());
     // Je höher die Serie, desto farbiger und lebendiger wird die Welt.
@@ -378,6 +393,14 @@ export class PlayScene {
     const best = app.profile.highscores[key] || 0;
     const record = this.score > best && !app.practice?.();
     if (record) {
+      // Hielt jemand anderes bisher den Rekord dieser Übung? Dann erfährt er es beim nächsten Start.
+      const others = (app.config.profiles ?? []).filter((q) => q !== app.profile);
+      const top = Math.max(0, ...others.map((q) => q.highscores?.[key] || 0));
+      if (top > best && this.score > top) {
+        for (const q of others.filter((x) => x.highscores[key] === top)) {
+          q.news = [...(q.news ?? []), `${app.profile.name} hat deinen Rekord bei „${game.name}“ geknackt – hol ihn dir zurück!`].slice(-5);
+        }
+      }
       app.profile.highscores[key] = this.score;
       app.save();
     }
@@ -466,7 +489,8 @@ export class PlayScene {
       noGlow(ctx);
       text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
     }
-    if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');
+    if (this.gold > 0) caption(ctx, 'Goldregen x3', 42, 172, 18, '#ffd76a');
+    else if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');
     if (this.slow > 0) caption(ctx, 'Zeitlupe', 42, this.double > 0 ? 200 : 172, 18, tone(c[3], 82));
     if (this.lives != null) {
       for (let i = 0; i < (this.endless ? this.game.endless.lives : this.game.lives ?? 0); i++) {
@@ -487,6 +511,7 @@ export class PlayScene {
       ctx.fillRect(0, 0, w, 1000);
     }
     this.party?.draw(ctx);
+    this.show.draw(ctx, this.app.engine.field, this.app.engine.ball);
     if (this.coach) {
       // Der Trainer schaut kurz unten links herein und ruft etwas zu
       const a = this.coach.age;

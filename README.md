@@ -90,6 +90,12 @@ Für alle Spiele gilt:
 - **Schatzkiste:** Sind alle drei Aufgaben erledigt, geht die Kiste auf: 500 Bonuspunkte und ein neues Sammelstück. Danach ist für heute Schluss mit Aufgaben, morgen gibt es neue.
 - **Sammlung:** Zehn Sammelstücke – fünf bunte Ballschweife und fünf Mützen für den Trainer. Im Profil führt der Knopf mit der Kiste zur Sammlung; dort lässt sich an- und ablegen, was man schon hat.
 - **Krone der Woche:** Wer die Wochenliste anführt, trägt im Menü und in der Spielerwahl eine Krone am Namen. Beim ersten Start einer neuen Woche ruft der Trainer den Sieger der Vorwoche aus.
+- **Rekord geknackt:** Holt jemand den Rekord eines anderen Spielers, erfährt der es beim nächsten Start vom Trainer („Lotta hat deinen Rekord bei Slalom geknackt – hol ihn dir zurück!“).
+- **Duell mit Revanche und Altersausgleich:** Nach dem Duell startet „Revanche“ dieselben Übungen noch einmal, der Verlierer fängt an. Ist bei beiden das Alter eingetragen, bekommt der Jüngere 5 % mehr Punkte je Jahr Unterschied (höchstens 50 %).
+- **Goldregen:** Etwa jede zehnte Runde regnet es Gold – sechs Sekunden dreifache Punkte.
+- **Schneller Neustart:** „Nochmal“ startet mit kurzem Countdown.
+- **Stärken:** Im Profil zeigen fünf Balken, wie viele Sterne man in jedem Schwerpunkt schon hat.
+- **Tagesbilanz:** Im Menü sagt der Trainer, was heute schon geschafft ist.
 - **Der Trainer redet mit:** Im Menü begrüßt er je nach Tageszeit und erinnert sich („Gestern: 2 Sterne bei Slalom – schaffst du heute mehr?“, „Bei Achter fehlt dir nur noch ein Stern!“, „Wie wäre es mal wieder mit Stoppen?“). Während der Runde schaut er unten links kurz herein und ruft zu: bei Serien, zur Halbzeit (vor oder hinter dem Rekord), im Endspurt, beim Rekord und aufmunternd nach Fehlern. Mit Sprachansagen spricht er es auch.
 - **Mehr Wumms:** Jeder Treffer einer Serie klingt einen Halbton höher. Bei Serie x4 und bei einem neuen Rekord regnet Konfetti; der Rekord bekommt dazu eine kurze Zeitlupe und einen hellen Blitz. Die letzten fünf Sekunden ticken hörbar herunter.
 
