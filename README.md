@@ -57,7 +57,8 @@ Jede Übung dauert 30 bis 60 Sekunden. Dazwischen liegen 7 Sekunden Pause, in de
 
 - **Vormachen:** Beim ersten Mal zeigt ein Geisterball fünf Sekunden lang, wie die Übung geht.
 - **Sprachansagen:** Erklärung, „Stopp!“, Ergebnis und neue Abzeichen werden vorgelesen, für Kinder, die noch nicht lesen.
-- **Zufallsereignisse:** In einer Runde kann es zehn Sekunden doppelte Punkte, fünf Sekunden Zeitlupe oder einen Glücksstern geben.
+- **Zufallsereignisse:** In einer Runde kann es zehn Sekunden doppelte Punkte oder fünf Sekunden Zeitlupe geben.
+- **Superpunkte:** In jeder Übung erscheint einmal pro Runde das Logo von Blau-Weiss (in endlosen Runden alle 45 Sekunden wieder). Wer es innerhalb von 8 Sekunden mit dem Ball holt, bekommt +100 Punkte – bei doppelten Punkten das Doppelte, im Goldregen das Dreifache. Im freien Spiel gibt es keine Superpunkte.
 - **Anpassende Schwierigkeit:** Nach Fehlern wird die Übung unauffällig etwas langsamer (bis 25 %), bei langen Serien etwas schneller (bis 15 %).
 - **Themenwelten:** Vier gemalte, bunte Welten, zufällig je Runde oder fest gewählt:
   - *Weltraum* in Violett und Pink mit Farbnebeln, Planeten und Sternschnuppen. Die Ziele sind kleine Außerirdische, zu sammeln gibt es Sterne, und unter dem Ball leuchten Waben auf.

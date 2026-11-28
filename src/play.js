@@ -12,12 +12,14 @@ const STAGES = 4;                // so oft wird ein Spiel innerhalb einer Runde 
 const STREAK_STEPS = [3, 6, 10]; // ab so vielen schnellen Treffern in Folge gibt es x2, x3, x4
 const AWAY_PAUSE = 2.5;          // nach so vielen Sekunden ohne Ball pausiert das Spiel
 const DEMO_SECONDS = 5;
+const SUPER_POINTS = 100; // für das Vereinslogo (etwa ein Zehntel einer guten Runde)
 
 // Zufallsereignisse, die eine Runde auflockern
 const EVENTS = {
   double: { label: 'Doppelte Punkte!', say: 'Doppelte Punkte!', seconds: 10 },
   slow: { label: 'Zeitlupe!', say: 'Zeitlupe!', seconds: 5 },
-  lucky: { label: 'Glücksstern!', say: 'Ein Glücksstern!', seconds: 7 },
+  // Superpunkte: das Vereinslogo erscheint, wer es mit dem Ball holt, bekommt viele Punkte
+  lucky: { label: 'Superpunkte!', say: 'Superpunkte! Hol dir das Logo!', seconds: 8 },
   gold: { label: 'Goldregen! Punkte x3', say: 'Goldregen! Dreifache Punkte!', seconds: 6, rare: true },
 };
 
@@ -61,7 +63,8 @@ export class PlayScene {
     this.resumeIn = 0;
     this.double = 0;         // Sekunden, die "Doppelte Punkte" noch läuft
     this.slow = 0;
-    this.lucky = null;       // Glücksstern { x, y, left }
+    this.lucky = null;       // Superpunkte (Vereinslogo) { x, y, left }
+    this.nextSuper = Infinity; // endlose Runden: wann das Logo wieder kommt
     this.lastScore = 0;
     // Jagd auf den eigenen Rekord (nur in der einzelnen Übung, nicht im Training oder Übungsmodus)
     this.best = !session && !this.free && !app.practice?.() ? app.profile?.highscores?.[scoreKey(app, game, level)] || 0 : 0;
@@ -84,13 +87,17 @@ export class PlayScene {
 
     // Ein bis zwei Zufallsereignisse je Runde, wenn sie lang genug ist
     this.events = [];
-    if (opts.events !== false && this.duration >= 30) {
-      const kinds = Object.keys(EVENTS).filter((k) => !EVENTS[k].rare);
+    if (opts.events !== false && this.duration >= 30 && !this.free) {
+      const kinds = Object.keys(EVENTS).filter((k) => !EVENTS[k].rare && k !== 'lucky');
       for (const [from, to] of [[0.22, 0.42], [0.58, 0.8]]) {
         // selten (etwa jede zehnte Runde) kommt der Goldregen
         const kind = Math.random() < 0.06 ? 'gold' : kinds[Math.floor(Math.random() * kinds.length)];
         if (Math.random() < 0.75) this.events.push({ at: this.duration * (from + Math.random() * (to - from)), kind });
       }
+      // In jeder Runde einmal Superpunkte (Vereinslogo), in endlosen Runden alle 45 Sekunden wieder
+      this.events.push({ at: this.duration * (0.3 + Math.random() * 0.45), kind: 'lucky' });
+      this.events.sort((a, b) => a.at - b.at);
+      this.nextSuper = this.endless ? this.duration + 45 : Infinity;
     }
 
     // Spielfarben kommen aus der Themenwelt, die Leitfarbe der Anzeigen vom Schwerpunkt der Übung.
@@ -377,13 +384,16 @@ export class PlayScene {
       if (second >= 1 && second <= 5) this.app.sound.tick();
     }
     while (this.events.length && this.elapsed >= this.events[0].at) this.trigger(this.events.shift().kind);
+    if (this.elapsed >= this.nextSuper) { this.nextSuper += 45; if (!this.lucky) this.trigger('lucky'); }
 
     if (this.lucky) {
       this.lucky.left -= dt;
-      if (ball.visible && Math.hypot(ball.x - this.lucky.x, ball.y - this.lucky.y) < 55 + BALL_RADIUS) {
-        this.score += 25 * (this.double > 0 ? 2 : 1);
+      if (ball.visible && Math.hypot(ball.x - this.lucky.x, ball.y - this.lucky.y) < 62 + BALL_RADIUS) {
+        const bonus = SUPER_POINTS * (this.double > 0 ? 2 : 1) * (this.gold > 0 ? 3 : 1);
+        this.score += bonus;
         this.app.sound.win();
-        this.banner = { str: '+25', age: 0.5, color: this.env.palette[1] };
+        this.show.coins(this.app.engine.field, 50);
+        this.banner = { str: `Superpunkte! +${bonus}`, age: 0.3, color: '#fff' };
         this.lucky = null;
       } else if (this.lucky.left <= 0) {
         this.lucky = null;
@@ -485,10 +495,35 @@ export class PlayScene {
     if (this.lucky) {
       const l = this.lucky;
       ctx.globalAlpha = l.left < 2 ? 0.5 + 0.5 * Math.sin(l.left * 16) : 1;
-      glow(ctx, '#fff', 30);
-      star(ctx, l.x, l.y, 50 + 6 * Math.sin(this.elapsed * 7), '#fff', this.elapsed * 2);
+      const size = 60 + 6 * Math.sin(this.elapsed * 7);
+      // leuchtender Kreis und Strahlen hinter dem Logo
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(this.elapsed * 0.8);
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        ctx.moveTo(Math.cos(a) * (size + 8), Math.sin(a) * (size + 8));
+        ctx.lineTo(Math.cos(a) * (size + 26), Math.sin(a) * (size + 26));
+      }
+      ctx.stroke();
+      ctx.restore();
+      glow(ctx, '#fff', 34);
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, size, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
       noGlow(ctx);
-      text(ctx, '+25', l.x, l.y + 2, 26, '#0b1d4a', 'center', 0, 600);
+      const logo = this.app.logo;
+      if (logo?.complete && logo.naturalWidth) {
+        const k = (size * 1.9) / Math.max(logo.naturalWidth, logo.naturalHeight);
+        ctx.drawImage(logo, l.x - (logo.naturalWidth * k) / 2, l.y - (logo.naturalHeight * k) / 2, logo.naturalWidth * k, logo.naturalHeight * k);
+      } else {
+        star(ctx, l.x, l.y, size * 0.8, '#0b1d4a', this.elapsed * 2);
+      }
+      text(ctx, `+${SUPER_POINTS}`, l.x, l.y + size + 34, 34, '#fff', 'center', 8, 700);
       ctx.globalAlpha = 1;
     }
 
