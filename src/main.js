@@ -77,7 +77,7 @@ stage.addEventListener('pointerleave', () => { mouse.inside = false; });
 engine.ballProvider = () => {
   if (mode === 'mouse') return mouse.inside ? mouse : null;
   if (!detection || !config.calib || performance.now() - detectionAt > 400) return null;
-  return applyHomography(config.calib.H, detection.x, detection.y);
+  return { ...applyHomography(config.calib.H, detection.x, detection.y), at: detectionAt };
 };
 
 /** Sagt der Ballsuche, wo das Spielfeld im Kamerabild liegt (mit etwas Rand). */
@@ -478,8 +478,8 @@ async function measureLatency() {
   if (results.length < 3) return setMessage('Die Messung hat nicht geklappt: Die Kamera hat das Aufblitzen nicht gesehen. Ist das Feld im Kamerabild und der Raum nicht zu hell?');
   results.sort((a, b) => a - b);
   const median = results[Math.floor(results.length / 2)];
-  // Ganz vorhalten lässt den Ring bei Richtungswechseln überschießen; gut drei Viertel sind ein guter Kompromiss.
-  config.latency = Math.max(0, Math.min(250, Math.round((median * 0.8) / 10) * 10));
+  // Voll vorhalten: Die Begrenzung im Engine verhindert weites Überschießen bei Richtungswechseln.
+  config.latency = Math.max(0, Math.min(250, Math.round(median / 10) * 10));
   saveConfig();
   refreshSetup();
   setMessage(`Gemessene Verzögerung: ${Math.round(median)} ms (Kamera + Beamer + Rechnen). Vorhalt auf ${config.latency} ms gestellt.${median > 150 ? ' Das ist viel – am Beamer den Spielmodus (Game Mode) einschalten und Bildverbesserungen ausschalten, und den Kamera-Modus „Schnell“ probieren.' : ''}`);

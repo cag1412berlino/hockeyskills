@@ -195,30 +195,38 @@ export class Engine {
       if (this.lostFor > 0.45) { b.visible = false; b.vx = b.vy = 0; this.trail.length = 0; }
       return;
     }
-    // s = geglättete Position aus dem Kamerabild, v = beruhigte Geschwindigkeit
+    // s = geglättete Position aus dem Kamerabild, v = beruhigte Geschwindigkeit.
+    // Die Kamera liefert oft seltener Bilder, als gezeichnet wird: Geglättet wird nur bei einem neuen
+    // Kamerabild, und zwar über die echte Zeit zwischen zwei Kamerabildern.
     const s = this.seen;
+    const fresh = p.at == null || p.at !== this.lastAt;
+    const step = p.at != null && this.lastAt != null ? Math.max(0.001, (p.at - this.lastAt) / 1000) : dt;
+    if (fresh) this.lastAt = p.at;
     // Taucht der Ball nach einer Lücke wieder auf oder springt er weit, gilt die neue Stelle sofort –
     // ohne Glättung und ohne Schwung aus dem Sprung, sonst schießt der Ring über das Ziel hinaus.
     const reappear = this.lostFor > 0.05 || Math.hypot(x - s.x, y - s.y) > 180;
     if (!b.visible || dt <= 0 || reappear) {
       s.x = x; s.y = y; s.vx = s.vy = 0;
       b.vx = b.vy = 0;
-    } else {
+    } else if (fresh) {
       // Glättung je nach Tempo: Liegt der Ball fast still, wird kräftig beruhigt (kein Zittern),
       // bei schnellen Bewegungen folgt der Ring fast sofort (keine Verzögerung).
       const jump = Math.hypot(x - s.x, y - s.y);
       const k = Math.min(0.85, Math.max(0.25, 0.25 + jump / 160));
       const nx = s.x + (x - s.x) * k;
       const ny = s.y + (y - s.y) * k;
-      b.vx = (nx - s.x) / dt;
-      b.vy = (ny - s.y) / dt;
-      s.vx += (b.vx - s.vx) * 0.35;
-      s.vy += (b.vy - s.vy) * 0.35;
+      b.vx = (nx - s.x) / step;
+      b.vy = (ny - s.y) / step;
+      s.vx += (b.vx - s.vx) * 0.6;
+      s.vy += (b.vy - s.vy) * 0.6;
       s.x = nx; s.y = ny;
     }
     // Vorhalt gleicht die Verzögerung von Kamera und Beamer aus (0 = aus).
+    // Dazu kommt, wie alt das letzte Kamerabild schon ist. Höchstens 200 (etwa 40 cm) voraus,
+    // damit der Ring bei einem plötzlichen Richtungswechsel nicht weit überschießt.
     const lead = this.leadOff?.() ? 0 : (this.config.latency || 0) / 1000; // Maus: keine Verzögerung
-    const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead, 80) : s;
+    const age = lead && p.at != null ? Math.min(0.1, Math.max(0, (performance.now() - p.at) / 1000)) : 0;
+    const at = lead ? predict(s, { x: s.vx, y: s.vy }, lead + age, 200) : s;
     b.x = at.x; b.y = at.y;
     if (!b.visible) b.vx = b.vy = 0;
     b.visible = true;
