@@ -116,6 +116,10 @@ In der Stufenwahl jeder Übung gibt es unten in der Mitte den Schalter **„Frei
 
 Ziele (Treffen, Punktlandung, Zielrollen, Wegpunkte beim Achter) werden auf größeren Feldern kleiner, damit sie in Zentimetern etwa gleich groß bleiben: gedacht für 1,5 m Feldhöhe, bei 2 m 75 %, bei 2,5 m 60 %, bei 3 m 50 %. Gänge und Tore (Draht, Slalom) richten sich nach dem Ball und passen immer so, dass er durchkommt. Die Feldhöhe stellt man unter Einstellungen ein.
 
+## Führen: jede Strecke in anderer Größe
+
+Bei Linie, Draht, Zeichnen, Achter und Slalom hat jede neue Strecke eine andere Größe und liegt an einer anderen Stelle: mal ganz klein auf gut einem Meter Breite, mal über das halbe Feld, mal über die ganze Breite (nie zweimal hintereinander gleich). Wie viel ein Meter ist, rechnet die App aus der eingestellten Feldhöhe. Beim Achter ändert sich die Größe alle zwei ganzen Achten (mal eng, mal riesig), die Mitte bleibt dort, wo der Ball gerade ist. Die Breite der Gänge und Tore bleibt dabei immer passend zum Ball.
+
 ## Tippen ab „Mittel“
 
 Ab „Mittel“ liegen die Marken weiter auseinander (längere Zieher), die Linie wandert ständig über das Feld und schwenkt hin und her. Alle paar Wechsel gibt es eine Überraschung: **Drehung** (Linie dreht sich um 90°), **Sprung** (Linie springt an eine andere Stelle) oder **Goldlinie** (6 Sekunden doppelte Punkte). Auf „Schwer“ atmet zusätzlich der Abstand der Marken. „Leicht“ bleibt ruhig.

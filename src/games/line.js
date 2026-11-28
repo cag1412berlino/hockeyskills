@@ -4,7 +4,7 @@
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, collectible, tone, text } from '../ui.js';
-import { Fx, Rest, OffTrack } from './common.js';
+import { Fx, Rest, OffTrack, pickSpan } from './common.js';
 
 const LEVELS = {
   1: { tol: 95, points: 4, obstacles: 0, period: 3.5 },
@@ -52,15 +52,17 @@ class Line {
   newPath(start) {
     const { env, p } = this;
     const { field } = env;
-    const n = p.points + (env.stage >= 2 ? 1 : 0); // später mehr Kurven
-    const m = 110;
+    // Jede Linie hat ihre eigene Größe: mal ganz klein, mal halbes Feld, mal über die ganze Breite
+    this.span = pickSpan(field, { avoid: this.span?.kind });
+    const { x0, x1, y0, y1, kind } = this.span;
+    const n = Math.max(3, p.points + (env.stage >= 2 ? 1 : 0) - (kind === 'klein' ? 1 : 0)); // später mehr Kurven
     const flip = Math.random() < 0.5 ? 0 : 1;
     const ctrl = [];
     for (let i = 0; i < n; i++) {
-      const fx = i / (n - 1);
+      const fx = i / (n - 1), h = y1 - y0;
       ctrl.push({
-        x: this.dir > 0 ? m + fx * (field.w - 2 * m) : field.w - m - fx * (field.w - 2 * m),
-        y: (i + flip) % 2 ? 220 + Math.random() * 220 : 620 + Math.random() * 250,
+        x: this.dir > 0 ? x0 + fx * (x1 - x0) : x1 - fx * (x1 - x0),
+        y: (i + flip) % 2 ? y0 + Math.random() * h * 0.3 : y0 + h * (0.62 + Math.random() * 0.38),
       });
     }
     if (start) ctrl[0] = { ...start };
@@ -257,8 +259,8 @@ export default {
   hint: 'Führe den Ball an der Linie entlang!',
   name: 'Linie',
   duration: 60,
-  scale: 0.35,
-  medals: [[500, 1510, 2770], [20, 370, 970], [20, 50, 340]],
+  scale: 0.5,
+  medals: [[790, 2370, 4310], [30, 470, 1220], [20, 50, 250]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;

@@ -3,7 +3,7 @@
 // Kein Tempo-Spiel: Es zählt, wie weit man sauber kommt. Mit jeder Stufe wird der Gang enger.
 import { BALL_RADIUS, FIT } from '../engine.js';
 import { glow, noGlow, collectible, text, tone } from '../ui.js';
-import { Fx, OffTrack } from './common.js';
+import { Fx, OffTrack, pickSpan } from './common.js';
 import { spline } from './line.js';
 
 const LEVELS = { 1: { width: 205 }, 2: { width: 172 }, 3: { width: 142 } };
@@ -25,14 +25,16 @@ class Wire {
   newPath(start) {
     const { env, p } = this;
     const { field } = env;
-    const m = 130;
+    // Jeder Gang hat seine eigene Größe: mal ganz klein, mal halbes Feld, mal über die ganze Breite
+    this.span = pickSpan(field, { margin: 130, avoid: this.span?.kind });
+    const { x0, x1, y0, y1 } = this.span;
     const flip = Math.random() < 0.5 ? 0 : 1;
     const ctrl = [];
     for (let i = 0; i < 4; i++) {
-      const fx = i / 3;
+      const fx = i / 3, h = y1 - y0;
       ctrl.push({
-        x: this.dir > 0 ? m + fx * (field.w - 2 * m) : field.w - m - fx * (field.w - 2 * m),
-        y: (i + flip) % 2 ? 260 + Math.random() * 160 : 700 + Math.random() * 170,
+        x: this.dir > 0 ? x0 + fx * (x1 - x0) : x1 - fx * (x1 - x0),
+        y: (i + flip) % 2 ? y0 + Math.random() * h * 0.25 : y0 + h * (0.7 + Math.random() * 0.3),
       });
     }
     if (start) ctrl[0] = { ...start };
@@ -168,8 +170,8 @@ export default {
   hint: 'Führe den Ball durch den Gang, ohne die Wand zu berühren!',
   name: 'Draht',
   duration: 60,
-  scale: 0.65,
-  medals: [[30, 770, 1420], [20, 500, 1280], [20, 160, 1260]],
+  scale: 0.55,
+  medals: [[30, 800, 1450], [20, 530, 1320], [20, 180, 1270]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

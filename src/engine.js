@@ -30,6 +30,7 @@ export function trailColors(look) {
 
 /** Stellt die tatsächliche Kantenlänge des Felds in Metern ein (Höhe der Projektion). */
 export function setFieldMeters(meters) {
+  METERS = meters || 2;
   BALL_RADIUS = Math.round(70 / Math.max(1, meters));
   // Ziele, Tore und Zonen sind für ein Feld von 1,5 m Höhe gemacht. Auf größeren Feldern wären sie
   // in echt riesig – deshalb werden sie im Spiel kleiner, damit sie in Zentimetern etwa gleich bleiben.
@@ -37,6 +38,8 @@ export function setFieldMeters(meters) {
   // Gänge und Tore richten sich nach dem Ball (in Zentimetern gleich wie auf dem 2-m-Feld)
   FIT = Math.max(0.6, Math.min(1.2, 2 / Math.max(1, meters)));
 }
+/** Feldhöhe in Metern (aus der Einrichtung). */
+export let METERS = 2;
 /** Größenfaktor für Gänge und Tore, durch die der Ball passen muss (1 bei 2 m). */
 export let FIT = 1;
 /** Größenfaktor für Ziele und Tore je nach Feldgröße (1 bei 1,5 m, 0,75 bei 2 m, 0,6 bei 2,5 m). */

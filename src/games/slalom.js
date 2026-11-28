@@ -9,7 +9,7 @@
 // und ein Feuerwerk für eine Runde ohne Pfostenberührung.
 import { BALL_RADIUS, FIT } from '../engine.js';
 import { text, glow, noGlow, star, tone } from '../ui.js';
-import { Fx } from './common.js';
+import { Fx, pickSpan } from './common.js';
 import { Show, drawPost, rainbow, fireHsl, gold, drawSign } from './spectacle.js';
 
 // Materialien der Runden
@@ -46,25 +46,27 @@ function crosses(p1, p2, p3, p4) {
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
-/** Torpositionen für eine Streckenform. Liefert Punkte in Fahrreihenfolge. */
-export function layout(shape, n, W) {
+/** Torpositionen für eine Streckenform im Rahmen box { x0, x1, y0, y1 }. Liefert Punkte in Fahrreihenfolge. */
+export function layout(shape, n, box) {
+  const { x0, x1, y0, y1 } = box;
+  const W = x1 - x0, H = y1 - y0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   const pts = [];
   if (shape === 'zigzag') {
     const side = Math.random() < 0.5 ? 1 : -1, down = Math.random() < 0.5;
     for (let i = 0; i < n; i++) {
       const row = down ? i : n - 1 - i;
-      pts.push({ x: W / 2 + side * (i % 2 ? -1 : 1) * W * (0.17 + Math.random() * 0.08), y: TOP + (row * (BOTTOM - TOP)) / (n - 1) });
+      pts.push({ x: cx + side * (i % 2 ? -1 : 1) * W * (0.25 + Math.random() * 0.12), y: y0 + (row * H) / (n - 1) });
     }
   } else if (shape === 'across') {
-    // quer über die ganze Breite, abwechselnd oben und unten
+    // quer durch den Rahmen, abwechselnd oben und unten
     const right = Math.random() < 0.5, high = Math.random() < 0.5;
     for (let i = 0; i < n; i++) {
       const col = right ? i : n - 1 - i;
-      pts.push({ x: 200 + (col * (W - 400)) / (n - 1), y: (i % 2) === (high ? 0 : 1) ? 360 + Math.random() * 60 : 740 + Math.random() * 60 });
+      pts.push({ x: x0 + 60 + (col * (W - 120)) / (n - 1), y: (i % 2) === (high ? 0 : 1) ? y0 + H * (0.12 + Math.random() * 0.1) : y0 + H * (0.78 + Math.random() * 0.1) });
     }
   } else if (shape === 'circle') {
     // im Kreis um die Mitte, mal links-, mal rechtsherum
-    const cx = W / 2, cy = (TOP + BOTTOM) / 2 + 10, rx = Math.min(W * 0.32, 560), ry = 300;
+    const rx = Math.max(200, W * 0.42), ry = Math.max(170, H * 0.45);
     const dir = Math.random() < 0.5 ? 1 : -1, start = Math.random() * Math.PI * 2;
     for (let i = 0; i < n; i++) {
       const a = start + dir * (i / n) * Math.PI * 2;
@@ -72,12 +74,13 @@ export function layout(shape, n, W) {
     }
   } else {
     // kreuz und quer: zufällig verteilt, aber nie zu dicht beieinander
+    const gap = Math.min(330, Math.sqrt((W * H) / n) * 0.8);
     for (let i = 0; i < n; i++) {
-      let p, tries = 0;
+      let q, tries = 0;
       do {
-        p = { x: 200 + Math.random() * (W - 400), y: TOP + Math.random() * (BOTTOM - TOP) };
-      } while (tries++ < 60 && pts.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 330));
-      pts.push(p);
+        q = { x: x0 + 40 + Math.random() * Math.max(1, W - 80), y: y0 + Math.random() * H };
+      } while (tries++ < 80 && pts.some((o) => Math.hypot(o.x - q.x, o.y - q.y) < gap));
+      pts.push(q);
     }
   }
   return pts;
@@ -116,7 +119,11 @@ class Slalom {
     this.mode = first ? 'order' : pick(modes);
     this.move = this.mode === 'drift' ? 90 + p.move : p.move + (env.stage >= 2 ? 35 : 0);
     if (this.shape === 'circle' && this.mode === 'drift') this.move *= 0.6;
-    const pts = layout(this.shape, n, field.w);
+    // Größe der Strecke: mal eng auf gut einem Meter, mal halbes Feld, mal über die ganze Breite
+    this.span = first ? { x0: 140, x1: field.w - 140, y0: TOP, y1: BOTTOM, kind: 'gross' } : pickSpan(field, { minMeters: 1.3, margin: 140, avoid: this.span?.kind });
+    // in der Höhe immer das ganze Feld, sonst stehen die Tore zu dicht übereinander
+    this.span.y0 = TOP; this.span.y1 = BOTTOM;
+    const pts = layout(this.shape, n, this.span);
     this.gates = pts.map((q, i) => {
       // Fahrtrichtung durch das Tor: vom vorigen zum nächsten Tor
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
@@ -407,7 +414,7 @@ export default {
   name: 'Slalom',
   duration: 60,
   scale: 0.25,
-  medals: [[670, 2220, 4060], [60, 400, 960], [20, 90, 480]],
+  medals: [[680, 2180, 4120], [60, 410, 1010], [20, 190, 720]],
   icon(ctx, r) {
     ctx.fillStyle = '#fff';
     for (const [x, y] of [[-0.35, -0.3], [0.35, 0], [-0.35, 0.3]]) {

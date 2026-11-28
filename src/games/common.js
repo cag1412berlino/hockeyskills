@@ -1,6 +1,7 @@
 // Gemeinsame Bausteine für mehrere Spiele: Effekte und die Stoppzone.
 import { glow, noGlow, text, collectible, tone } from '../ui.js';
 import { safeHue } from '../themes.js';
+import { METERS } from '../engine.js';
 
 /** Sammelt alle kurzlebigen Effekte eines Spiels: Funken, Druckwellen, Punktetexte, Blitz. */
 export class Fx {
@@ -352,4 +353,23 @@ export class OffTrack {
       ctx.globalAlpha = 1;
     }
   }
+}
+
+/**
+ * Wie groß die nächste Strecke wird: mal ganz klein (etwa 1 m breit), mal halb so breit wie das Feld,
+ * mal über die ganze Breite – an einer zufälligen Stelle. Liefert den Rahmen { x0, x1, y0, y1, kind }.
+ * minMeters: so schmal darf es höchstens werden (z. B. für Tore, die Platz brauchen).
+ */
+export const SPAN_TOP = 230, SPAN_BOTTOM = 920;
+export function pickSpan(field, { minMeters = 1, margin = 110, avoid = null } = {}) {
+  const perMeter = 1000 / METERS;
+  const full = field.w - 2 * margin;
+  const kinds = ['klein', 'mittel', 'gross'].filter((k) => k !== avoid);
+  const kind = kinds[Math.floor(Math.random() * kinds.length)];
+  const w = Math.min(full, kind === 'gross' ? full : kind === 'mittel' ? Math.max(full * 0.5, perMeter * minMeters * 1.4) : Math.max(perMeter * minMeters, 380));
+  const H = SPAN_BOTTOM - SPAN_TOP;
+  const h = kind === 'gross' ? H : kind === 'mittel' ? H * 0.8 : Math.min(H, Math.max(320, w * 0.75));
+  const x0 = margin + Math.random() * (full - w);
+  const y0 = SPAN_TOP + Math.random() * (H - h);
+  return { x0, x1: x0 + w, y0, y1: y0 + h, kind };
 }

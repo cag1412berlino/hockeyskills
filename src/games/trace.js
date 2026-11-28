@@ -35,7 +35,14 @@ class Trace {
     const { field } = this.env;
     this.shape = SHAPES[this.n % SHAPES.length];
     this.env.say(this.shape.name);
-    this.path = resample(this.shape.pts.map((q) => ({ x: field.w / 2 + q.x * SIZE, y: 585 + q.y * SIZE })));
+    // Jede Form in eigener Größe und an eigener Stelle: mal klein, mal mittel, mal groß
+    const sizes = [0.55, 0.8, 1.1].filter((k) => k !== this.k);
+    this.k = sizes[Math.floor(Math.random() * sizes.length)];
+    const r = SIZE * this.k;
+    const cx = r + 90 + Math.random() * Math.max(0, field.w - 2 * (r + 90));
+    const cy = Math.max(r + 250, Math.min(field.h - r - 70, 585 + (Math.random() - 0.5) * 200));
+    this.center = { x: cx, y: cy };
+    this.path = resample(this.shape.pts.map((q) => ({ x: cx + q.x * r, y: cy + q.y * r })));
     this.idx = 0;
     this.running = false;
     this.devSum = 0;
@@ -81,7 +88,7 @@ class Trace {
       const par = (this.path.length * 10) / [250, 320, 400][env.level - 1];
       const points = env.combo(Math.round(10 + 30 * accuracy), 25, { par });
       env.sound.win();
-      fx.text(env.field.w / 2, 585, `${Math.round(accuracy * 100)} % genau  +${points}`, env.palette[1], 60);
+      fx.text(this.center.x, this.center.y, `${Math.round(accuracy * 100)} % genau  +${points}`, env.palette[1], 60);
       fx.burst(path[path.length - 1].x, path[path.length - 1].y, env.palette[1], 26);
       this.n++;
       this.load();
@@ -130,7 +137,7 @@ class Trace {
     ctx.stroke();
     noGlow(ctx);
     if (!this.running) text(ctx, 'Start', here.x, here.y - 72, 36);
-    text(ctx, this.shape.name, env.field.w / 2, 215, 50, tone(c1, 78), 'center', 8);
+    text(ctx, this.shape.name, this.center.x, 215, 50, tone(c1, 78), 'center', 8);
     this.fx.draw(ctx, env.field);
     this.guard.draw(ctx, env.field);
   }
@@ -141,8 +148,8 @@ export default {
   hint: 'Fahre die Form mit dem Ball genau nach!',
   name: 'Zeichnen',
   duration: 60,
-  scale: 2.25,
-  medals: [[80, 750, 1650], [30, 510, 1250], [20, 140, 890]],
+  scale: 1.9,
+  medals: [[90, 790, 1830], [40, 550, 1380], [20, 160, 990]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

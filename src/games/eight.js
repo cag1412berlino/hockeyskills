@@ -23,8 +23,15 @@ class Eight {
     this.loops = 0;
     this.reversed = false;
     this.fx = new Fx();
-    const cx = env.field.w / 2, cy = 590;
-    const { d, R } = this.p;
+    this.k = 1;
+    this.build(env.field.w / 2, 590, 1);
+    this.seq = this.base;
+  }
+
+  /** Acht um die Mitte (cx, cy) in Größe k bauen (1 = normal). */
+  build(cx, cy, k) {
+    const d = this.p.d * k, R = this.p.R * k;
+    this.k = k;
     this.posts = [{ x: cx - d, y: cy }, { x: cx + d, y: cy }];
     const [a, b] = this.posts;
     const mid = { x: cx, y: cy, mid: true };
@@ -33,7 +40,21 @@ class Eight {
       { x: a.x, y: a.y - R }, { x: a.x - R, y: a.y }, { x: a.x, y: a.y + R }, mid,
       { x: b.x, y: b.y - R }, { x: b.x + R, y: b.y }, { x: b.x, y: b.y + R }, mid,
     ];
-    this.seq = this.base;
+  }
+
+  /**
+   * Neue Größe: mal eine kleine, enge Acht, mal eine riesige über das halbe Feld. Die Mitte bleibt,
+   * wo der Ball gerade ist (oder rückt so weit, dass alles ins Feld passt).
+   */
+  resize(at) {
+    const { field } = this.env;
+    const sizes = [0.6, 1, 1.5, 2].filter((k) => Math.abs(k - this.k) > 0.1);
+    const k = sizes[Math.floor(Math.random() * sizes.length)];
+    const kk = Math.min(k, (field.w / 2 - 70) / (this.p.d + this.p.R), (1000 - 290) / 2 / this.p.R);
+    const reachX = (this.p.d + this.p.R) * kk + 70, reachY = this.p.R * kk + 60;
+    const cx = Math.max(reachX, Math.min(field.w - reachX, at.x));
+    const cy = Math.max(230 + reachY, Math.min(960 - reachY, at.y));
+    this.build(cx, cy, kk);
   }
 
   update(dt, ball) {
@@ -66,12 +87,15 @@ class Eight {
     env.sound.pop(env.mult);
     fx.text(w.x, w.y - 50, `+${points}`, env.palette[1], 50 + env.mult * 8);
     fx.ring(w.x, w.y, env.palette[1], 140);
-    if (env.stage >= 1 && this.loops % 4 === 0) {
-      // Nach zwei ganzen Achten: andersherum. Die Mitte bleibt der Ausgangspunkt.
-      this.reversed = !this.reversed;
+    if (this.loops % 4 === 0) {
+      // Nach zwei ganzen Achten: neue Größe (ganz klein bis riesig), ab der ersten Stufe auch andersherum.
+      // Die Mitte bleibt der Ausgangspunkt.
+      const before = this.k;
+      this.resize(w);
+      if (env.stage >= 1) this.reversed = !this.reversed;
       this.seq = this.reversed ? [...this.base].reverse() : this.base;
       this.next = this.seq.findIndex((q) => q.mid) + 1;
-      fx.text(w.x, w.y - 130, 'Andersherum!', '#fff', 56);
+      fx.text(w.x, w.y - 130, `${this.k > before ? 'Größer' : 'Kleiner'}${env.stage >= 1 ? ' und andersherum' : ''}!`, '#fff', 56);
       env.sound.stage();
     }
   }
@@ -133,8 +157,8 @@ export default {
   hint: 'Führe den Ball in einer Acht um die Hütchen!',
   name: 'Achter',
   duration: 60,
-  scale: 0.2,
-  medals: [[120, 550, 1060], [70, 500, 1060], [20, 360, 1010]],
+  scale: 0.3,
+  medals: [[140, 790, 1750], [90, 580, 1650], [20, 370, 1060]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;
