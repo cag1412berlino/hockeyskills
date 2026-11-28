@@ -79,9 +79,10 @@ class Targets {
       fx.ring(t.x, t.y, '#fff', 200);
       return;
     }
-    // Je schneller nach dem Auftauchen getroffen, desto mehr Punkte (10 bis 20).
+    // Je schneller nach dem Auftauchen getroffen, desto mehr Punkte.
     const quick = Math.max(0, 1 - t.age / t.life);
-    const points = env.combo(10 + Math.round(10 * quick));
+    // Tempo nach Sekunden: Richtzeit ist ein knappes Drittel der Lebensdauer der Kugel
+    const points = env.combo(15, 2.5, { par: this.p.life * 0.3, took: t.age });
     env.sound.pop(Math.round(quick * 5));
     fx.text(t.x, t.y, `+${points}`, t.color, 50 + env.mult * 8);
     fx.burst(t.x, t.y, t.color);
@@ -193,7 +194,7 @@ export default {
   name: 'Ziele',
   duration: 60,
   scale: 0.2,
-  medals: [[170, 530, 780], [200, 570, 870], [60, 280, 460]],
+  medals: [[210, 640, 1160], [160, 470, 870], [30, 180, 380]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

@@ -77,7 +77,9 @@ class Trace {
     if (this.idx >= path.length - 3) {
       // Genauigkeit: mittlere Abweichung im Verhältnis zur erlaubten
       const accuracy = Math.max(0, 1 - this.devSum / this.devN / (this.tol() * 0.8));
-      const points = env.combo(Math.round(10 + 30 * accuracy), 25);
+      // Tempo: Richtzeit aus der Länge der Form (Punkte liegen 10 auseinander)
+      const par = (this.path.length * 10) / [250, 320, 400][env.level - 1];
+      const points = env.combo(Math.round(10 + 30 * accuracy), 25, { par });
       env.sound.win();
       fx.text(env.field.w / 2, 585, `${Math.round(accuracy * 100)} % genau  +${points}`, env.palette[1], 60);
       fx.burst(path[path.length - 1].x, path[path.length - 1].y, env.palette[1], 26);
@@ -139,8 +141,8 @@ export default {
   hint: 'Fahre die Form mit dem Ball genau nach!',
   name: 'Zeichnen',
   duration: 60,
-  scale: 1.3,
-  medals: [[100, 630, 1150], [60, 570, 1110], [20, 210, 990]],
+  scale: 2.25,
+  medals: [[80, 750, 1650], [30, 510, 1250], [20, 140, 890]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

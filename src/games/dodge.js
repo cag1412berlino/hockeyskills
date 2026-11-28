@@ -101,7 +101,7 @@ class Dodge {
     if (this.survive >= 1) { this.survive -= 1; env.addScore(1); }
 
     if (Math.hypot(this.star.x - ball.x, this.star.y - ball.y) < 50 + BALL_RADIUS) {
-      const points = env.combo(10, 4);
+      const points = env.combo(10, 4, { par: 3 }); // schneller zum Stern = mehr
       env.sound.pop(env.mult);
       fx.text(this.star.x, this.star.y, `+${points}`, env.palette[1], 50 + env.mult * 8);
       fx.burst(this.star.x, this.star.y, env.palette[1], 16);
@@ -179,8 +179,8 @@ export default {
   name: 'Ausweichen',
   duration: 60,
   lives: 3,
-  scale: 1.05,
-  medals: [[220, 550, 1250], [180, 580, 1060], [170, 500, 980]],
+  scale: 0.7,
+  medals: [[150, 680, 1680], [130, 650, 1380], [110, 510, 1190]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;

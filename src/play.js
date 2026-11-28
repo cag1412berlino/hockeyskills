@@ -69,6 +69,8 @@ export class PlayScene {
     this.lastShout = -10;
     this.misses = 0;         // Fehler in Folge
     this.slowmo = 0;         // Sekunden Zeitlupe nach einem neuen Rekord
+    this.tempoFrom = 0;      // seit wann die aktuelle Aufgabe läuft (Spielzeit in Sekunden)
+    this.tempo = null;       // letzte Tempo-Wertung { secs, f, age } für die Anzeige
     this.flash = 0;
     this.party = null;       // Konfetti bei Serie x4 und neuem Rekord
     this.show = new Show();  // Goldregen
@@ -138,7 +140,9 @@ export class PlayScene {
       get mult() { return demo ? 1 : scene.multiplier(); },
       addScore: demo ? nothing : (n) => { scene.score = Math.max(0, scene.score + (n > 0 ? n * scene.scale * scene.bonus() : n)); },
       /** Punkte für eine gelungene Aktion. Schnelle Treffer in Folge bauen eine Serie auf, die die Punkte vervielfacht. */
-      combo: demo ? (points) => points : (points, window = 2.5) => scene.combo(points, window),
+      // tempo = { par, took }: par = Sekunden für eine gute Ausführung, took = gebrauchte Zeit
+      // (ohne took: seit der letzten gewerteten Aufgabe). Schneller gibt mehr, langsamer deutlich weniger.
+      combo: demo ? (points) => points : (points, window = 2.5, tempo = null) => scene.combo(points, window, tempo),
       /** Fehler: die Serie ist weg. */
       miss: demo ? nothing : () => scene.miss(),
       addTime: demo ? nothing : (sec) => { scene.timeLeft = Math.min(scene.duration, scene.timeLeft + sec); },
@@ -175,7 +179,8 @@ export class PlayScene {
     return 1 + STREAK_STEPS.filter((s) => this.streak >= s).length;
   }
 
-  combo(points, window) {
+  combo(points, window, tempo = null) {
+    const speed = tempo ? this.tempoFactor(tempo) : 1;
     const before = this.multiplier();
     this.streak = this.streakLeft > 0 ? this.streak + 1 : 1;
     this.streakLeft = this.streakWindow = window;
@@ -195,9 +200,21 @@ export class PlayScene {
       // Läuft es richtig gut, zieht das Tempo unauffällig etwas an.
       if (mult >= 3) this.assist = Math.min(1.15, this.assist + 0.04);
     }
-    const awarded = Math.max(1, Math.round(points * mult * this.scale * this.bonus()));
+    const awarded = Math.max(1, Math.round(points * speed * mult * this.scale * this.bonus()));
     this.score += awarded;
     return awarded;
+  }
+
+  /**
+   * Tempo-Faktor nach Sekunden: in der Richtzeit x1, doppelt so schnell x2, halb so schnell x0,5,
+   * höchstens x2,5 und mindestens x0,25. Wird kurz unter der Punktzahl angezeigt.
+   */
+  tempoFactor({ par, took }) {
+    const secs = Math.max(0.05, took ?? this.elapsed - this.tempoFrom);
+    this.tempoFrom = this.elapsed;
+    const f = Math.max(0.25, Math.min(2.5, par / secs));
+    this.tempo = { secs, f, age: 0 };
+    return f;
   }
 
   /** Der Trainer ruft etwas herein: höchstens einmal je Anlass und Runde, nicht zu dicht hintereinander. */
@@ -282,6 +299,7 @@ export class PlayScene {
     this.lastLives = this.lives;
     this.heartHit = Math.max(0, (this.heartHit || 0) - dt * 2.5);
     this.shownScore += (this.score - this.shownScore) * Math.min(1, dt * 10);
+    if (this.tempo && (this.tempo.age += dt) > 1.8) this.tempo = null;
 
     if (this.demo) {
       const d = this.demo;
@@ -512,6 +530,15 @@ export class PlayScene {
       ctx.stroke();
       noGlow(ctx);
       text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
+    }
+    if (this.tempo) {
+      // Tempo der letzten Aufgabe: Sekunden und was sie gebracht haben
+      const { secs, f, age } = this.tempo;
+      ctx.globalAlpha = Math.min(1, (1.8 - age) * 3);
+      const color = f >= 1.2 ? '#7dffb0' : f <= 0.8 ? '#ff9a8a' : '#fff';
+      const label = `${secs.toFixed(1).replace('.', ',')} s · ${f >= 1.2 ? 'Tempo' : f <= 0.8 ? 'zu langsam' : 'okay'} x${f.toFixed(1).replace('.', ',')}`;
+      text(ctx, label, w / 2, 118, 30 * (1 + 0.15 * Math.max(0, 1 - age * 4)), color, 'center', 6, 600);
+      ctx.globalAlpha = 1;
     }
     if (this.gold > 0) caption(ctx, 'Goldregen x3', 42, 172, 18, '#ffd76a');
     else if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');

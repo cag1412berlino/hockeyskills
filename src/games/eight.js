@@ -62,7 +62,7 @@ class Eight {
 
     // Durch die Mitte: eine Schleife ist geschafft.
     this.loops++;
-    const points = env.combo(10, 7);
+    const points = env.combo(10, 7, { par: [6, 5, 4.2][env.level - 1] }); // Richtzeit je Schleife
     env.sound.pop(env.mult);
     fx.text(w.x, w.y - 50, `+${points}`, env.palette[1], 50 + env.mult * 8);
     fx.ring(w.x, w.y, env.palette[1], 140);
@@ -133,8 +133,8 @@ export default {
   hint: 'Führe den Ball in einer Acht um die Hütchen!',
   name: 'Achter',
   duration: 60,
-  scale: 0.35,
-  medals: [[180, 530, 900], [160, 570, 950], [60, 460, 1030]],
+  scale: 0.2,
+  medals: [[150, 600, 1070], [100, 590, 1110], [30, 450, 1190]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

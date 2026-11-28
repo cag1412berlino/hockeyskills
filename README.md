@@ -15,7 +15,7 @@ Das Menü zeigt fünf Schwerpunkte, dazu „Training“, „Heute“ und „Duel
 | | Ausweichen | Sterne sammeln und Stachelbällen ausweichen. Schild und Zeitlupe als Extras. Drei Leben. |
 | | Fangen | Zwei bis vier Fänger jagen den Ball, jeder auf seine Art. Haken schlagen hilft. Drei Leben. |
 | **Führen** | Linie | Den Ball an einer geschwungenen Linie entlangführen, mit Stopp-Punkt und pendelnden Stachelbällen. |
-| | Slalom | Der Reihe nach durch die Tore, später mit Bonus-Tor und beweglichen Toren. |
+| | Slalom | Durch die Tore – jede Runde anders: Zickzack, quer, im Kreis, kreuz und quer; der Reihe nach, mit Countdown, freie Fahrt, Dreh- und Wandertore. |
 | | Rennen | Die Bahn läuft ununterbrochen durchs Feld: Kurven, harte Schnitte, Rückzieher. |
 | | Draht | Durch einen schmalen Gang, ohne die Wand zu berühren. Fehler führen zum letzten Kontrollpunkt zurück. |
 | | Achter | Den Ball in einer Acht um zwei Hütchen führen, später andersherum. |
@@ -103,6 +103,14 @@ Für alle Spiele gilt:
 
 Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen: Anfänger-Insel (Stufe Leicht, 1 Stern nötig), Techniker-Tal (Mittel, 2 Sterne) und Meister-Gipfel (Schwer, 2 Sterne). Jede Station ist eine Übung; wer genug Sterne holt, schaltet die nächste frei. Jede zehnte Station ist eine Prüfung im Tricktrainer, für die es drei Sterne braucht. Jede Region enthält Übungen aus allen fünf Schwerpunkten. Der Trainer steht an der Station, die gerade dran ist; nach der Runde führt „Karte“ zurück. Geschaffte Stationen lassen sich jederzeit wiederholen. Zwei Abzeichen gibt es für 10 und für alle 30 Stationen.
 
+## Zeit zählt
+
+Bei allen Übungen, in denen man selbst das Tempo bestimmt (Ziele, Wolke, Slalom, Achter, Zeichnen, Tricks, Draht, Fangen, Ausweichen), zählt jede Aufgabe nach Sekunden: In der Richtzeit gibt es die normalen Punkte (x1), doppelt so schnell x2, halb so schnell nur noch die Hälfte – von x0,25 bis x2,5. Nach jeder Aufgabe steht kurz oben in der Mitte, wie viele Sekunden es waren und was sie gebracht haben („1,4 s · Tempo x1,8“ oder „6,0 s · zu langsam x0,4“). Die Richtzeit hängt von der Stufe ab (z. B. Slalom je Tor 2,6 / 2,1 / 1,7 s, beim Zeichnen und den Tricks von der Länge der Form). Danach wurden Punkte und Sterne-Schwellen dieser Übungen neu abgestimmt.
+
+## Menü: Ball liegt schon auf dem Knopf
+
+Erscheint ein neuer Bildschirm und der Ball liegt schon auf einem Knopf, löst der Knopf nach einer Sekunde Wartezeit trotzdem aus (plus die normale Haltezeit). Man muss also nicht erst herunter und wieder drauf.
+
 ## Tempo
 
 Die App misst bei jeder Übung, wie schnell der Ball war (umgerechnet mit der eingestellten Feldgröße), und zeigt den schnellsten Ball im Ergebnis und im Profil. Gezählt wird nur, was mehrere Kamerabilder am Stück so schnell war. Abzeichen gibt es für 10 und 18 km/h. Die Werte stimmen nur, wenn die Feldgröße in der Einrichtung richtig eingestellt ist.
@@ -123,7 +131,7 @@ Jedes Rennen ist anders: Die Strecke führt durch wechselnde Zonen in zufällige
 - **Turbo-Felder:** schneller und doppelte Punkte für ein paar Sekunden.
 - **Goldener Stern:** selten, mit Goldregen und Feuerwerk.
 
-**Slalom** wechselt mit jeder Runde das Material der Tore (Lichttore, Feuerfackeln, Eiskristalle, Backstein, Holz). Die Lichtschranke wechselt mit jedem Tor in Folge die Farbe, manchmal ist ein Tor golden (dreifache Punkte, Goldregen). Wer eine Runde ohne Pfostenberührung schafft, bekommt „Perfekte Runde!“ mit Feuerwerk; eine Feuerrunde endet mit einer Flammenwand über das ganze Bild. Berührte Pfosten zerbröseln.
+**Slalom** ist jede Runde anders: Die Streckenform wechselt (Zickzack von oben nach unten, quer über das Feld, im Kreis, kreuz und quer) und ebenso die Spielart (der Reihe nach; Countdown-Tore, die nach ein paar Sekunden zufallen; freie Fahrt mit allen Toren offen und beliebiger Reihenfolge; ab „Mittel“ Drehtore und Wandertore). Ein Pfeil zeigt die Fahrtrichtung durch das nächste Tor. Außerdem wechselt mit jeder Runde das Material der Tore (Lichttore, Feuerfackeln, Eiskristalle, Backstein, Holz). Die Lichtschranke wechselt mit jedem Tor in Folge die Farbe, manchmal ist ein Tor golden (dreifache Punkte, Goldregen). Wer eine Runde ohne Pfostenberührung schafft, bekommt „Perfekte Runde!“ mit Feuerwerk; eine Feuerrunde endet mit einer Flammenwand über das ganze Bild. Berührte Pfosten zerbröseln.
 
 Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus.
 

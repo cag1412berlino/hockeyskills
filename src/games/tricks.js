@@ -290,8 +290,9 @@ class Tricks {
 
     if (this.idx >= path.length - 3) {
       const accuracy = Math.max(0, 1 - this.devSum / this.devN / (p.tol * 0.8));
-      const quick = this.t < this.ghostTime * 1.5; // fast so flott wie der Geisterball
-      const points = env.combo((10 + Math.round(10 * accuracy) + (quick ? 10 : 0)) * (this.chainOf ? 2 : 1), 20);
+      // Tempo nach Sekunden: so flott wie der Geisterball (mit etwas Luft) ist x1
+      const quick = this.t < this.ghostTime * 0.9;
+      const points = env.combo((15 + Math.round(10 * accuracy)) * (this.chainOf ? 2 : 1), 20, { par: this.ghostTime * 1.3 + 0.4, took: this.t });
       env.sound.win();
       // nicht in den Namen des Tricks hineinschreiben, der oben steht
       fx.text(ball.x, Math.max(400, ball.y - 50), `${this.chainOf ? 'Kette geschafft! ' : quick ? 'Blitzschnell! ' : ''}+${points}`, env.palette[1], 58);
@@ -394,8 +395,8 @@ export default module.default = {
   hint: 'Schau dir den Trick an und mach ihn nach!',
   name: 'Tricks',
   duration: 75,
-  scale: 0.85,
-  medals: [[150, 720, 1160], [50, 490, 1000], [20, 110, 360]],
+  scale: 0.95,
+  medals: [[150, 830, 1620], [50, 590, 1450], [20, 90, 480]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

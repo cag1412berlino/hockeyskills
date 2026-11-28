@@ -68,8 +68,14 @@ export const goals = {
     return g.stopDone ? next : g.path[Math.min(g.stopAt, g.idx + 7)];
   },
   slalom(g, ball) {
-    const [a, b] = g.posts(g.gates[g.next]);
-    return { x: (a.x + b.x) / 2, y: a.y + (ball.y < a.y ? 70 : -70) };
+    // durch die Mitte des nächsten Tors hindurch auf die andere Seite
+    const gate = g.target(ball);
+    if (!gate) return null;
+    const [a, b] = g.posts(gate);
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const ang = g.angle(gate), dx = Math.cos(ang), dy = Math.sin(ang);
+    const side = (ball.x - mx) * dx + (ball.y - my) * dy;
+    return { x: mx - Math.sign(side || -1) * dx * 70, y: my - Math.sign(side || -1) * dy * 70 };
   },
   run(g, ball) {
     if (!g.screen) return null;

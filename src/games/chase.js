@@ -106,7 +106,7 @@ class Chase {
     if (this.survive >= 1) { this.survive -= 1; env.addScore(2); }
 
     if (Math.hypot(this.star.x - ball.x, this.star.y - ball.y) < 48 + BALL_RADIUS) {
-      const points = env.combo(10, 4);
+      const points = env.combo(10, 4, { par: 3 }); // schneller zum Stern = mehr
       env.sound.pop(env.mult);
       fx.text(this.star.x, this.star.y, `+${points}`, env.palette[1], 50 + env.mult * 8);
       fx.burst(this.star.x, this.star.y, env.palette[1], 16);
@@ -165,8 +165,8 @@ export default {
   name: 'Fangen',
   duration: 60,
   lives: 3,
-  scale: 1,
-  medals: [[260, 610, 1130], [240, 590, 1120], [270, 670, 1230]],
+  scale: 0.55,
+  medals: [[170, 540, 1280], [170, 600, 1110], [180, 670, 1360]],
   icon(ctx, r) {
     // Ball vorneweg, zwei Fänger hinterher
     ctx.fillStyle = '#fff';

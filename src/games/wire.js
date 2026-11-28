@@ -89,7 +89,7 @@ class Wire {
       if (!cp.done && this.idx >= cp.at) {
         cp.done = true;
         this.from = cp.at;
-        const points = env.combo(10, 12);
+        const points = env.combo(10, 12, { par: [3.6, 3, 2.5][env.level - 1] }); // Richtzeit je Abschnitt
         env.sound.pop(env.mult);
         fx.text(path[cp.at].x, path[cp.at].y, `+${points}`, env.palette[1]);
         fx.ring(path[cp.at].x, path[cp.at].y, env.palette[1], this.width);
@@ -168,8 +168,8 @@ export default {
   hint: 'Führe den Ball durch den Gang, ohne die Wand zu berühren!',
   name: 'Draht',
   duration: 60,
-  scale: 0.6,
-  medals: [[30, 770, 1270], [20, 530, 1290], [20, 190, 1260]],
+  scale: 0.65,
+  medals: [[30, 770, 1420], [20, 500, 1280], [20, 160, 1260]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

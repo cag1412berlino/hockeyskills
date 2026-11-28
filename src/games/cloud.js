@@ -180,7 +180,7 @@ class Cloud {
 
     if (Math.hypot(ball.x - t.x, ball.y - t.y) < t.r + BALL_RADIUS) {
       // schnell = mehr Punkte
-      const points = env.combo(10 + Math.max(0, Math.round(10 - this.roundTime * 2)), 4);
+      const points = env.combo(15, 4, { par: 3, took: this.roundTime });
       env.sound.pop(env.mult);
       fx.text(t.x, t.y, `+${points}`, t.color, 50 + env.mult * 8);
       fx.burst(t.x, t.y, t.color);
@@ -208,8 +208,8 @@ export default {
   hint: 'Triff die Kugel, aber weiche der Wolke aus!',
   name: 'Wolke',
   duration: 60,
-  scale: 1.1,
-  medals: [[320, 830, 1400], [90, 560, 1130], [20, 300, 890]],
+  scale: 0.75,
+  medals: [[190, 810, 1530], [30, 470, 1210], [20, 200, 800]],
   icon(ctx, r) {
     const s = r * 0.42;
     ctx.beginPath();

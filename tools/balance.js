@@ -5,6 +5,7 @@
 //   node tools/balance.js --noise    dasselbe mit Störungen wie von einer echten Kamera
 //                                    (Zittern, Verzögerung, kurze Aussetzer)
 //   node tools/balance.js --write    schreibt die vorgeschlagenen Schwellen in die Spieldateien
+//   --only=slalom,tricks             nur diese Übungen
 import { readFileSync, writeFileSync } from 'node:fs';
 import { PlayScene } from '../src/play.js';
 import { games } from '../src/games/index.js';
@@ -73,7 +74,8 @@ const round10 = (n) => Math.max(10, Math.round(n / 10) * 10);
 if (import.meta.url === `file://${process.argv[1]}`) {
   const noise = args.has('--noise');
   console.log(`Übung            | Stufe | Anfänger | Mittel | Stark   ${noise ? '(mit Kamera-Störungen)' : ''}`);
-  for (const game of games) {
+  const only = [...args].find((a) => a.startsWith('--only='))?.slice(7).split(',');
+  for (const game of games.filter((g) => !only || only.includes(g.id))) {
     if (args.has('--write')) {
       // Erst den Ausgleichsfaktor bestimmen: Ein mittlerer Spieler soll auf "Mittel" bei rund 1000 Punkten landen.
       const raw = mean(Array.from({ length: RUNS }, () => playRound(game, 2, SKILLS.medium, false, 1)));
