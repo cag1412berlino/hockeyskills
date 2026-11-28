@@ -580,7 +580,7 @@ function buildSetup() {
       $('#focus-value').textContent = info.distance != null ? String(Math.round(info.distance * 100) / 100) : '';
     }
     if (source && !sim && !info.manual) {
-      $('#focus-hint').textContent = 'Diese Kamera (oder dieser Browser) lässt den Fokus nicht von der App einstellen. Viele Webcams haben ohnehin einen festen Fokus. Sonst den Fokus mit der Software des Kameraherstellers festlegen (auf dem Mac z. B. mit einer App wie „Webcam Settings“) und dabei auf den Ball am Boden scharf stellen.';
+      $('#focus-hint').textContent = 'Diese Kamera (oder dieser Browser) lässt den Fokus nicht von der App einstellen. Viele Webcams haben ohnehin einen festen Fokus. Sonst den Fokus mit der Software des Kameraherstellers festlegen und dabei auf den Ball am Boden scharf stellen – bei der Logitech C920 mit „Logi Options+“ (Anleitung unter Hilfe).';
     }
   };
   $('#focus-lock').onchange = async (e) => {
