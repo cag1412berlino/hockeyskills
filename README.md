@@ -108,6 +108,10 @@ Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen:
 
 Bei allen Übungen, in denen man selbst das Tempo bestimmt (Ziele, Wolke, Slalom, Achter, Zeichnen, Tricks, Draht, Fangen, Ausweichen), zählt jede Aufgabe nach Sekunden: In der Richtzeit gibt es die normalen Punkte (x1), doppelt so schnell x2, halb so schnell nur noch die Hälfte – von x0,25 bis x2,5. Nach jeder Aufgabe steht kurz oben in der Mitte, wie viele Sekunden es waren und was sie gebracht haben („1,4 s · Tempo x1,8“ oder „6,0 s · zu langsam x0,4“). Die Richtzeit hängt von der Stufe ab (z. B. Slalom je Tor 2,6 / 2,1 / 1,7 s, beim Zeichnen und den Tricks von der Länge der Form). Danach wurden Punkte und Sterne-Schwellen dieser Übungen neu abgestimmt.
 
+## Vollbild
+
+Oben rechts auf der Startseite gibt es den Knopf **„⛶ Vollbild“** (oder Taste F). Beim Klick auf „Spielen“ schaltet die App außerdem automatisch in den Vollbildmodus; das lässt sich unter Einstellungen → „Beim Spielen automatisch Vollbild“ abschalten. Mit Esc oder F kommt man wieder heraus. Wichtig: Kalibrieren im selben Modus, in dem gespielt wird (also im Vollbild) – sonst passt das Feld nicht.
+
 ## Design: Bunt oder Blau-Weiss
 
 Unter **Einstellungen → Ton und Aussehen → Design** gibt es zwei Skins:

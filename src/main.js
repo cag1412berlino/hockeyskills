@@ -260,6 +260,7 @@ function refreshSetup() {
   $('#voice-on').checked = config.voice;
   $('#music-on').checked = config.music;
   $('#demos-on').checked = config.demos;
+  $('#fullscreen-on').checked = config.autoFullscreen !== false;
   $('#theme').value = config.theme;
   $('#skin').value = config.skin || 'classic';
   $('#theme-field').hidden = config.skin === 'club';
@@ -638,6 +639,7 @@ function buildSetup() {
   toggle('#voice-on', 'voice', (on) => { voice.enabled = on; });
   toggle('#music-on', 'music', (on) => { music.enabled = on; if (!on) music.stop(); });
   toggle('#demos-on', 'demos');
+  toggle('#fullscreen-on', 'autoFullscreen');
   $('#theme').replaceChildren(new Option('Automatisch (wechselt)', 'auto'), ...THEME_IDS.map((id) => new Option(THEMES[id].name, id)));
   $('#theme').onchange = (e) => {
     config.theme = e.target.value;
@@ -663,6 +665,13 @@ function buildSetup() {
   $('#btn-camera').onclick = () => startCamera($('#camera-select').value || config.cameraId);
   $('#camera-select').onchange = (e) => startCamera(e.target.value);
   $('#btn-fullscreen').onclick = toggleFullscreen;
+  $('#btn-fullscreen-top').onclick = toggleFullscreen;
+  // Beschriftung folgt dem Zustand (auch wenn man mit Esc oder F11 wechselt)
+  document.addEventListener('fullscreenchange', () => {
+    const on = !!document.fullscreenElement;
+    $('#btn-fullscreen-top').textContent = on ? '⛶ Vollbild beenden' : '⛶ Vollbild';
+    $('#btn-fullscreen').textContent = on ? 'Vollbild beenden' : 'Vollbild';
+  });
   $('#btn-auto').onclick = () => calibrate('auto');
   $('#btn-manual').onclick = () => calibrate('manual');
   $('#btn-mouse').onclick = () => { mode = 'mouse'; setFakeBall(false); startPlaying(); };
@@ -715,6 +724,8 @@ function startPlaying() {
   setMessage();
   sound.resume();
   keepAwake();
+  // Spielen heißt meist: Bild auf den Beamer – dann gleich Vollbild (abschaltbar in den Einstellungen)
+  if (config.autoFullscreen !== false && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
   showSetup(false);
   app.menu();
   const aspect = stage.width / stage.height;

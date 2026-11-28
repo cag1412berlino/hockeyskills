@@ -22,6 +22,7 @@ const defaults = () => ({
   skin: 'classic',      // Aussehen: 'classic' = bunte Themenwelten, 'club' = Blau-Weiss-Vereinsdesign
   theme: 'auto',        // Themenwelt (nur Skin 'classic'): 'auto' wechselt je Runde
   demos: true,          // neue Übungen kurz vormachen
+  autoFullscreen: true, // beim Start des Spiels in den Vollbildmodus
   custom: null,         // eigenes Training: { ids: [...], seconds }
 });
 
