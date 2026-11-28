@@ -113,7 +113,7 @@ Bei allen Übungen, in denen man selbst das Tempo bestimmt (Ziele, Wolke, Slalom
 Unter **Einstellungen → Ton und Aussehen → Design** gibt es zwei Skins:
 
 - **Bunt – wechselnde Themenwelten:** wie bisher, mit Weltraum, Unterwasser, Eiswelt und Nachtwald (fest gewählt oder automatisch wechselnd).
-- **Blau-Weiss – Vereinsdesign:** alles in Vereinsblau und Weiß. Dunkelblauer Hintergrund mit der weißen Diagonale aus dem Logo und einem langsamen Glanz, das Vereinslogo groß als Wasserzeichen, blau-weiße Nadelstreifen an den Rändern und „TC Blau-Weiss Berlin · seit 1899“ senkrecht am rechten Rand. Die Schwerpunkte haben verschiedene Blautöne (Tricks in Weiß), die Spielfarben sind Blau und Weiß, der Ball hinterlässt blau-weiße Ringe. Gedacht für Vorführungen und Marketing. Am besten mit einem orangen, pinken oder gelben Ball – ein blauer Ball hebt sich nicht ab (der Farbschutz schiebt die Blautöne dann zur Seite).
+- **Blau-Weiss – Vereinsdesign:** alles in Vereinsblau und Weiß. Dunkelblauer Hintergrund mit der weißen Diagonale aus dem Logo und einem langsamen Glanz, das Vereinslogo groß als Wasserzeichen, blau-weiße Nadelstreifen an den Rändern und „TC Blau-Weiss 1899“ senkrecht am rechten Rand. Die Schwerpunkte haben verschiedene Blautöne (Tricks in Weiß), die Spielfarben sind Blau und Weiß, der Ball hinterlässt blau-weiße Ringe. Gedacht für Vorführungen und Marketing. Am besten mit einem orangen, pinken oder gelben Ball – ein blauer Ball hebt sich nicht ab (der Farbschutz schiebt die Blautöne dann zur Seite).
 
 ## Freies Spiel
 

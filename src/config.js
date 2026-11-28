@@ -76,7 +76,7 @@ export function saveConfig() {
  */
 export const BRAND = {
   name: 'Blau-Weiss Skiller Academy',
-  club: 'TC Blau-Weiss Berlin',
+  club: 'TC Blau-Weiss 1899',
   palette: ['hsl(212 90% 55%)', 'hsl(196 90% 55%)', 'hsl(226 90% 62%)', 'hsl(204 90% 72%)'],
 };
 

@@ -381,7 +381,7 @@ export const THEMES = {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = 'rgba(255,255,255,0.2)';
-      ctx.fillText('TC BLAU-WEISS BERLIN · SEIT 1899', 0, 0);
+      ctx.fillText('TC BLAU-WEISS 1899', 0, 0);
       ctx.restore();
       // funkelnde weiße Punkte
       ctx.fillStyle = '#ffffff';
