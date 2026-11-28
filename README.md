@@ -14,7 +14,7 @@ Das Menü zeigt fünf Schwerpunkte, dazu „Training“, „Heute“ und „Duel
 | | Wolke | Ein Ziel treffen, aber um die wabernde Gewitterwolke herumdribbeln. |
 | | Ausweichen | Sterne sammeln und Stachelbällen ausweichen. Schild und Zeitlupe als Extras. Drei Leben. |
 | | Fangen | Zwei bis vier Fänger jagen den Ball, jeder auf seine Art. Haken schlagen hilft. Drei Leben. |
-| **Führen** | Linie | Den Ball an einer geschwungenen Linie entlangführen, mit Stopp-Punkt und pendelnden Stachelbällen. |
+| **Führen** | Linie | Den Ball an einer geschwungenen Linie entlangführen, mit pendelnden Stachelbällen. Ab „Mittel“ auf jeder dritten oder vierten Linie ein Stopp-Punkt: eine Sekunde anhalten bringt Extrapunkte, einfach weiterführen ist auch in Ordnung. |
 | | Slalom | Durch die Tore – jede Runde anders: Zickzack, quer, im Kreis, kreuz und quer; der Reihe nach, mit Countdown, freie Fahrt, Dreh- und Wandertore. |
 | | Rennen | Die Bahn läuft ununterbrochen durchs Feld: Kurven, harte Schnitte, Rückzieher. |
 | | Draht | Durch einen schmalen Gang, ohne die Wand zu berühren. Fehler führen zum letzten Kontrollpunkt zurück. |

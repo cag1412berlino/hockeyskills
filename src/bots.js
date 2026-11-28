@@ -62,10 +62,11 @@ export const goals = {
   dodge: (g, ball) => flee(ball, g.hazards.filter((h) => h.wait <= 0), 210, g.env.field, g.power ?? g.star),
   chase: (g, ball) => flee(ball, g.safe > 0 || g.frozen > 0 ? [] : g.chasers, 230, g.env.field, g.ice ?? g.star),
   line(g, ball) {
-    if (!g.stopDone && g.idx >= g.stopAt) return dist(ball, g.path[g.stopAt]) > 25 ? g.path[g.stopAt] : null;
+    // Stopp-Punkt mitnehmen (Extrapunkte): dort kurz anhalten
+    if (!g.stopDone && g.idx >= g.stopAt - 6 && g.idx <= g.stopAt + 4) return dist(ball, g.path[g.stopAt]) > 25 ? g.path[g.stopAt] : null;
     const next = ahead(g.path, g.idx, 7);
     if (g.obstacles.some((o) => dist(o, next) < 120)) return null; // Stachelball abwarten
-    return g.stopDone ? next : g.path[Math.min(g.stopAt, g.idx + 7)];
+    return g.stopDone || g.idx > g.stopAt ? next : g.path[Math.min(g.stopAt, g.idx + 7)];
   },
   slalom(g, ball) {
     // durch die Mitte des nächsten Tors hindurch auf die andere Seite

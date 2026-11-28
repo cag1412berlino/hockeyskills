@@ -1,5 +1,6 @@
 // Spiel "Linie": Den Ball an einer geschwungenen Linie entlangführen und die Lichtpunkte einsammeln.
-// Unterwegs gibt es einen Stopp-Punkt: dort muss der Ball kurz ruhig liegen.
+// Ab "Mittel" liegt auf jeder dritten oder vierten Linie ein Stopp-Punkt. Wer dort den Ball eine
+// Sekunde ruhig hält, bekommt Extrapunkte – wer einfach weiterführt, verliert nichts.
 // Ab "Mittel" pendeln Stachelbälle über die Linie – abwarten und im richtigen Moment durch.
 import { BALL_RADIUS } from '../engine.js';
 import { glow, noGlow, villain, collectible, tone, text } from '../ui.js';
@@ -10,7 +11,7 @@ const LEVELS = {
   2: { tol: 72, points: 5, obstacles: 2, period: 3.2 },
   3: { tol: 54, points: 6, obstacles: 3, period: 2.4 },
 };
-const HOLD = 0.8; // Sekunden, die der Ball am Stopp-Punkt ruhig liegen muss
+const HOLD = 1; // Sekunden, die der Ball am Stopp-Punkt ruhig liegen muss (für die Extrapunkte)
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -42,6 +43,7 @@ class Line {
     this.carry = 0;
     this.pellets = 0;
     this.dir = 1;
+    this.untilStop = 2 + Math.floor(Math.random() * 2); // so viele Linien noch bis zum nächsten Stopp-Punkt
     this.fx = new Fx();
     this.newPath(null);
   }
@@ -66,15 +68,19 @@ class Line {
     this.idx = 0;
     this.tol = p.tol * (1 - 0.07 * env.stage); // mit jeder Stufe muss man genauer führen
     this.guard ??= new OffTrack({ grace: 0.4, every: 0.5, start: 2, step: 2 });
-    // Stopp-Punkt ungefähr in der Mitte
-    this.stopAt = Math.round((this.path.length - 1) * (0.4 + Math.random() * 0.2));
+    // Stopp-Punkt ungefähr in der Mitte – nicht auf "Leicht", sonst nur auf jeder dritten oder vierten Linie
+    this.stopAt = null;
+    if (env.level >= 2 && --this.untilStop <= 0) {
+      this.untilStop = 3 + Math.floor(Math.random() * 2);
+      this.stopAt = Math.round((this.path.length - 1) * (0.4 + Math.random() * 0.2));
+    }
     this.rest = new Rest(HOLD, 24);
-    this.stopDone = false;
+    this.stopDone = this.stopAt == null;
     this.obstacles = [];
     const count = p.obstacles + (env.stage >= 3 ? 1 : 0);
     for (let k = 1; k <= count; k++) {
       let j = Math.round((this.path.length - 1) * (k / (count + 1)));
-      if (Math.abs(j - this.stopAt) < 14) j += 18; // nicht auf den Stopp-Punkt legen
+      if (this.stopAt != null && Math.abs(j - this.stopAt) < 14) j += 18; // nicht auf den Stopp-Punkt legen
       j = Math.min(this.path.length - 2, j);
       const a = this.path[j - 1], b = this.path[j + 1];
       const len = dist(a, b) || 1;
@@ -105,11 +111,10 @@ class Line {
     this.guard.update(dt, ball.visible && near > this.tol * 1.15, env, fx, ball);
     if (!ball.visible) return;
 
-    // Am Stopp-Punkt geht es erst weiter, wenn der Ball kurz ruhig gelegen hat.
-    const limit = this.stopDone ? path.length : this.stopAt + 1;
     // Nur ein kurzes Stück vorausschauen, damit man die Linie nicht abkürzen kann.
+    // Am Stopp-Punkt darf man einfach weiterführen – anhalten bringt nur Extrapunkte.
     let best = this.idx;
-    for (let k = this.idx; k < Math.min(limit, this.idx + 12); k++) {
+    for (let k = this.idx; k < Math.min(path.length, this.idx + 12); k++) {
       if (dist(ball, path[k]) < this.tol) best = k;
     }
     if (best > this.idx) {
@@ -124,16 +129,19 @@ class Line {
       }
     }
 
-    if (!this.stopDone && this.idx >= this.stopAt) {
+    if (!this.stopDone && this.idx >= this.stopAt - 6) {
       const s = path[this.stopAt];
       // "Ruhig" heißt: bleibt in einem kleinen Umkreis. Die Geschwindigkeit taugt dafür nicht,
       // weil das Kamerabild immer leicht zittert und ein liegender Ball dann scheinbar rast.
-      if (dist(ball, s) >= this.tol) this.rest.reset();
-      else if (this.rest.update(dt, ball)) {
+      if (dist(ball, s) >= this.tol) {
+        this.rest.reset();
+        // weitergeführt, ohne anzuhalten: kein Problem, der Stopp-Punkt verschwindet einfach
+        if (this.idx > this.stopAt + 10) this.stopDone = true;
+      } else if (this.rest.update(dt, ball)) {
         this.stopDone = true;
-        const points = env.combo(15, 3);
+        const points = env.combo(30, 3);
         env.sound.power();
-        fx.text(s.x, s.y, `Stopp! +${points}`, env.palette[1]);
+        fx.text(s.x, s.y, `Stopp! Extra +${points}`, env.palette[1]);
         fx.ring(s.x, s.y, env.palette[1], 160);
       }
     }
@@ -221,7 +229,8 @@ class Line {
         ctx.stroke();
       }
       noGlow(ctx);
-      text(ctx, 'Stopp', s.x, s.y + 2, 30, '#fff', 'center', 0);
+      text(ctx, 'Stopp', s.x, s.y - 8, 30, '#fff', 'center', 0);
+      text(ctx, 'Extra', s.x, s.y + 22, 18, 'rgba(255,255,255,0.75)', 'center', 0, 600);
     }
 
     // Ziel und aktuelle Stelle ("hier geht es weiter")
@@ -248,8 +257,8 @@ export default {
   hint: 'Führe den Ball an der Linie entlang!',
   name: 'Linie',
   duration: 60,
-  scale: 0.4,
-  medals: [[330, 1310, 2740], [20, 400, 960], [20, 50, 370]],
+  scale: 0.35,
+  medals: [[500, 1510, 2770], [20, 370, 970], [20, 50, 340]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.065;
