@@ -5,12 +5,18 @@
 // geschoben. Die Hintergründe bleiben dunkel; kräftige Farbe steckt in Figuren, Kanten und Effekten.
 
 const TAU = Math.PI * 2;
-const ZONE = 55; // so viele Grad um die Ballfarbe herum bleiben frei
+let ZONE = 55; // so viele Grad um die Ballfarbe herum bleiben frei
 
 let ballHue = 18;
-export function setBallHue(h) {
+let version = 0;
+/** Ballfarbe (Farbton) und ihre Toleranz in der Erkennung: Je breiter die Toleranz, desto größer die Sperrzone. */
+export function setBallHue(h, tol = 20) {
   ballHue = h;
+  ZONE = Math.max(55, Math.min(80, tol + 35));
+  version++;
 }
+/** Zählt jede Änderung der Sperrzone mit (für Zwischenspeicher). */
+export const ballKey = () => version;
 
 /** Abstand eines Farbtons zur Ballfarbe in Grad (0 bis 180). */
 export const hueGap = (h) => Math.abs(((h - ballHue + 540) % 360) - 180);

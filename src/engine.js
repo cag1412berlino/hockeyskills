@@ -4,6 +4,7 @@
 // field.w breit (1000 beim Quadrat, breiter bei voller Projektionsfläche).
 import { theme, glow, noGlow, star } from './ui.js';
 import { THEMES, Floor, safeHue } from './themes.js';
+import { guardContext } from './colorguard.js';
 
 /**
  * Ballgröße in Feld-Einheiten, großzügig für Treffer-Abfragen. Sie hängt davon ab, wie groß
@@ -54,6 +55,8 @@ export class Engine {
   constructor(canvas, config) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    // Farbschutz: nichts auf dem Feld bekommt die Farbe des Balls
+    this.colors = guardContext(this.ctx);
     this.config = config;
     this.field = { x: 0, y: 0, scale: 1, w: 1000, h: 1000 };
     this.ball = { x: 0, y: 0, vx: 0, vy: 0, visible: false };
@@ -373,6 +376,8 @@ export class Engine {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Kalibrier- und Messbilder und der Test-Ball müssen genau so aussehen wie gewollt
+    this.colors.on = !this.override;
     if (this.override) {
       this.override(ctx, canvas.width, canvas.height);
     } else if (this.scene) {
@@ -424,10 +429,12 @@ export class Engine {
       // Test-Ball: ein gemalter „Ball“ an der Maus, den die Kamera wie einen echten Ball filmt
       const fake = this.fakeBall?.();
       if (fake) {
+        this.colors.on = false;
         ctx.fillStyle = fake.color;
         ctx.beginPath();
         ctx.arc(fake.x * canvas.width, fake.y * canvas.height, BALL_RADIUS * 0.8 * f.scale, 0, Math.PI * 2);
         ctx.fill();
+        this.colors.on = true;
       }
     }
 

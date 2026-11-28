@@ -125,7 +125,9 @@ Jedes Rennen ist anders: Die Strecke führt durch wechselnde Zonen in zufällige
 
 **Slalom** wechselt mit jeder Runde das Material der Tore (Lichttore, Feuerfackeln, Eiskristalle, Backstein, Holz). Die Lichtschranke wechselt mit jedem Tor in Folge die Farbe, manchmal ist ein Tor golden (dreifache Punkte, Goldregen). Wer eine Runde ohne Pfostenberührung schafft, bekommt „Perfekte Runde!“ mit Feuerwerk; eine Feuerrunde endet mit einer Flammenwand über das ganze Bild. Berührte Pfosten zerbröseln.
 
-Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus. Ist der Ball orange oder rot, brennt das Feuer blau, damit die Kamera es nicht für den Ball hält.
+Alle Effektfarben halten Abstand zur Ballfarbe, und was über das ganze Bild geht, spart den Ball aus.
+
+**Farbschutz für das ganze Feld:** Jede Farbe, die auf das Spielfeld gemalt wird – Figuren, Knöpfe, Texte, Effekte, Verläufe –, läuft durch einen Farbschutz (`src/colorguard.js`). Liegt sie zu nah an der Ballfarbe, wird ihr Farbton automatisch weggeschoben (mindestens 55° Abstand, bei breiter Toleranz in der Erkennung mehr). Das passt sich sofort an, wenn eine andere Ballfarbe gewählt oder gelernt wird: Bei einem pinken Ball gibt es nichts Pinkes auf dem Feld, bei einem gelben nichts Gelbes. Grau, Weiß und Schwarz bleiben unverändert. Ausgenommen sind nur die Kalibrierbilder und der Test-Ball. Ist der Ball orange oder rot, brennt das Feuer blau, damit die Kamera es nicht für den Ball hält.
 
 ## Steinschlag
 

@@ -243,7 +243,7 @@ function refreshSetup() {
   for (const radio of document.querySelectorAll('input[name=shape]')) {
     radio.checked = radio.value === config.fieldShape;
   }
-  setBallHue(config.ball.h); // Spielfarben meiden den Farbbereich um den Ball
+  setBallHue(config.ball.h, config.ball.hTol); // Spielfarben meiden den Farbbereich um den Ball
   setFieldMeters(config.fieldMeters);
   $('#field-meters').value = String(config.fieldMeters);
   $('#latency').value = config.latency;
@@ -849,7 +849,7 @@ $('#brand').textContent = BRAND.name;
 for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fredoka"`).catch(() => {});
 
 if (config.calib && !calibOk(config.calib)) { config.calib = null; saveConfig(); } // verunglückte alte Kalibrierung verwerfen
-setBallHue(config.ball.h);
+setBallHue(config.ball.h, config.ball.hTol);
 setFieldMeters(config.fieldMeters);
 engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt
 $('#version').textContent = `Version ${VERSION}`;
