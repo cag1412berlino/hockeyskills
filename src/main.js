@@ -9,7 +9,7 @@ import { applyHomography, invertHomography } from './homography.js';
 import { autoCalibrate, manualCalibrate, toGray, calibOk } from './calibration.js';
 import { createApp } from './app.js';
 import { MenuScene } from './scenes.js';
-import { THEMES, randomTheme, setBallHue } from './themes.js';
+import { THEMES, THEME_IDS, randomTheme, setBallHue, setClubLogo } from './themes.js';
 import { VERSION } from './version.js';
 import { initTabs } from './setupui.js';
 import { initPlayersPanel } from './setup/players.js';
@@ -58,6 +58,8 @@ window.hockey = app; // zum Ausprobieren in der Browser-Konsole
 
 // Übungsmodus: Mit der Maus als Ball, mit dem gemalten Test-Ball oder mit der simulierten Kamera
 // wird nichts gewertet. Punkte, Rekorde, Abzeichen und Ranglisten gibt es nur mit echtem Ball.
+/** Welt, die jetzt gezeigt wird: im Vereinsdesign Blau-Weiss, sonst die gewählte oder eine zufällige. */
+const worldNow = () => (config.skin === 'club' ? 'club' : config.theme === 'auto' ? randomTheme() : config.theme);
 const practiceNow = () => mode === 'mouse' || fakeBall || !!sim;
 // Wer während einer Runde in den Übungsmodus wechselt (z. B. Test-Ball mit B), bekommt die ganze Runde nicht gewertet.
 let tainted = false;
@@ -259,6 +261,9 @@ function refreshSetup() {
   $('#music-on').checked = config.music;
   $('#demos-on').checked = config.demos;
   $('#theme').value = config.theme;
+  $('#skin').value = config.skin || 'classic';
+  $('#theme-field').hidden = config.skin === 'club';
+  $('#skin-note').hidden = config.skin !== 'club';
   playersPanel.render();
   const c = config.calib;
   $('#calib-status').textContent = !c
@@ -633,11 +638,18 @@ function buildSetup() {
   toggle('#voice-on', 'voice', (on) => { voice.enabled = on; });
   toggle('#music-on', 'music', (on) => { music.enabled = on; if (!on) music.stop(); });
   toggle('#demos-on', 'demos');
-  $('#theme').replaceChildren(new Option('Automatisch (wechselt)', 'auto'), ...Object.entries(THEMES).map(([id, t]) => new Option(t.name, id)));
+  $('#theme').replaceChildren(new Option('Automatisch (wechselt)', 'auto'), ...THEME_IDS.map((id) => new Option(THEMES[id].name, id)));
   $('#theme').onchange = (e) => {
     config.theme = e.target.value;
     saveConfig();
-    engine.theme = config.theme === 'auto' ? randomTheme() : config.theme;
+    engine.theme = worldNow();
+  };
+  // Design: bunte Themenwelten oder Blau-Weiss-Vereinsdesign
+  $('#skin').onchange = (e) => {
+    config.skin = e.target.value;
+    saveConfig();
+    engine.theme = worldNow();
+    refreshSetup();
   };
 
   // Feinabstimmung für den Aufbau
@@ -836,6 +848,7 @@ window.addEventListener('unhandledrejection', (e) => reportError(e.reason));
   const img = new Image();
   img.onload = () => {
     app.logo = img;
+    setClubLogo(img);
     $('#logo').src = src;
     $('#logo').hidden = false;
   };
@@ -851,7 +864,7 @@ for (const weight of [400, 500, 600]) document.fonts?.load(`${weight} 20px "Fred
 if (config.calib && !calibOk(config.calib)) { config.calib = null; saveConfig(); } // verunglückte alte Kalibrierung verwerfen
 setBallHue(config.ball.h, config.ball.hTol);
 setFieldMeters(config.fieldMeters);
-engine.theme = config.theme === 'auto' ? randomTheme() : config.theme; // jede Sitzung beginnt in einer anderen Welt
+engine.theme = worldNow(); // jede Sitzung beginnt in einer anderen Welt (im Vereinsdesign immer Blau-Weiss)
 $('#version').textContent = `Version ${VERSION}`;
 initTabs();
 sound.muted = config.muted;

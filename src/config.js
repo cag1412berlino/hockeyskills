@@ -19,7 +19,8 @@ const defaults = () => ({
   current: null,        // id des aktiven Profils
   voice: true,          // Sprachansagen
   music: true,          // Hintergrundmusik
-  theme: 'auto',        // Themenwelt: 'auto' wechselt je Runde
+  skin: 'classic',      // Aussehen: 'classic' = bunte Themenwelten, 'club' = Blau-Weiss-Vereinsdesign
+  theme: 'auto',        // Themenwelt (nur Skin 'classic'): 'auto' wechselt je Runde
   demos: true,          // neue Übungen kurz vormachen
   custom: null,         // eigenes Training: { ids: [...], seconds }
 });

@@ -108,6 +108,13 @@ Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen:
 
 Bei allen Übungen, in denen man selbst das Tempo bestimmt (Ziele, Wolke, Slalom, Achter, Zeichnen, Tricks, Draht, Fangen, Ausweichen), zählt jede Aufgabe nach Sekunden: In der Richtzeit gibt es die normalen Punkte (x1), doppelt so schnell x2, halb so schnell nur noch die Hälfte – von x0,25 bis x2,5. Nach jeder Aufgabe steht kurz oben in der Mitte, wie viele Sekunden es waren und was sie gebracht haben („1,4 s · Tempo x1,8“ oder „6,0 s · zu langsam x0,4“). Die Richtzeit hängt von der Stufe ab (z. B. Slalom je Tor 2,6 / 2,1 / 1,7 s, beim Zeichnen und den Tricks von der Länge der Form). Danach wurden Punkte und Sterne-Schwellen dieser Übungen neu abgestimmt.
 
+## Design: Bunt oder Blau-Weiss
+
+Unter **Einstellungen → Ton und Aussehen → Design** gibt es zwei Skins:
+
+- **Bunt – wechselnde Themenwelten:** wie bisher, mit Weltraum, Unterwasser, Eiswelt und Nachtwald (fest gewählt oder automatisch wechselnd).
+- **Blau-Weiss – Vereinsdesign:** alles in Vereinsblau und Weiß. Dunkelblauer Hintergrund mit der weißen Diagonale aus dem Logo und einem langsamen Glanz, das Vereinslogo groß als Wasserzeichen, blau-weiße Nadelstreifen an den Rändern und „TC Blau-Weiss Berlin · seit 1899“ senkrecht am rechten Rand. Die Schwerpunkte haben verschiedene Blautöne (Tricks in Weiß), die Spielfarben sind Blau und Weiß, der Ball hinterlässt blau-weiße Ringe. Gedacht für Vorführungen und Marketing. Am besten mit einem orangen, pinken oder gelben Ball – ein blauer Ball hebt sich nicht ab (der Farbschutz schiebt die Blautöne dann zur Seite).
+
 ## Freies Spiel
 
 In der Stufenwahl jeder Übung gibt es unten in der Mitte den Schalter **„Freies Spiel“** (Zeichen ∞). Ist er an, läuft die Übung ohne Punkte, ohne Herzen und ohne Zeitlimit, gleichbleibend auf der gewählten Stufe – einfach weiterspielen, ohne Frust. Es wird nichts gewertet (kein Rekord, keine Sterne, keine Abzeichen). Mit dem X oben rechts geht es zurück zur Stufenwahl. Der Schalter bleibt an, bis man ihn wieder ausschaltet oder die Seite neu lädt.

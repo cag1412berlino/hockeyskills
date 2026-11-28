@@ -12,6 +12,9 @@ import { topicGame } from './games/tricks.js';
 import { setMascotHat } from './ui.js';
 import { randomTheme, worldPalette, bright } from './themes.js';
 
+// Skin Blau-Weiss: Schwerpunkte in verschiedenen Blautönen, die Tricks in Weiß
+const CLUB_ACCENTS = { treffen: 212, fuehren: 196, wechsel: 230, stoppen: 186, tricks: null };
+
 /** Drei zufällige, verschiedene Einträge einer Liste. */
 function pick3(list) {
   const pool = [...list];
@@ -41,15 +44,20 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     accentOf: (x) => {
       // auch für Abwandlungen einer Übung (z. B. Tricks-Dauertraining), die dieselbe id tragen
       const cat = categories.find((c) => c === x || c.games.some((g) => g === x || g.id === x?.id));
-      return cat ? bright(cat.hue) : null;
+      if (!cat) return null;
+      // Skin Blau-Weiss: jeder Schwerpunkt in einem eigenen Blau (oder Weiß)
+      if (config.skin === 'club') return CLUB_ACCENTS[cat.id] == null ? 'hsl(212 45% 90%)' : `hsl(${CLUB_ACCENTS[cat.id]} 95% 66%)`;
+      return bright(cat.hue);
     },
     today: () => dateString(),
     daily: () => dailyGame(games),
 
     /** Wechselt den Bildschirm. Im Menü gilt die gewählte Themenwelt, bei "auto" der Weltraum. */
     show(scene) {
-      // Bei fester Themenwelt gilt sie überall; bei "auto" bleibt im Menü die Welt der letzten Runde stehen.
-      if (config.theme !== 'auto') engine.theme = config.theme;
+      // Skin Blau-Weiss: immer die Vereinswelt. Sonst: Bei fester Themenwelt gilt sie überall;
+      // bei "auto" bleibt im Menü die Welt der letzten Runde stehen.
+      if (config.skin === 'club') engine.theme = 'club';
+      else if (config.theme !== 'auto') engine.theme = config.theme;
       engine.trailStyle = Math.min(2, Math.floor(rankOf(app.profile.xp).index / 2));
       app.applyGear();
       engine.bloomTo(0.35);
@@ -97,7 +105,8 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
      * Spielbildschirm gebaut, damit er gleich die Farben und Wesen dieser Welt bekommt.
      */
     playScene: (make) => {
-      if (config.theme === 'auto') engine.theme = randomTheme();
+      if (config.skin === 'club') engine.theme = 'club';
+      else if (config.theme === 'auto') engine.theme = randomTheme();
       engine.setScene(make());
     },
     play: (game, level, opts = {}) => app.playScene(() => new PlayScene(app, game, level, null, opts)),

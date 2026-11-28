@@ -329,9 +329,90 @@ export const THEMES = {
       ctx.beginPath(); ctx.arc(m.x, m.y, 3, 0, TAU); ctx.fill();
     },
   },
+  // ---------------------------------------------------------------- Blau-Weiss (Vereinsdesign)
+  // Eigener Skin für den Verein: dunkles Vereinsblau, weiße Diagonale wie im Logo, großes Logo als
+  // Wasserzeichen, Nadelstreifen am Rand. Alle Spielfarben in Blau und Weiß.
+  club: {
+    name: 'Blau-Weiss',
+    brand: true,
+    hues: [214, 200, 228, 190],
+    palette: () => ['hsl(214 100% 62%)', '#ffffff', 'hsl(198 95% 68%)', 'hsl(228 85% 76%)'],
+    step: 90,
+    paint(ctx, f, t, bloom, dots) {
+      base(ctx, f, 'hsl(220 72% 17%)', 'hsl(226 85% 6%)');
+      // weiße Diagonale wie im Vereinslogo, mit langsamem Glanz
+      ctx.save();
+      ctx.translate(f.w / 2, f.h / 2);
+      ctx.rotate(-0.55);
+      const band = ctx.createLinearGradient(0, -170, 0, 170);
+      band.addColorStop(0, 'rgba(255,255,255,0)');
+      band.addColorStop(0.5, `rgba(255,255,255,${0.05 + 0.04 * bloom})`);
+      band.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = band;
+      ctx.fillRect(-f.w, -170, f.w * 2, 340);
+      const shine = ((t * 160) % (f.w * 2.4)) - f.w * 1.2;
+      const g = ctx.createLinearGradient(shine - 160, 0, shine + 160, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(shine - 160, -170, 320, 340);
+      ctx.restore();
+      // Vereinslogo groß als Wasserzeichen in der Mitte
+      if (clubLogo?.complete && clubLogo.naturalWidth) {
+        const size = f.h * 0.62, k = size / Math.max(clubLogo.naturalWidth, clubLogo.naturalHeight);
+        ctx.globalAlpha = 0.05 + 0.04 * bloom;
+        ctx.drawImage(clubLogo, f.w / 2 - (clubLogo.naturalWidth * k) / 2, f.h * 0.56 - (clubLogo.naturalHeight * k) / 2, clubLogo.naturalWidth * k, clubLogo.naturalHeight * k);
+        ctx.globalAlpha = 1;
+      }
+      // Nadelstreifen in Blau und Weiß an linkem und rechtem Rand (wie ein Vereinsschal)
+      for (const side of [0, 1]) {
+        for (let i = 0; i < 5; i++) {
+          const x = side ? f.w - 18 - i * 14 : 18 + i * 14;
+          ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.10)' : 'hsl(214 90% 50% / 0.16)';
+          ctx.fillRect(x - 4, 0, 8, f.h);
+        }
+      }
+      // Vereinsname senkrecht neben den Streifen am rechten Rand (wie auf einem Schal)
+      ctx.save();
+      ctx.translate(f.w - 100, f.h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = '600 22px Fredoka, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillText('TC BLAU-WEISS BERLIN · SEIT 1899', 0, 0);
+      ctx.restore();
+      // funkelnde weiße Punkte
+      ctx.fillStyle = '#ffffff';
+      for (const p of dots) {
+        ctx.globalAlpha = p.a * 0.6 * (0.4 + 0.6 * Math.max(0, Math.sin(t * p.tw + p.x * 30))) * (1 + bloom);
+        ctx.beginPath();
+        ctx.arc(p.x * f.w, p.y * f.h, p.r, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    },
+    // Boden: Hinter dem Ball bleiben weiße und blaue Ringe wie Abdrücke auf dem Platz.
+    mark: (ball, n) => ({ x: ball.x, y: ball.y, life: 1.2, white: n % 2 === 0 }),
+    drawMark(ctx, m, k) {
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 14 + 34 * k, 0, TAU);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = m.white ? `rgba(255,255,255,${0.5 * (1 - k)})` : `hsl(210 100% 65% / ${0.55 * (1 - k)})`;
+      ctx.stroke();
+    },
+  },
 };
 
-export const THEME_IDS = Object.keys(THEMES);
+/** Bunte Themenwelten (Skin „Bunt“); die Vereinswelt gehört zum Skin „Blau-Weiss“. */
+export const THEME_IDS = Object.keys(THEMES).filter((id) => !THEMES[id].brand);
+
+// Vereinslogo für das Wasserzeichen der Vereinswelt (main.js setzt es, sobald es geladen ist)
+let clubLogo = null;
+export function setClubLogo(img) {
+  clubLogo = img;
+}
 
 export function randomTheme() {
   return THEME_IDS[Math.floor(Math.random() * THEME_IDS.length)];
@@ -339,7 +420,8 @@ export function randomTheme() {
 
 /** Die vier Spielfarben einer Welt, an die Ballfarbe angepasst. */
 export function worldPalette(id) {
-  return (THEMES[id] ?? THEMES.space).hues.map(bright);
+  const world = THEMES[id] ?? THEMES.space;
+  return world.palette ? world.palette() : world.hues.map(bright);
 }
 
 /** Der Boden reagiert auf den Ball: Jede Welt hinterlässt ihre eigenen Spuren. */
