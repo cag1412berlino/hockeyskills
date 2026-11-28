@@ -139,10 +139,6 @@ Ab „Mittel“ liegen die Marken weiter auseinander (längere Zieher), die Lini
 
 Der Hintergrund wird abgedunkelt, die fallenden Brocken leuchten kräftig (pink, rot, lila oder blau – nie in Ballfarbe) und haben Fallstreifen. Alles, was Punkte bringt (Sterne, Edelsteine in der Mauerlücke), ist immer grün bzw. gold mit pulsierendem Kreis und einem Plus.
 
-## Menü: Ball liegt schon auf dem Knopf
-
-Erscheint ein neuer Bildschirm und der Ball liegt schon auf einem Knopf, löst der Knopf nach einer Sekunde Wartezeit trotzdem aus (plus die normale Haltezeit). Man muss also nicht erst herunter und wieder drauf.
-
 ## Tempo
 
 Die App misst bei jeder Übung, wie schnell der Ball war (umgerechnet mit der eingestellten Feldgröße), und zeigt den schnellsten Ball im Ergebnis und im Profil. Gezählt wird nur, was mehrere Kamerabilder am Stück so schnell war. Abzeichen gibt es für 10 und 18 km/h. Die Werte stimmen nur, wenn die Feldgröße in der Einrichtung richtig eingestellt ist.

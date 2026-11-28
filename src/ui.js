@@ -166,18 +166,13 @@ export const icons = {
   },
 };
 
-/** Sekunden, die der Ball auf einem gerade erschienenen Button liegen muss, bevor er zu zählen beginnt. */
-export const HOLD_OFF = 1;
-
 /** Runder Leucht-Button. Löst aus, wenn der Ball `dwell` Sekunden darauf liegt (oder per Mausklick). */
 export class DwellButton {
   constructor({ x, y, r, dwell = 1, color = '#fff', icon = null, label = '', sub = '', onActivate }) {
     Object.assign(this, { x, y, r, dwell, color, icon, label, sub, onActivate });
     this.progress = 0;
-    // Liegt der Ball beim Erscheinen schon auf dem Button, zählt er erst nach einer kurzen Wartezeit
-    // (so löst nichts aus Versehen aus, man muss aber auch nicht erst herunter und wieder drauf).
+    // Liegt der Ball beim Erscheinen schon auf dem Button, muss er ihn erst einmal verlassen.
     this.armed = false;
-    this.wait = 0;
   }
 
   contains(x, y) {
@@ -188,8 +183,7 @@ export class DwellButton {
   update(dt, ball) {
     const inside = ball.visible && this.contains(ball.x, ball.y);
     if (!this.armed) {
-      this.wait = inside ? this.wait + dt : 0;
-      if (!inside || this.wait >= HOLD_OFF) this.armed = true;
+      if (!inside) this.armed = true;
       return false;
     }
     if (!inside) {
@@ -200,7 +194,6 @@ export class DwellButton {
     if (this.progress < 1) return false;
     this.progress = 0;
     this.armed = false;
-    this.wait = 0;
     this.onActivate();
     return true;
   }
