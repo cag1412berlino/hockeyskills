@@ -107,6 +107,22 @@ Im Menü führt „Karriere“ zu einer Karte mit 30 Stationen in drei Regionen:
 
 Bei allen Übungen, in denen man selbst das Tempo bestimmt (Ziele, Wolke, Slalom, Achter, Zeichnen, Tricks, Draht, Fangen, Ausweichen), zählt jede Aufgabe nach Sekunden: In der Richtzeit gibt es die normalen Punkte (x1), doppelt so schnell x2, halb so schnell nur noch die Hälfte – von x0,25 bis x2,5. Nach jeder Aufgabe steht kurz oben in der Mitte, wie viele Sekunden es waren und was sie gebracht haben („1,4 s · Tempo x1,8“ oder „6,0 s · zu langsam x0,4“). Die Richtzeit hängt von der Stufe ab (z. B. Slalom je Tor 2,6 / 2,1 / 1,7 s, beim Zeichnen und den Tricks von der Länge der Form). Danach wurden Punkte und Sterne-Schwellen dieser Übungen neu abgestimmt.
 
+## Freies Spiel
+
+In der Stufenwahl jeder Übung gibt es unten in der Mitte den Schalter **„Freies Spiel“** (Zeichen ∞). Ist er an, läuft die Übung ohne Punkte, ohne Herzen und ohne Zeitlimit, gleichbleibend auf der gewählten Stufe – einfach weiterspielen, ohne Frust. Es wird nichts gewertet (kein Rekord, keine Sterne, keine Abzeichen). Mit dem X oben rechts geht es zurück zur Stufenwahl. Der Schalter bleibt an, bis man ihn wieder ausschaltet oder die Seite neu lädt.
+
+## Größe passt zum Feld
+
+Ziele (Treffen, Punktlandung, Zielrollen, Wegpunkte beim Achter) werden auf größeren Feldern kleiner, damit sie in Zentimetern etwa gleich groß bleiben: gedacht für 1,5 m Feldhöhe, bei 2 m 75 %, bei 2,5 m 60 %, bei 3 m 50 %. Gänge und Tore (Draht, Slalom) richten sich nach dem Ball und passen immer so, dass er durchkommt. Die Feldhöhe stellt man unter Einstellungen ein.
+
+## Tippen ab „Mittel“
+
+Ab „Mittel“ liegen die Marken weiter auseinander (längere Zieher), die Linie wandert ständig über das Feld und schwenkt hin und her. Alle paar Wechsel gibt es eine Überraschung: **Drehung** (Linie dreht sich um 90°), **Sprung** (Linie springt an eine andere Stelle) oder **Goldlinie** (6 Sekunden doppelte Punkte). Auf „Schwer“ atmet zusätzlich der Abstand der Marken. „Leicht“ bleibt ruhig.
+
+## Steinschlag: klare Farben
+
+Der Hintergrund wird abgedunkelt, die fallenden Brocken leuchten kräftig (pink, rot, lila oder blau – nie in Ballfarbe) und haben Fallstreifen. Alles, was Punkte bringt (Sterne, Edelsteine in der Mauerlücke), ist immer grün bzw. gold mit pulsierendem Kreis und einem Plus.
+
 ## Menü: Ball liegt schon auf dem Knopf
 
 Erscheint ein neuer Bildschirm und der Ball liegt schon auf einem Knopf, löst der Knopf nach einer Sekunde Wartezeit trotzdem aus (plus die normale Haltezeit). Man muss also nicht erst herunter und wieder drauf.

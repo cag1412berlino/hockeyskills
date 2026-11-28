@@ -7,7 +7,7 @@
 // Schnell geschaffte Tore bringen mehr Punkte (Tempo nach Sekunden). Ab "Mittel" kosten berührte
 // Pfosten Punkte. Dazu Material je Runde (Feuer, Eis, Backstein, Holz), Goldtore, ein Bonus-Tor
 // und ein Feuerwerk für eine Runde ohne Pfostenberührung.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, FIT } from '../engine.js';
 import { text, glow, noGlow, star, tone } from '../ui.js';
 import { Fx } from './common.js';
 import { Show, drawPost, rainbow, fireHsl, gold, drawSign } from './spectacle.js';
@@ -107,7 +107,8 @@ class Slalom {
     const { field } = env;
     const n = p.gates;
     // Mit jeder Stufe werden die Tore enger und geraten stärker in Bewegung.
-    this.width = p.width * (1 - 0.07 * env.stage);
+    // kleiner auf großen Feldern, aber immer so breit, dass der Ball zwischen den Pfosten durchpasst
+    this.width = Math.max(p.width * FIT * (1 - 0.07 * env.stage), BALL_RADIUS * 2 + POST * 2 + 30);
     const first = this.courses++ === 0;
     // Neue Runde: andere Streckenform und andere Spielart als zuletzt (die erste ist ein klassischer Zickzack)
     this.shape = first ? 'zigzag' : pick(SHAPES.filter((x) => x !== this.shape));

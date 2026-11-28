@@ -4,9 +4,23 @@
 // Auf "Mittel" und "Schwer" kommen Mauern mit einer Lücke, durch die man muss.
 // Als einzelne Übung läuft es endlos mit drei Herzen und wird immer schneller.
 import { BALL_RADIUS } from '../engine.js';
-import { collectible, text, tone } from '../ui.js';
+import { collectible, glow, noGlow, text, tone } from '../ui.js';
 import { Fx, OffTrack } from './common.js';
-import { Show, drawBlock, gold, rainbow } from './spectacle.js';
+import { Show, drawBlock, hsl, rainbow } from './spectacle.js';
+import { hueGap } from '../themes.js';
+
+// Farbe für alles, was Punkte bringt: Gold, außer der Ball ist gelblich – dann ein kräftiges Grün.
+// Gefahren sind rot-weiß umrandet. So sieht man sofort, was man holen und was man meiden muss.
+const prizeHue = () => (hueGap(46) >= 60 ? 46 : 150);
+const prize = (l = 60, a = 1) => hsl(prizeHue(), 100, l, a);
+// Gefahren bekommen eine kräftige eigene Farbe (pink, rot, lila oder blau) – nie die des Balls
+// und nie die der Punkte-Sachen. So heben sie sich klar vom dunklen Hintergrund ab.
+const HAZARD_HUES = [330, 0, 275, 215];
+function hazardHue() {
+  const ok = HAZARD_HUES.filter((h) => hueGap(h) >= 60 && Math.abs(((h - prizeHue() + 540) % 360) - 180) >= 60);
+  const list = ok.length ? ok : HAZARD_HUES;
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 const LEVELS = {
   //   Fallgeschwindigkeit, Sekunden zwischen zwei Wellen, Anteil Mauern mit Lücke, kleinste Lücke
@@ -49,8 +63,9 @@ class Rain {
       const far = 180 + Math.random() * Math.min(500, W * 0.35);
       const gx = Math.max(gap / 2 + 20, Math.min(W - gap / 2 - 20, aim + this.lastSide * far));
       const h = 46;
-      if (gx - gap / 2 > 20) this.items.push({ kind: 'block', mat, x: (gx - gap / 2) / 2, y: -60, w: gx - gap / 2, h });
-      if (gx + gap / 2 < W - 20) this.items.push({ kind: 'block', mat, x: (gx + gap / 2 + W) / 2, y: -60, w: W - gx - gap / 2, h });
+      const wallHue = hazardHue();
+      if (gx - gap / 2 > 20) this.items.push({ kind: 'block', hue: wallHue, mat, x: (gx - gap / 2) / 2, y: -60, w: gx - gap / 2, h });
+      if (gx + gap / 2 < W - 20) this.items.push({ kind: 'block', hue: wallHue, mat, x: (gx + gap / 2 + W) / 2, y: -60, w: W - gx - gap / 2, h });
       this.items.push({ kind: 'gem', x: gx, y: -60, seq: this.dodged });
       env.sound.tick();
     } else if (roll < 0.65) {
@@ -58,12 +73,12 @@ class Rain {
       const big = Math.random() < 0.45;
       const w = big ? 260 + Math.random() * Math.min(340, W * 0.25) : 90 + Math.random() * 70;
       const x = Math.max(w / 2, Math.min(W - w / 2, aim + (Math.random() - 0.5) * w * 0.6));
-      this.items.push({ kind: 'block', mat: big && mat === 'fire' ? 'stone' : mat, x, y: -80, w, h: mat === 'stone' ? Math.min(w * 0.7, 150) : 60, big, seed: Math.random() * 99 });
+      this.items.push({ kind: 'block', hue: hazardHue(), mat: big && mat === 'fire' ? 'stone' : mat, x, y: -80, w, h: mat === 'stone' ? Math.min(w * 0.7, 150) : 60, big, seed: Math.random() * 99 });
     } else {
       // Steinregen: drei kleine Brocken verteilt, einer davon auf den Ball
       for (let i = 0; i < 3; i++) {
         const x = i === 0 ? aim : 80 + Math.random() * (W - 160);
-        this.items.push({ kind: 'block', mat: 'stone', x, y: -60 - i * 120, w: 70, h: 56, seed: Math.random() * 99 });
+        this.items.push({ kind: 'block', hue: hazardHue(), mat: 'stone', x, y: -60 - i * 120, w: 70, h: 56, seed: Math.random() * 99 });
       }
     }
     // Ab und zu ein Stern zum Einsammeln, der in der Zone landet
@@ -118,14 +133,14 @@ class Rain {
         if (it.kind === 'star') {
           const points = env.combo(20, 3);
           env.sound.power();
-          fx.text(it.x, it.y - 30, `Stern! +${points}`, gold(65), 54);
+          fx.text(it.x, it.y - 30, `Stern! +${points}`, prize(65), 54);
           show.coins(field, 20);
         } else {
           // Edelstein in der Lücke der Mauer
           const points = env.combo(10, 3);
           env.sound.pop(env.mult);
-          fx.burst(it.x, it.y, rainbow(it.seq), 16);
-          fx.text(it.x, it.y - 30, `Durch die Lücke! +${points}`, rainbow(it.seq), 46);
+          fx.burst(it.x, it.y, prize(60), 16);
+          fx.text(it.x, it.y - 30, `Durch die Lücke! +${points}`, prize(65), 46);
         }
       }
     }
@@ -136,6 +151,9 @@ class Rain {
     const { env } = this;
     const { field } = env;
     const c1 = env.palette[1];
+    // Hintergrund kräftig abdunkeln, damit alles, was fällt, klar heraussticht
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, field.w, field.h);
     // Zone unten, in der der Ball bleiben muss
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = tone(c1, 50, 60);
@@ -155,13 +173,45 @@ class Rain {
       ctx.fillRect(it.x - it.w / 2, ZONE.top + 6, it.w, 14);
     }
     for (const it of this.items) {
-      if (it.kind === 'block') drawBlock(ctx, it.mat, it.x, it.y, it.w, it.h, this.time, it.seed ?? 0);
-      else if (it.kind === 'star') collectible(ctx, it.x, it.y, 32, gold(62), this.time * 3);
-      else {
+      if (it.kind === 'block') {
+        // Fallstreifen darüber: man sieht sofort, dass es fällt und wie schnell
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(it.x, it.y, 16, 0, Math.PI * 2);
-        ctx.fillStyle = rainbow(it.seq);
-        ctx.fill();
+        for (const fx of [-0.3, 0, 0.3]) { ctx.moveTo(it.x + fx * it.w, it.y - it.h / 2 - 12); ctx.lineTo(it.x + fx * it.w, it.y - it.h / 2 - 70); }
+        ctx.stroke();
+        drawBlock(ctx, it.mat, it.x, it.y, it.w, it.h, this.time, it.seed ?? 0);
+        // Gefahr: der Brocken selbst in kräftiger Farbe (Struktur bleibt sichtbar, kein Rahmen)
+        ctx.save();
+        ctx.globalCompositeOperation = 'color';
+        ctx.fillStyle = hsl(it.hue ?? 330, 100, 55);
+        ctx.fillRect(it.x - it.w / 2, it.y - it.h / 2, it.w, it.h);
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.fillStyle = hsl(it.hue ?? 330, 100, 60, 0.55);
+        ctx.fillRect(it.x - it.w / 2, it.y - it.h / 2, it.w, it.h);
+        ctx.restore();
+      } else {
+        // Punkte: immer dieselbe klare Farbe, pulsierender Ring und ein Plus
+        const pulse = 1 + 0.12 * Math.sin(this.time * 8);
+        ctx.beginPath();
+        ctx.arc(it.x, it.y, 46 * pulse, 0, Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = prize(70, 0.8);
+        glow(ctx, prize(60), 26);
+        ctx.stroke();
+        noGlow(ctx);
+        if (it.kind === 'star') collectible(ctx, it.x, it.y, 32, prize(60), this.time * 3);
+        else {
+          // Edelstein in der Mauerlücke: Raute
+          ctx.beginPath();
+          ctx.moveTo(it.x, it.y - 26); ctx.lineTo(it.x + 20, it.y); ctx.lineTo(it.x, it.y + 26); ctx.lineTo(it.x - 20, it.y); ctx.closePath();
+          ctx.fillStyle = prize(62);
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+        }
+        text(ctx, '+', it.x + 40, it.y - 34, 34, prize(75), 'center', 6, 700);
       }
     }
     if (this.dodged >= 3) text(ctx, `${this.dodged} ausgewichen`, field.w / 2, 130, 24, rainbow(this.dodged), 'center', 6, 600);

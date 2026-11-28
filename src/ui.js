@@ -111,6 +111,18 @@ export const icons = {
     ctx.moveTo(-r * 0.05, -r * 0.35); ctx.lineTo(-r * 0.4, 0); ctx.lineTo(-r * 0.05, r * 0.35);
     ctx.stroke();
   },
+  /** Unendlich-Zeichen: freies Spiel ohne Ende */
+  infinity(ctx, r) {
+    stroke(ctx, r);
+    ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const t = (i / 64) * Math.PI * 2;
+      const d = 1 + Math.sin(t) ** 2;
+      const x = (r * 0.45 * Math.cos(t)) / d, y = (r * 0.45 * Math.sin(t) * Math.cos(t)) / d;
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  },
   close(ctx, r) {
     stroke(ctx, r);
     ctx.beginPath();

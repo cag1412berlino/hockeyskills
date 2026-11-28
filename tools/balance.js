@@ -11,6 +11,10 @@ import { PlayScene } from '../src/play.js';
 import { games } from '../src/games/index.js';
 import { Bot, SKILLS, goals } from '../src/bots.js';
 import { newProfile } from '../src/profile.js';
+import { setFieldMeters } from '../src/engine.js';
+
+// wie in der App voreingestellt: 2 m Feldhöhe (bestimmt Ball- und Zielgröße)
+setFieldMeters(2);
 
 const args = new Set(process.argv.slice(2));
 const RUNS = args.has('--quick') ? 4 : 14;

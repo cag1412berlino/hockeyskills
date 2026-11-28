@@ -1,7 +1,7 @@
 // Spiel "Draht" (heißer Draht): Den Ball durch einen schmalen, gewundenen Gang zum Stern führen,
 // ohne die Wand zu berühren. Wer anstößt, muss zum letzten Kontrollpunkt zurück.
 // Kein Tempo-Spiel: Es zählt, wie weit man sauber kommt. Mit jeder Stufe wird der Gang enger.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, FIT } from '../engine.js';
 import { glow, noGlow, collectible, text, tone } from '../ui.js';
 import { Fx, OffTrack } from './common.js';
 import { spline } from './line.js';
@@ -37,7 +37,7 @@ class Wire {
     }
     if (start) ctrl[0] = { ...start };
     this.path = spline(ctrl, field);
-    this.width = p.width * (1 - 0.06 * env.stage);
+    this.width = Math.max(p.width * FIT * (1 - 0.06 * env.stage), BALL_RADIUS * 3); // Ball passt immer durch
     this.guard ??= new OffTrack();
     const last = this.path.length - 1;
     this.checkpoints = [1 / 3, 2 / 3].map((f) => ({ at: Math.round(last * f), done: false }));

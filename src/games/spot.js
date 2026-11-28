@@ -1,7 +1,7 @@
 // Spiel "Punktlandung": Den Ball genau auf der Zielscheibe zum Liegen bringen.
 // Je näher an der Mitte er ruhig liegt, desto mehr Punkte. Jede Scheibe bleibt nur
 // eine begrenzte Zeit; mit jeder Stufe wird sie kleiner und die Zeit kürzer.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { tone } from '../ui.js';
 import { Fx, Rest, randomSpot, drawBullseye } from './common.js';
 
@@ -24,7 +24,7 @@ class Spot {
 
   newTarget(ball) {
     const { env, p } = this;
-    const k = p.scale * (1 - 0.06 * env.stage);
+    const k = p.scale * SIZE * (1 - 0.06 * env.stage);
     this.target = { ...randomSpot(env.field, ball, 420), rings: RINGS.map((r) => r * k), left: p.life / env.ramp };
     this.target.total = this.target.left;
     this.rest.reset();
@@ -88,8 +88,8 @@ export default {
   hint: 'Leg den Ball genau in die Mitte und lass ihn ruhig liegen!',
   name: 'Punktlandung',
   duration: 60,
-  scale: 1.1,
-  medals: [[110, 1000, 4010], [70, 610, 3930], [20, 410, 3760]],
+  scale: 1.55,
+  medals: [[110, 920, 5370], [60, 480, 5250], [20, 370, 4900]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

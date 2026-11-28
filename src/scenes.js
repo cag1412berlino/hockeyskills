@@ -264,6 +264,15 @@ export class LevelScene extends ButtonScene {
     this.buttons.push(new DwellButton({
       x: 110, y: 870, r: 70, icon: icons.back, onActivate: this.act(() => this.opts.onBack()),
     }));
+    // Freies Spiel ein/aus: ohne Punkte, ohne Herzen, ohne Zeit
+    if (this.opts.free) {
+      const on = !!this.app.freePlay;
+      this.buttons.push(new DwellButton({
+        x: w / 2, y: 830, r: 70, color: on ? '#7dffb0' : colors[2], icon: icons.infinity,
+        label: on ? 'Freies Spiel: an' : 'Freies Spiel: aus',
+        onActivate: this.act(() => { this.app.freePlay = !on; this.layout(); }),
+      }));
+    }
     // Tempo-Button: schaltet reihum Langsam, Normal, Schnell.
     const speed = this.app.config.speed;
     this.buttons.push(new DwellButton({
@@ -279,7 +288,7 @@ export class LevelScene extends ButtonScene {
   draw(ctx) {
     title(ctx, this.opts.title, this.field.w / 2, 140, 86, this.opts.color ?? this.app.palette()[1]);
     ctx.globalAlpha = this.pulse();
-    caption(ctx, 'Wähle eine Stufe', this.field.w / 2, 240, 22, '#fff', 'center');
+    caption(ctx, this.opts.free && this.app.freePlay ? 'Freies Spiel: ohne Punkte, ohne Herzen, ohne Zeit – wähle eine Stufe' : 'Wähle eine Stufe', this.field.w / 2, 240, 22, '#fff', 'center');
     ctx.globalAlpha = 1;
     super.draw(ctx);
   }

@@ -2,7 +2,7 @@
 // Die Wolke verändert ständig ihre Form und wird größer und kleiner. Der Ball muss außen herum.
 // Auf "Mittel" pendelt sie, auf "Schwer" stellt sie sich in den Weg. In späten Stufen
 // wandert das Ziel und eine zweite kleine Wolke kreist um die große.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { glow, noGlow, creature, eyes } from '../ui.js';
 import { Fx, StopZones } from './common.js';
 
@@ -83,8 +83,9 @@ class Cloud {
     this.hurt = 0;
     this.roundTime = 0;
     this.target = null;
-    this.cloud = new Blob(this.p.r);
-    this.mini = new Blob(this.p.r * 0.45);
+    this.R = this.p.r * SIZE; // Wolke, passend zur Feldgröße
+    this.cloud = new Blob(this.R);
+    this.mini = new Blob(this.R * 0.45);
     this.fx = new Fx();
     this.stops = new StopZones(this.p.stop);
   }
@@ -93,7 +94,7 @@ class Cloud {
   newRound(ball) {
     const { field, palette } = this.env;
     const from = ball.visible ? ball : { x: field.w / 2, y: field.h / 2 };
-    const r = this.p.target * (1 - 0.06 * this.env.stage);
+    const r = this.p.target * SIZE * (1 - 0.06 * this.env.stage);
     // Von mehreren zufälligen Stellen die nehmen, die am weitesten vom Ball entfernt ist.
     let t = null, far = -1;
     for (let tries = 0; tries < 8; tries++) {
@@ -158,13 +159,13 @@ class Cloud {
     }
     // Die Wolke darf das Ziel nie ganz verdecken.
     const dc = Math.hypot(c.x - t.x, c.y - t.y);
-    const min = p.r * 1.3 + t.r + 30;
+    const min = this.R * 1.3 + t.r + 30;
     if (dc < min && dc > 0) { c.x = t.x + ((c.x - t.x) / dc) * min; c.y = t.y + ((c.y - t.y) / dc) * min; }
 
     // Ab Stufe 2 kreist eine kleine Wolke um die große.
     this.hasMini = env.stage >= 2;
-    mini.x = c.x + Math.cos(this.time * 1.1) * p.r * 2.3;
-    mini.y = c.y + Math.sin(this.time * 1.1) * p.r * 2.3;
+    mini.x = c.x + Math.cos(this.time * 1.1) * this.R * 2.3;
+    mini.y = c.y + Math.sin(this.time * 1.1) * this.R * 2.3;
 
     if (!ball.visible) return;
 
@@ -208,8 +209,8 @@ export default {
   hint: 'Triff die Kugel, aber weiche der Wolke aus!',
   name: 'Wolke',
   duration: 60,
-  scale: 0.75,
-  medals: [[190, 810, 1530], [30, 470, 1210], [20, 200, 800]],
+  scale: 0.9,
+  medals: [[270, 1120, 2000], [60, 530, 1440], [20, 260, 1020]],
   icon(ctx, r) {
     const s = r * 0.42;
     ctx.beginPath();

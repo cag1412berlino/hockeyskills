@@ -2,7 +2,7 @@
 // von selbst auf der Zielscheibe ausrollt. Trainiert das Gefühl für die Passstärke.
 // Liegt er daneben, sagt das Spiel, ob er zu kurz, zu weit oder seitlich vorbei war.
 // Die Kamera sieht nur den Ball: Dass der Schläger wirklich loslässt, ist Ehrensache.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { glow, noGlow, text, tone } from '../ui.js';
 import { Fx, Rest, drawBullseye, penalty } from './common.js';
 
@@ -30,7 +30,7 @@ class Roll {
   setup() {
     const { env, p } = this;
     const { field } = env;
-    const k = p.scale * (1 - 0.06 * env.stage);
+    const k = p.scale * SIZE * (1 - 0.06 * env.stage);
     this.rings = RINGS.map((r) => r * k);
     let t = null;
     for (let tries = 0; tries < 60; tries++) {
@@ -170,8 +170,8 @@ export default {
   hint: 'Schieb den Ball an und lass ihn ins Ziel rollen!',
   name: 'Zielrollen',
   duration: 60,
-  scale: 2.5,
-  medals: [[190, 1220, 3910], [120, 690, 3230], [40, 260, 1930]],
+  scale: 3,
+  medals: [[110, 810, 4250], [70, 430, 2860], [30, 190, 1270]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.fillStyle = '#fff';

@@ -29,6 +29,7 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
     engine, config, sound, voice, music, games, categories,
     logo: null,    // Vereinslogo, sobald geladen
     session: null, // laufendes Training oder Duell
+    freePlay: false, // freies Spiel: ohne Punkte, Herzen und Zeit (Schalter in der Stufenwahl)
     get profile() { return currentProfile(); },
     save: saveConfig,
     /** Übungsmodus (Maus, Test-Ball, simulierte Kamera): Es wird nichts gewertet. main.js legt das fest. */
@@ -72,8 +73,9 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       app.levelsFor({
         title: game.name,
         color: app.accentOf(game),
-        sub: (level) => bestLabel(app, game, level),
-        onPick: (level) => app.play(game, level),
+        sub: (level) => (app.freePlay ? '' : bestLabel(app, game, level)),
+        free: true,
+        onPick: (level) => app.play(game, level, app.freePlay ? { free: true, back: () => app.trickLevels(game) } : {}),
         onBack: () => (game.id === 'tricks' ? app.levels(game) : cat.games.length > 1 ? app.category(cat) : app.menu()),
       });
     },
@@ -84,8 +86,9 @@ export function createApp({ engine, sound, voice, music, onPlayerChange = () => 
       app.levelsFor({
         title: game.name,
         color: app.accentOf(tricks),
-        sub: (level) => bestLabel(app, game, level),
-        onPick: (level) => app.play(game, level),
+        sub: (level) => (app.freePlay ? '' : bestLabel(app, game, level)),
+        free: true,
+        onPick: (level) => app.play(game, level, app.freePlay ? { free: true, back: () => app.trickTopic(topicId) } : {}),
         onBack: () => app.levels(tricks),
       });
     },

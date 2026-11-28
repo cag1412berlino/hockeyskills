@@ -1,7 +1,7 @@
 // Spiel "Achter": Den Ball in einer Acht um zwei Hütchen führen.
 // Leuchtende Wegpunkte zeigen, wo es langgeht. Jede Schleife bringt Punkte,
 // berührte Hütchen kosten welche. Später wechselt die Richtung, und die Wegpunkte werden kleiner.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { glow, noGlow, tone } from '../ui.js';
 import { Fx } from './common.js';
 
@@ -52,7 +52,7 @@ class Eight {
       fx.text(ball.x, ball.y, '-5');
     }
 
-    const zone = p.zone * (1 - 0.06 * env.stage);
+    const zone = p.zone * SIZE * (1 - 0.06 * env.stage);
     const w = this.seq[this.next];
     if (Math.hypot(ball.x - w.x, ball.y - w.y) > zone) return;
     env.addScore(env.mult);
@@ -79,7 +79,7 @@ class Eight {
   draw(ctx) {
     const { env, p } = this;
     const [c0, c1] = env.palette;
-    const zone = p.zone * (1 - 0.06 * env.stage);
+    const zone = p.zone * SIZE * (1 - 0.06 * env.stage);
 
     // Die Acht als feine, laufende Strichlinie
     ctx.beginPath();
@@ -134,7 +134,7 @@ export default {
   name: 'Achter',
   duration: 60,
   scale: 0.2,
-  medals: [[150, 600, 1070], [100, 590, 1110], [30, 450, 1190]],
+  medals: [[120, 550, 1060], [70, 500, 1060], [20, 360, 1010]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

@@ -2,7 +2,7 @@
 // Mit dem Ball berühren = Treffer; je schneller nach dem Auftauchen, desto mehr Punkte.
 // Besondere Ziele: Doppel-Kugeln zerfallen in zwei kleine, die Uhr schenkt Zeit,
 // Stachelbällen (ab "Schwer" oder späten Stufen) muss man ausweichen.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { glow, noGlow, villain, randomVillain, creature, text } from '../ui.js';
 import { Fx, StopZones } from './common.js';
 
@@ -51,7 +51,7 @@ class Targets {
   spawn(ball) {
     const { env, p } = this;
     // Mit jeder Stufe werden die Ziele etwas kleiner; ab Stufe 2 tauchen überall Stachelbälle auf.
-    const r = p.r * (1 - 0.07 * env.stage);
+    const r = p.r * SIZE * (1 - 0.07 * env.stage);
     const bombChance = p.bombs + (env.stage >= 2 ? 0.1 : 0);
     const roll = Math.random();
     const kind = roll < bombChance ? 'bomb' : roll < bombChance + 0.15 && env.level + env.stage >= 2 ? 'split' : 'normal';
@@ -193,8 +193,8 @@ export default {
   hint: 'Triff die Kugeln – je schneller, desto besser!',
   name: 'Ziele',
   duration: 60,
-  scale: 0.2,
-  medals: [[210, 640, 1160], [160, 470, 870], [30, 180, 380]],
+  scale: 0.25,
+  medals: [[220, 760, 1400], [150, 580, 1060], [30, 250, 550]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.055;

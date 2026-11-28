@@ -2,7 +2,7 @@
 // Drei Leben; eine Warnung am Rand zeigt, wo der nächste Stachelball hereinkommt.
 // Extras: Der Schild fängt einen Treffer ab, die Schneeflocke bremst alle Stachelbälle.
 // In späten Stufen fliegen manche Stachelbälle im Zickzack.
-import { BALL_RADIUS } from '../engine.js';
+import { BALL_RADIUS, SIZE } from '../engine.js';
 import { text, glow, noGlow, villain, randomVillain, tone } from '../ui.js';
 import { Fx, randomSpot, drawCollectible, drawPickup, PICKUP_SECONDS } from './common.js';
 
@@ -33,7 +33,7 @@ class Dodge {
   spawn(ball) {
     const { env, p } = this;
     const { field } = env;
-    const r = p.r;
+    const r = p.r * SIZE;
     const edge = Math.floor(Math.random() * 4);
     const along = 0.15 + Math.random() * 0.7;
     const from = [
@@ -179,8 +179,8 @@ export default {
   name: 'Ausweichen',
   duration: 60,
   lives: 3,
-  scale: 0.7,
-  medals: [[150, 680, 1680], [130, 650, 1380], [110, 510, 1190]],
+  scale: 0.65,
+  medals: [[140, 660, 1520], [140, 580, 1240], [110, 500, 1240]],
   icon(ctx, r) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = r * 0.05;

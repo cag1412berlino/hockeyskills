@@ -104,8 +104,9 @@ export const goals = {
   pendulum: (g) => g.pads()[g.active],
   taps(g) {
     // immer auf die Seite, auf der der Ball zuletzt nicht war
-    const s = (g.side === 1 ? -1 : 1) * (g.p.gap + 45);
-    return { x: g.c.x - Math.sin(g.c.a) * s, y: g.c.y + Math.cos(g.c.a) * s };
+    const { x, y, a, gap } = g.now;
+    const s = (g.side === 1 ? -1 : 1) * (gap + 45);
+    return { x: x - Math.sin(a) * s, y: y + Math.cos(a) * s };
   },
   rhythm(g) {
     const n = g.notes.reduce((a, c) => (!a || c.y > a.y ? c : a), null);

@@ -32,14 +32,16 @@ export class PlayScene {
     this.shownScore = 0;
     // Endlos (nur als einzelne Übung, nicht im Training oder Duell): keine Zeitgrenze, nur Herzen.
     // Es wird immer schneller, bis alle Herzen weg sind.
-    this.endless = !!game.endless && !session && opts.career == null; // Karriere: feste Runde
+    // Freies Spiel: ohne Punkte, ohne Herzen, ohne Zeit – einfach weiterspielen, gleichbleibend schwer
+    this.free = !!opts.free && !session;
+    this.endless = this.free || (!!game.endless && !session && opts.career == null); // Karriere: feste Runde
     if (!session) app.freshRound?.(); // Übungsmodus gilt für die ganze Runde
     this.duration = this.endless ? game.duration ?? 60 : session?.seconds ?? game.duration ?? 60;
     this.timeLeft = this.endless ? Infinity : this.duration;
     this.elapsed = 0;
-    this.lives = this.endless ? game.endless.lives : game.lives ?? null;
+    this.lives = this.free ? null : this.endless ? game.endless.lives : game.lives ?? null;
     this.pace = 0;           // Endlos: so oft wurde es schon schneller
-    this.steady = this.endless && !!game.endless.steady; // Dauertraining: endlos, aber gleichbleibend
+    this.steady = this.free || (this.endless && !!game.endless.steady); // Dauertraining: endlos, aber gleichbleibend
     // „Nochmal“ startet schneller: kurzer Countdown
     this.countdown = opts.quick ? 1.6 : 3.5;
     this.lastTick = opts.quick ? 2 : 4;
@@ -62,7 +64,7 @@ export class PlayScene {
     this.lucky = null;       // Glücksstern { x, y, left }
     this.lastScore = 0;
     // Jagd auf den eigenen Rekord (nur in der einzelnen Übung, nicht im Training oder Übungsmodus)
-    this.best = !session && !app.practice?.() ? app.profile?.highscores?.[scoreKey(app, game, level)] || 0 : 0;
+    this.best = !session && !this.free && !app.practice?.() ? app.profile?.highscores?.[scoreKey(app, game, level)] || 0 : 0;
     this.beaten = false;
     this.coach = null;       // Zuruf des Trainers: { kind, str, age }
     this.shouted = new Set(); // jeder Anlass höchstens einmal je Runde
@@ -145,7 +147,7 @@ export class PlayScene {
       combo: demo ? (points) => points : (points, window = 2.5, tempo = null) => scene.combo(points, window, tempo),
       /** Fehler: die Serie ist weg. */
       miss: demo ? nothing : () => scene.miss(),
-      addTime: demo ? nothing : (sec) => { scene.timeLeft = Math.min(scene.duration, scene.timeLeft + sec); },
+      addTime: demo ? nothing : (sec) => { if (Number.isFinite(scene.timeLeft)) scene.timeLeft = Math.min(scene.duration, scene.timeLeft + sec); }, // endlos: keine Zeit
       shake: demo ? nothing : (amount) => app.engine.shake(amount),
       /** Sprachansage, z. B. "Stopp!" */
       say: demo ? nothing : (str) => app.voice.say(str),
@@ -163,6 +165,7 @@ export class PlayScene {
       // Im Dauertraining heißt „X“: fertig für heute – dann wird abgerechnet.
       onActivate: () => {
         this.app.sound.select();
+        if (this.free) { this.app.music.stop(); return this.opts.back ? this.opts.back() : this.app.menu(); }
         if (this.steady && this.elapsed > 10 && !this.demo) return this.finish();
         this.app.music.stop();
         this.app.menu();
@@ -245,6 +248,7 @@ export class PlayScene {
   }
 
   loseLife() {
+    if (this.free) return; // freies Spiel: keine Herzen, kein Abzug
     if (this.lives == null) {
       // Übung ohne Leben (z. B. im Finale): stattdessen Punktabzug
       this.score = Math.max(0, this.score - 10);
@@ -414,6 +418,12 @@ export class PlayScene {
   finish() {
     if (this.done) return;
     this.done = true;
+    if (this.free) {
+      // freies Spiel: nichts wird gewertet, zurück zur Stufenwahl
+      this.app.music.stop();
+      if (this.opts.back) this.opts.back(); else this.app.menu();
+      return;
+    }
     const { app, game, level } = this;
     this.score = Math.round(this.score);
     app.music.stop();
@@ -504,41 +514,46 @@ export class PlayScene {
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     if (!this.endless) for (let i = 1; i < STAGES; i++) ctx.fillRect(40 + bw * (1 - i / STAGES) - 1, 46, 2, 8);
 
-    caption(ctx, 'Punkte', 42, 76, 18);
-    if (this.best > 0) {
-      // Liegt man gerade vor oder hinter dem Tempo des eigenen Rekords?
-      const pace = this.endless ? this.best : this.best * Math.min(1, this.elapsed / this.duration);
-      const ahead = this.score >= pace;
-      caption(ctx, this.beaten ? `Rekord ${Math.round(this.best)} geknackt!` : `Rekord ${Math.round(this.best)} · ${ahead ? '▲ du liegst vorn' : '▼ du liegst zurück'}`,
-        w / 2, this.endless ? 78 : 76, 18, this.beaten || ahead ? '#7dffb0' : 'rgba(255,255,255,0.65)', 'center');
-    }
-    text(ctx, Math.round(this.shownScore), 40, 118, 66 * (1 + 0.14 * (this.bump || 0)), '#fff', 'left', 8, 600);
-    const mult = this.multiplier();
-    if (mult > 1) {
-      // Serien-Anzeige mit ablaufendem Ring
-      const x = 262, y = 112;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(x, y, 34, 0, Math.PI * 2);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (this.streakLeft / this.streakWindow) * Math.PI * 2);
-      ctx.strokeStyle = tone(this.accent, 70);
-      glow(ctx, this.accent, 14);
-      ctx.stroke();
-      noGlow(ctx);
-      text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
-    }
-    if (this.tempo) {
-      // Tempo der letzten Aufgabe: Sekunden und was sie gebracht haben
-      const { secs, f, age } = this.tempo;
-      ctx.globalAlpha = Math.min(1, (1.8 - age) * 3);
-      const color = f >= 1.2 ? '#7dffb0' : f <= 0.8 ? '#ff9a8a' : '#fff';
-      const label = `${secs.toFixed(1).replace('.', ',')} s · ${f >= 1.2 ? 'Tempo' : f <= 0.8 ? 'zu langsam' : 'okay'} x${f.toFixed(1).replace('.', ',')}`;
-      text(ctx, label, w / 2, 118, 30 * (1 + 0.15 * Math.max(0, 1 - age * 4)), color, 'center', 6, 600);
-      ctx.globalAlpha = 1;
+    if (this.free) {
+      caption(ctx, 'Freies Spiel', 42, 76, 18);
+      text(ctx, 'ohne Punkte', 40, 112, 30, 'rgba(255,255,255,0.75)', 'left', 6, 600);
+    } else {
+      caption(ctx, 'Punkte', 42, 76, 18);
+      if (this.best > 0) {
+        // Liegt man gerade vor oder hinter dem Tempo des eigenen Rekords?
+        const pace = this.endless ? this.best : this.best * Math.min(1, this.elapsed / this.duration);
+        const ahead = this.score >= pace;
+        caption(ctx, this.beaten ? `Rekord ${Math.round(this.best)} geknackt!` : `Rekord ${Math.round(this.best)} · ${ahead ? '▲ du liegst vorn' : '▼ du liegst zurück'}`,
+          w / 2, this.endless ? 78 : 76, 18, this.beaten || ahead ? '#7dffb0' : 'rgba(255,255,255,0.65)', 'center');
+      }
+      text(ctx, Math.round(this.shownScore), 40, 118, 66 * (1 + 0.14 * (this.bump || 0)), '#fff', 'left', 8, 600);
+      const mult = this.multiplier();
+      if (mult > 1) {
+        // Serien-Anzeige mit ablaufendem Ring
+        const x = 262, y = 112;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(x, y, 34, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, 34, -Math.PI / 2, -Math.PI / 2 + (this.streakLeft / this.streakWindow) * Math.PI * 2);
+        ctx.strokeStyle = tone(this.accent, 70);
+        glow(ctx, this.accent, 14);
+        ctx.stroke();
+        noGlow(ctx);
+        text(ctx, `x${mult}`, x, y + 1, 32, '#fff', 'center', 0, 600);
+      }
+      if (this.tempo) {
+        // Tempo der letzten Aufgabe: Sekunden und was sie gebracht haben
+        const { secs, f, age } = this.tempo;
+        ctx.globalAlpha = Math.min(1, (1.8 - age) * 3);
+        const color = f >= 1.2 ? '#7dffb0' : f <= 0.8 ? '#ff9a8a' : '#fff';
+        const label = `${secs.toFixed(1).replace('.', ',')} s · ${f >= 1.2 ? 'Tempo' : f <= 0.8 ? 'zu langsam' : 'okay'} x${f.toFixed(1).replace('.', ',')}`;
+        text(ctx, label, w / 2, 118, 30 * (1 + 0.15 * Math.max(0, 1 - age * 4)), color, 'center', 6, 600);
+        ctx.globalAlpha = 1;
+      }
     }
     if (this.gold > 0) caption(ctx, 'Goldregen x3', 42, 172, 18, '#ffd76a');
     else if (this.double > 0) caption(ctx, 'Doppelte Punkte', 42, 172, 18, '#fff');
